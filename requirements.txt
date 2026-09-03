@@ -1,0 +1,36 @@
+# Hallucinations in AI-Driven Cybersecurity Systems — Team Zetabyte
+# Open-source only. No paid API dependency anywhere in the system.
+#
+#   pip install -r requirements.txt
+#
+# Generation needs no Python package:
+#   Groq   -- free tier, set GROQ_API_KEY, called over plain HTTP  (project default)
+#   Ollama -- install the app, then `ollama pull llama3.2:3b`      (local iteration)
+#
+# Verify a setup before any batch run:
+#   python -m pipeline.check_backends
+
+# --- core ---
+numpy>=1.24
+
+# --- embeddings and retrieval (pipeline/) ---
+# For a CPU-only install, install torch first from the CPU index:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+
+# --- detectors/ ---
+# protectai/deberta-v3-base-prompt-injection-v2
+transformers>=4.40
+# cross-encoder/nli-deberta-v3-base
+# (sentence-transformers, above, provides the CrossEncoder)
+# Both models are DeBERTa-v3; their tokenizer needs sentencepiece.
+sentencepiece>=0.2
+
+# --- clustering and the Level 3 fusion model ---
+scikit-learn>=1.3
+
+# --- service layer and dashboard (planned) ---
+# fastapi>=0.110
+# uvicorn>=0.29
+# streamlit>=1.35
