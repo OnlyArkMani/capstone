@@ -1,0 +1,46 @@
+{
+  "corpus": "/sessions/rcw-01u9mli5ec6ksvoaaoc6yttq/mnt/Capstone/corpus/poisoned",
+  "validated_at": "2026-09-03T05:11:36+00:00",
+  "passed": true,
+  "strict": true,
+  "summary": {
+    "tier_counts": {
+      "1": 2,
+      "2": 5,
+      "3": 5
+    },
+    "max_pairwise_jaccard": 0.1977,
+    "max_pairwise_jaccard_pair": [
+      "poison-attribution-regional-t3-unattrib",
+      "poison-ioc-flip-c2-domain-t3-unattrib"
+    ],
+    "content_words": {
+      "min": 151,
+      "median": 225,
+      "max": 262,
+      "mean": 214.8
+    },
+    "document_count": 12,
+    "reference_verified_count": 0,
+    "source_counts": {
+      "health_isac": 2,
+      "unattributed_report": 2,
+      "vendor_psirt": 1,
+      "cisa_ics_medical": 1,
+      "community_forum": 2,
+      "curated_osint": 1,
+      "vendor_research_blog": 2,
+      "analyst_upload": 1
+    },
+    "poison_families": [
+      "attribution_fabrication",
+      "authority_spoof",
+      "direct_prompt_injection",
+      "ioc_reputation_flip",
+      "remediation_misdirection",
+      "severity_downgrade"
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

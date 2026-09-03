@@ -1,0 +1,42 @@
+{
+  "corpus": "/sessions/rcw-01u9mli5ec6ksvoaaoc6yttq/mnt/Capstone/corpus/clean",
+  "validated_at": "2026-09-03T05:11:36+00:00",
+  "passed": true,
+  "strict": true,
+  "summary": {
+    "tier_counts": {
+      "1": 40,
+      "2": 21,
+      "3": 11
+    },
+    "max_pairwise_jaccard": 0.3394,
+    "max_pairwise_jaccard_pair": [
+      "osint-feed-phishing-domains-payer-brands",
+      "osint-feed-tls-certificate-anomalies"
+    ],
+    "content_words": {
+      "min": 93,
+      "median": 186,
+      "max": 264,
+      "mean": 179.5
+    },
+    "document_count": 72,
+    "reference_verified_count": 27,
+    "source_counts": {
+      "analyst_upload": 3,
+      "mitre_attack": 12,
+      "cisa_advisory": 7,
+      "cisa_ics_medical": 8,
+      "community_forum": 4,
+      "hhs_hc3": 4,
+      "health_isac": 6,
+      "nvd_cve": 7,
+      "curated_osint": 8,
+      "vendor_psirt": 2,
+      "unattributed_report": 4,
+      "vendor_research_blog": 7
+    }
+  },
+  "errors": [],
+  "warnings": []
+}
