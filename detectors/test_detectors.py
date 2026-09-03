@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""
+Sanity check: do the three detectors point the right way on known documents?
+
+    python -m detectors.test_detectors
+    python -m detectors.test_detectors --verbose
+
+This is NOT a performance evaluation. It answers one question before we build
+fusion on top of these signals: given documents we already know the answer for,
+does each detector move in the direction it is supposed to move? A detector
+wired backwards produces confident, plausible, wrong numbers, and it is far
+cheaper to catch that here than after it has been fused with two others.
+
+Ground truth
+------------
+This script READS corpus/ground_truth/. That is correct and is the boundary: the
+detectors are the system under test and never see the answer key; test and
+evaluation code do. A check below asserts that no module in the detectors package
+reads it.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import statistics
+import sys
+from pathlib import Path
+from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from detectors import (  # noqa: E402
+    embedding_anomaly_score, injection_probabilities, entailment_scores,
+    pairwise_conflict, d_conflict_max, tier1_conflict_max,
+)
+from detectors.base import doc_text  # noqa: E402
+
+GT_DIR = PROJECT_ROOT / "corpus" / "ground_truth"
+FAILURES: list[str] = []
+WARNINGS: list[str] = []
+
+
+def check(name: str, ok: bool, detail: str = "") -> None:
+    print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" -- {detail}" if detail and not ok else ""))
+    if not ok:
+        FAILURES.append(name)
+
+
+def load_docs() -> tuple[dict[str, dict], dict[str, dict], dict[str, Any]]:
+    clean_gt = json.loads((GT_DIR / "clean.json").read_text(encoding="utf-8"))
+    pois_gt = json.loads((GT_DIR / "poisoned.json").read_text(encoding="utf-8"))
+
+    def read(partition: str, ids) -> dict[str, dict]:
+        out = {}
+        for doc_id in ids:
+            path = PROJECT_ROOT / "corpus" / partition / f"{doc_id}.json"
+            if path.exists():
+                out[doc_id] = json.loads(path.read_text(encoding="utf-8"))
+        return out
+
+    return read("clean", clean_gt["labels"]), read("poisoned", pois_gt["labels"]), pois_gt
+
+
+def bar(value: float, width: int = 20) -> str:
+    filled = int(round(value * width))
+    return "#" * filled + "." * (width - filled)
+
+
+# ---------------------------------------------------------------------------
+
+def test_isolation() -> None:
+    """The detectors are the system under test; only eval code sees the answer key."""
+    print("\n== detector isolation ==")
+    from detectors.isolation_check import check_package  # noqa: PLC0415
+
+    offenders = check_package(PROJECT_ROOT / "detectors",
+                              skip=("test_detectors.py", "isolation_check.py"))
+    check("no detector module reads ground truth", not offenders, f"offenders: {offenders}")
+
+    pipe = check_package(PROJECT_ROOT / "pipeline",
+                         skip=("test_pipeline.py",))
+    check("no pipeline module reads ground truth", not pipe, f"offenders: {pipe}")
+
+
+def test_structure(clean: dict, poisoned: dict) -> None:
+    print("\n== output contract ==")
+    sample = list(clean.values())[:5]
+    a = embedding_anomaly_score(sample)
+    check("anomaly returns one score per document", len(a) == len(sample))
+    check("anomaly scores are in [0,1]", all(0.0 <= s.score <= 1.0 for s in a))
+    check("anomaly reports robust_z for fusion", all("robust_z" in s.detail for s in a))
+    check("anomaly on singleton returns 0", embedding_anomaly_score(sample[:1])[0].score == 0.0)
+    check("anomaly on empty input returns []", embedding_anomaly_score([]) == [])
+
+    i = injection_probabilities(sample)
+    check("injection returns one score per document", len(i) == len(sample))
+    check("injection scores are in [0,1]", all(0.0 <= s.score <= 1.0 for s in i))
+
+    e = entailment_scores("The device is safe to use.", sample)
+    check("entailment returns one score per document", len(e) == len(sample))
+    check("entailment scores are in [0,1]", all(0.0 <= s.score <= 1.0 for s in e))
+    check("entailment exposes both directions",
+          all(abs((s.entailment + s.score) - 1.0) < 1e-6 for s in e))
+
+    ids = {s.doc_id for s in a} | {s.doc_id for s in i} | {s.doc_id for s in e}
+    check("all three detectors agree on doc_ids", ids == {d["doc_id"] for d in sample})
+
+
+def test_injection(clean: dict, poisoned: dict, verbose: bool) -> None:
+    print("\n== detector 2: prompt injection ==")
+    docs = list(clean.values()) + list(poisoned.values())
+    scores = {s.doc_id: s for s in injection_probabilities(docs)}
+    backend = next(iter(scores.values())).backend
+    if not backend.is_model:
+        WARNINGS.append("injection ran on heuristics, not the pretrained classifier")
+
+    # The corpus contains exactly one document with an injection payload.
+    target = "poison-injection-infusion-t3-forum"
+    if target not in scores:
+        check("injection-bearing document present", False)
+        return
+    injected = scores[target].score
+    others = [s.score for k, s in scores.items() if k != target]
+    rank = 1 + sum(1 for v in others if v > injected)
+
+    print(f"  backend: {backend.name} (real model: {backend.is_model})")
+    print(f"  {target}: {injected:.3f}  |{bar(injected)}|")
+    print(f"  highest other:                       {max(others):.3f}")
+    print(f"  mean of all others:                  {statistics.mean(others):.3f}")
+    check("the injection-bearing document ranks first", rank == 1, f"ranked {rank}")
+    check("it scores above every other document", injected > max(others),
+          f"{injected:.3f} vs {max(others):.3f}")
+
+    if verbose:
+        for did, s in sorted(scores.items(), key=lambda kv: -kv[1].score)[:6]:
+            print(f"    {s.score:.3f} |{bar(s.score, 14)}| {did}")
+
+    print("  NOTE: one positive example. Enough to confirm the signal fires; nowhere near")
+    print("        enough to estimate a threshold or a false-positive rate.")
+
+
+def test_entailment(clean: dict, poisoned: dict, pois_gt: dict, verbose: bool) -> None:
+    print("\n== detector 3: claim-evidence entailment ==")
+    queries = pois_gt["target_queries"]
+    labels = pois_gt["labels"]
+
+    rows, backend = [], None
+    for doc_id, meta in labels.items():
+        qid = meta["target_query_id"]
+        q = queries[qid]
+        pdoc = poisoned.get(doc_id)
+        if not pdoc:
+            continue
+        anchors = [clean[a] for a in q["clean_anchor_doc_ids"] if a in clean]
+        if not anchors:
+            continue
+
+        # The claim the attacker wants believed, against the poisoned document
+        # and against the genuine one.
+        s_att_pois = entailment_scores(q["attacker_target_answer"], [pdoc])[0]
+        s_att_clean = entailment_scores(q["attacker_target_answer"], anchors)
+        s_true_clean = entailment_scores(q["ground_truth_answer"], anchors)
+        backend = backend or s_att_pois.backend
+
+        rows.append({
+            "doc_id": doc_id,
+            "family": meta["poison_family_id"],
+            "attacker_claim_vs_poisoned": s_att_pois.entailment,
+            "attacker_claim_vs_clean": max(s.entailment for s in s_att_clean),
+            "true_claim_vs_clean": max(s.entailment for s in s_true_clean),
+        })
+
+    if not rows:
+        check("entailment pairs constructed", False)
+        return
+
+    print(f"  backend: {backend.name} (real model: {backend.is_model})")
+    if not backend.is_model:
+        WARNINGS.append("entailment ran on lexical overlap, which cannot detect contradiction")
+
+    a_p = statistics.mean(r["attacker_claim_vs_poisoned"] for r in rows)
+    a_c = statistics.mean(r["attacker_claim_vs_clean"] for r in rows)
+    t_c = statistics.mean(r["true_claim_vs_clean"] for r in rows)
+
+    print(f"  attacker's claim, supported by the POISONED doc : {a_p:.3f}  |{bar(a_p)}|")
+    print(f"  attacker's claim, supported by the CLEAN anchor : {a_c:.3f}  |{bar(a_c)}|")
+    print(f"  true answer,      supported by the CLEAN anchor : {t_c:.3f}  |{bar(t_c)}|")
+
+    # The directional claim: a poisoned document supports the attacker's answer
+    # more than the genuine document does. That gap is the signal the verifier
+    # exists to expose.
+    ok = a_p > a_c
+    check("poisoned docs support the attacker's claim more than clean docs do", ok,
+          f"{a_p:.3f} vs {a_c:.3f}")
+    check("clean anchors support the true answer", t_c > 0.0, f"{t_c:.3f}")
+
+    if verbose:
+        print(f"    {'poisoned doc':<44}{'family':<26}{'att|pois':>9}{'att|clean':>11}")
+        for r in sorted(rows, key=lambda x: -x["attacker_claim_vs_poisoned"]):
+            print(f"    {r['doc_id'][:43]:<44}{r['family']:<26}"
+                  f"{r['attacker_claim_vs_poisoned']:>9.3f}{r['attacker_claim_vs_clean']:>11.3f}")
+
+
+def test_anomaly(clean: dict, poisoned: dict, pois_gt: dict, verbose: bool) -> None:
+    print("\n== detector 1: embedding anomaly ==")
+    from pipeline.embeddings import get_embedder  # noqa: PLC0415
+
+    embedder = get_embedder()
+    if not embedder.is_semantic:
+        WARNINGS.append("anomaly ran on the non-semantic fallback embedder")
+
+    # Realistic retrieval sets: four clean documents plus one poisoned document,
+    # which is the shape the attack actually takes.
+    clean_list = list(clean.values())
+    ranks, backend = [], None
+    for idx, (doc_id, pdoc) in enumerate(poisoned.items()):
+        window = clean_list[(idx * 4) % (len(clean_list) - 4):][:4]
+        retrieval_set = window + [pdoc]
+        scores = embedding_anomaly_score(retrieval_set, embedder=embedder)
+        backend = backend or scores[0].backend
+        pois_score = next(s.score for s in scores if s.doc_id == doc_id)
+        rank = 1 + sum(1 for s in scores if s.score > pois_score)
+        ranks.append({"doc_id": doc_id, "score": pois_score, "rank": rank,
+                      "z": scores[-1].detail["robust_z"]})
+
+    print(f"  backend: {backend.name} (semantic embedder: {backend.is_model})")
+    top1 = sum(1 for r in ranks if r["rank"] == 1)
+    mean_score = statistics.mean(r["score"] for r in ranks)
+    print(f"  poisoned document ranked most anomalous in its set: {top1}/{len(ranks)}")
+    print(f"  mean anomaly score of poisoned documents          : {mean_score:.3f}  |{bar(mean_score)}|")
+
+    if verbose:
+        for r in sorted(ranks, key=lambda x: x["rank"]):
+            print(f"    rank {r['rank']}  score {r['score']:.3f}  z {r['z']:+.2f}  {r['doc_id']}")
+
+    check("anomaly produced a score for every poisoned document", len(ranks) == len(poisoned))
+    if top1 < len(ranks) / 2:
+        print("  EXPECTED: PoisonedRAG documents are constructed to sit NEAR the query in")
+        print("  embedding space -- that is the attack. A document engineered for retrieval")
+        print("  proximity can land inside the cluster it was aimed at, so this detector is")
+        print("  expected to be the weakest of the three here. Low scores are an observation")
+        print("  about the attack, not a defect.")
+
+
+def test_pairwise_conflict(clean: dict, poisoned: dict) -> None:
+    print("\n== derived: intra-evidence conflict (design 0.4) ==")
+    # The Tier-1 spoofed advisory alongside the genuine one it contradicts.
+    pair_ids = ["cisa-icsma-25-030-01", "poison-authority-contec-t1-cisa"]
+    docs = [clean.get(pair_ids[0]), poisoned.get(pair_ids[1])]
+    if not all(docs):
+        check("Tier-1 conflict pair available", False)
+        return
+    conflicts = pairwise_conflict(docs)
+    check("pairwise conflict returns one entry per pair", len(conflicts) == 1)
+    print(f"  genuine vs spoofed Tier-1 advisory: contradiction "
+          f"{conflicts[0].contradiction:.3f}  |{bar(conflicts[0].contradiction)}|")
+    print(f"  d_conflict_max = {d_conflict_max(conflicts):.3f}   "
+          f"tier1_conflict_max = {tier1_conflict_max(conflicts):.3f}")
+    check("d_conflict_max is in [0,1]", 0.0 <= d_conflict_max(conflicts) <= 1.0)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Sanity-check the three Level 2 detectors.")
+    ap.add_argument("--verbose", "-v", action="store_true", help="per-document tables")
+    args = ap.parse_args()
+
+    if not GT_DIR.exists():
+        print(f"ERROR: {GT_DIR} not found. Build the corpus first.", file=sys.stderr)
+        return 2
+
+    clean, poisoned, pois_gt = load_docs()
+    print(f"Loaded {len(clean)} clean and {len(poisoned)} poisoned documents.")
+
+    test_isolation()
+    test_structure(clean, poisoned)
+    test_anomaly(clean, poisoned, pois_gt, args.verbose)
+    test_injection(clean, poisoned, args.verbose)
+    test_entailment(clean, poisoned, pois_gt, args.verbose)
+    test_pairwise_conflict(clean, poisoned)
+
+    print("\n" + "=" * 78)
+    if WARNINGS:
+        print("RUN IS NOT CONCLUSIVE — one or more detectors used a fallback backend:")
+        for w in WARNINGS:
+            print(f"  - {w}")
+        print("  Directional results above are structural evidence only. Install the real")
+        print("  models (pip install -r detectors/requirements.txt) before drawing any")
+        print("  conclusion about detector performance.")
+        print()
+    if FAILURES:
+        print(f"FAILED: {len(FAILURES)} structural check(s): {FAILURES}")
+        return 1
+    print("All structural checks passed.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

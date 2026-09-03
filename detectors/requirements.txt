@@ -1,0 +1,21 @@
+# Level 2 detector models — open-source, no paid dependency.
+#
+# numpy alone runs the detectors with their fallback backends, which is enough to
+# verify structure and direction but NOT enough to report any performance figure.
+
+numpy>=1.24
+
+# Detector 1 — embedding anomaly. sklearn's KMeans is used when present; a
+# dependency-free numpy implementation with k-means++ init stands in otherwise.
+scikit-learn>=1.3
+
+# Detector 2 — prompt-injection classifier
+#   protectai/deberta-v3-base-prompt-injection-v2
+transformers>=4.40
+
+# Detector 3 — NLI cross-encoder
+#   cross-encoder/nli-deberta-v3-base
+sentence-transformers>=3.0
+
+# Both models are DeBERTa-v3, whose tokenizer needs sentencepiece.
+sentencepiece>=0.2
