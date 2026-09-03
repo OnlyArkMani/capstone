@@ -1,0 +1,91 @@
+"""
+Pipeline configuration.
+
+Every path and model name the baseline needs, in one place, overridable by
+environment variable so that later instrumentation can point the same code at a
+different index or a different generator without editing it.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _env(name: str, default: str) -> str:
+    return os.environ.get(name, default)
+
+
+@dataclass
+class PipelineConfig:
+    # ---- corpus ----
+    # Both partitions are indexed together. The pipeline is not told which is
+    # which; see corpus_loader.load_corpus().
+    corpus_dirs: list[Path] = field(default_factory=lambda: [
+        PROJECT_ROOT / "corpus" / "clean",
+        PROJECT_ROOT / "corpus" / "poisoned",
+    ])
+
+    # ---- embeddings ----
+    # bge-small-en-v1.5 is the default: 384-dim, ~130MB, and it materially
+    # outperforms all-MiniLM-L6-v2 on retrieval benchmarks at the same
+    # dimensionality. MiniLM stays available as the lighter alternative.
+    embedding_model: str = _env("RAG_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+    embedding_backend: str = _env("RAG_EMBEDDING_BACKEND", "auto")  # auto|sentence_transformers|hashing
+    embedding_dim_fallback: int = 384
+
+    # bge models are trained with an instruction prefix on the QUERY side only.
+    # Omitting it costs several points of retrieval quality; applying it to
+    # documents as well also hurts. Hence query_prefix, not a general prefix.
+    query_prefix: str = _env(
+        "RAG_QUERY_PREFIX",
+        "Represent this sentence for searching relevant passages: ",
+    )
+
+    # ---- index ----
+    index_backend: str = _env("RAG_INDEX_BACKEND", "auto")  # auto|faiss|numpy
+    index_dir: Path = PROJECT_ROOT / "pipeline" / "index"
+
+    # ---- retrieval ----
+    default_k: int = int(_env("RAG_TOP_K", "5"))
+
+    # ---- generation ----
+    # Groq is the project default. Rationale in pipeline/README.md: the headline
+    # evaluation must use ONE generator across both arms, and Groq gives an 8B
+    # model at consistent speed without depending on local hardware.
+    generation_backend: str = _env("RAG_GENERATION_BACKEND", "groq")  # groq|ollama|extractive|auto
+    ollama_model: str = _env("RAG_OLLAMA_MODEL", "llama3.2:3b")
+    ollama_host: str = _env("OLLAMA_HOST", "http://localhost:11434")
+    groq_model: str = _env("RAG_GROQ_MODEL", "llama-3.1-8b-instant")
+    groq_api_key_env: str = "GROQ_API_KEY"
+    generation_timeout_s: int = int(_env("RAG_GEN_TIMEOUT", "120"))
+
+    # Groq free tier: 30 requests/min, 6000 tokens/min, 1000 requests/day.
+    # At k=5 a RAG prompt is ~1.6k input + ~0.3k output tokens, so TOKENS bind
+    # long before requests -- roughly 3 queries/minute sustained, not 30. An
+    # evaluation run will hit this, so the backend retries rather than failing.
+    groq_max_retries: int = int(_env("RAG_GROQ_MAX_RETRIES", "5"))
+    groq_backoff_base_s: float = float(_env("RAG_GROQ_BACKOFF", "2.0"))
+    groq_min_interval_s: float = float(_env("RAG_GROQ_MIN_INTERVAL", "0.0"))
+    max_context_chars: int = int(_env("RAG_MAX_CONTEXT_CHARS", "12000"))
+    temperature: float = float(_env("RAG_TEMPERATURE", "0.0"))
+
+    # ---- logging ----
+    log_dir: Path = PROJECT_ROOT / "logs"
+    retrieval_log_file: str = "retrieval_log.jsonl"
+    per_query_dir: str = "queries"
+    log_content_in_jsonl: bool = _env("RAG_LOG_CONTENT", "0") == "1"
+
+    @property
+    def index_path(self) -> Path:
+        return self.index_dir / "corpus.index"
+
+    @property
+    def meta_path(self) -> Path:
+        return self.index_dir / "corpus_meta.json"
+
+
+DEFAULT_CONFIG = PipelineConfig()

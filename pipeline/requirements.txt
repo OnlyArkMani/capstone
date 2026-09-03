@@ -1,0 +1,22 @@
+# Baseline RAG pipeline — open-source only, no paid API dependency.
+#
+# numpy alone is enough to run the pipeline end to end with the fallback
+# backends (exact numpy search + hashing embedder + extractive generator), which
+# is how the structure and logging are tested offline. The rest is required for
+# real results.
+
+numpy>=1.24
+
+# Embeddings. Pulls torch, which is the large download here (~2GB with CUDA,
+# ~200MB CPU-only). For a CPU-only install, install torch first from the CPU
+# index:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+sentence-transformers>=3.0
+
+# Vector index. Optional: the pipeline falls back to exact numpy search, which
+# at this corpus size computes precisely the same thing.
+faiss-cpu>=1.8
+
+# Generation needs no Python package:
+#   Ollama -- install the app, then `ollama pull llama3.1:8b` (or qwen2.5:7b)
+#   Groq   -- free tier, set GROQ_API_KEY; called over plain HTTP
