@@ -1,0 +1,16 @@
+{
+  "suspicious": {
+    "anomaly": 0.569541339883907
+  },
+  "malicious": {
+    "anomaly": 0.8424705446009013
+  },
+  "n_clean_calibration": 320,
+  "fitted": true,
+  "note": "Q0.95/Q0.99 of the clean calibration distribution; 3 signal(s) unusable",
+  "unusable": {
+    "unsupport": "clean distribution is degenerate (spread 1.0000, Q0.95=1.0000); thresholds would be never-fire",
+    "injection": "clean distribution is degenerate (spread 0.0000, Q0.95=0.0000); thresholds would be always-fire",
+    "conflict": "signal absent from every calibration row"
+  }
+}

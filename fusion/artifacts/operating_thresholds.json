@@ -1,0 +1,10 @@
+{
+  "tau_review": 0.156146,
+  "tau_reject": 1.0,
+  "recall_target": 0.95,
+  "precision_target": 0.9,
+  "bands_consistent": false,
+  "reject_reachable": false,
+  "regime": "review_only",
+  "note": "No threshold reaches the precision target, so auto-Reject can never fire. Everything above tau_review routes to Review."
+}

@@ -1,0 +1,17 @@
+# Level 3 fusion layer.
+#
+# The fusion layer sits on top of the Level 2 detectors, so install
+# detectors/requirements.txt as well — without the real detector models the
+# training run produces structural evidence, not performance figures.
+
+numpy>=1.24
+
+# Logistic regression, Platt calibration, StratifiedGroupKFold and the metrics.
+# A dependency-free IRLS fallback exists in model.py and is used automatically if
+# sklearn is absent, but it is a fallback: it does not calibrate, and the run
+# says so.
+scikit-learn>=1.3
+
+# Model persistence. Falls back to pickle if absent; joblib is preferred because
+# it handles the numpy arrays in the bootstrap ensemble more compactly.
+joblib>=1.3
