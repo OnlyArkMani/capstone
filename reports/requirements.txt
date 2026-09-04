@@ -1,0 +1,15 @@
+# Level 3 output — the SOC analyst report.
+#
+# This package has NO dependencies of its own. Indicator extraction is the
+# standard library's `re` and `ipaddress`; the narrative is string substitution;
+# both renderers are string building.
+#
+# That is deliberate rather than incidental. The report is the most
+# user-facing artefact in the system and the one an analyst is most likely to
+# need in an incident, so it should not be the component that fails to import
+# because a formatting library moved on.
+#
+# It does need the layers below it — install those:
+#     pip install -r pipeline/requirements.txt
+#     pip install -r detectors/requirements.txt
+#     pip install -r fusion/requirements.txt
