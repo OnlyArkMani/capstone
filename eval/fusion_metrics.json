@@ -1,0 +1,185 @@
+{
+  "dataset": {
+    "n_queries": 94,
+    "n_rows": 470,
+    "n_pos": 70,
+    "n_neg": 400,
+    "k": 5,
+    "n_groups": 78,
+    "detector_backends": {
+      "anomaly": {
+        "name": "kmeans_sklearn:hashing-fallback-384d",
+        "is_model": false,
+        "detail": "n=5, clusters=2"
+      },
+      "injection": {
+        "name": "heuristic-patterns",
+        "is_model": false,
+        "detail": "regex patterns, not fitted"
+      },
+      "entailment": {
+        "name": "lexical-overlap",
+        "is_model": false,
+        "detail": "token overlap, cannot detect contradiction"
+      }
+    },
+    "signals_available": [
+      "unsupport",
+      "anomaly",
+      "injection"
+    ],
+    "signals_missing": [
+      "conflict"
+    ],
+    "hypothesis_source": "query_text_proxy",
+    "caveats": [
+      "The conflict detector (evidence vs. parametric knowledge) is not built; that signal is absent rather than zero-filled.",
+      "Entailment uses the query as the hypothesis because generation is not in the loop. Replace with the generated claim before quoting headline figures."
+    ]
+  },
+  "split": {
+    "method": "StratifiedGroupKFold",
+    "n_train": 373,
+    "n_test": 97,
+    "n_pos_train": 53,
+    "n_pos_test": 17
+  },
+  "signal_separation": {
+    "unsupport": {
+      "mean_poisoned": 0.3983,
+      "mean_clean": 0.5675,
+      "mean_difference": -0.1691,
+      "auc": 0.3806,
+      "inverted": true,
+      "usable": false
+    },
+    "anomaly": {
+      "mean_poisoned": 0.1168,
+      "mean_clean": 0.1332,
+      "mean_difference": -0.0164,
+      "auc": 0.466,
+      "inverted": true,
+      "usable": false
+    },
+    "injection": {
+      "mean_poisoned": 0.0755,
+      "mean_clean": 0.0,
+      "mean_difference": 0.0755,
+      "auc": 0.5377,
+      "inverted": false,
+      "usable": true
+    }
+  },
+  "dropped_inverted_signals": [
+    "unsupport",
+    "anomaly"
+  ],
+  "feature_spec": {
+    "names": [
+      "x_injection",
+      "is_tier1",
+      "is_tier3"
+    ],
+    "base_signals": [
+      "injection"
+    ],
+    "interactions": [],
+    "rung": "base_only",
+    "n_pos_at_fit": 53,
+    "underpowered": true,
+    "note": "UNDERPOWERED: fewer than 60 positive instances. Base signals and tier dummies only, no interactions. Coefficients are indicative; the case taxonomy is the primary control at this corpus size."
+  },
+  "fit_report": {
+    "n_train": 373,
+    "n_pos": 53,
+    "n_neg": 320,
+    "chosen_C": 0.03,
+    "n_features": 3,
+    "feature_names": [
+      "x_injection",
+      "is_tier1",
+      "is_tier3"
+    ],
+    "coefficients": {
+      "x_injection": 0.24204,
+      "is_tier1": -0.48444,
+      "is_tier3": 0.340611
+    },
+    "intercept": 0.250737,
+    "calibrated": true,
+    "backend": "sklearn",
+    "underpowered": true,
+    "warnings": [
+      "Only 53 positive instances. Design section 3.3 classes this as underpowered; coefficients are indicative and the case taxonomy remains the primary control."
+    ]
+  },
+  "band_thresholds": {
+    "suspicious": {
+      "anomaly": 0.569541339883907
+    },
+    "malicious": {
+      "anomaly": 0.8424705446009013
+    },
+    "n_clean_calibration": 320
+  },
+  "operating_thresholds": {
+    "tau_review": 0.156146,
+    "tau_reject": 1.0,
+    "recall_target": 0.95,
+    "precision_target": 0.9,
+    "bands_consistent": false,
+    "reject_reachable": false,
+    "regime": "review_only",
+    "note": "No threshold reaches the precision target, so auto-Reject can never fire. Everything above tau_review routes to Review."
+  },
+  "metrics": {
+    "n": 97,
+    "n_pos": 17,
+    "n_neg": 80,
+    "threshold": 0.156146,
+    "tp": 0,
+    "fp": 3,
+    "tn": 77,
+    "fn": 17,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "f_beta": 0.0,
+    "pr_auc": 0.269841,
+    "roc_auc": 0.69375,
+    "recall_at_budget": 0.0,
+    "threshold_at_budget": 1.0,
+    "brier": 0.140672,
+    "expected_cost": 173.0,
+    "precision_at_prevalence": {
+      "0.05": 0.0,
+      "0.01": 0.0
+    }
+  },
+  "attack_success_rate": {
+    "asr_baseline": 0.294118,
+    "asr_fusion": 1.0,
+    "absolute_reduction": -0.705882,
+    "relative_reduction": -2.4,
+    "n_poisoned_retrieved": 17,
+    "baseline_blocked": 12,
+    "fusion_blocked": 0,
+    "baseline_false_blocks": 64,
+    "fusion_false_blocks": 3,
+    "n_clean_retrieved": 80,
+    "baseline_description": "any single detector signal >= 0.5",
+    "scope_note": "Measured at the RETRIEVAL-CONTAINMENT stage: whether a poisoned document reaches the analyst, not whether it changed the generated answer. Generation is not yet in this loop. Recompute end to end against the attacker's intended answer once it is.",
+    "baseline_false_block_rate": 0.8,
+    "fusion_false_block_rate": 0.0375,
+    "matched_fpr": 0.8,
+    "asr_fusion_at_matched_fpr": 0.0,
+    "matched_comparison_note": "At the baseline's own false-block rate (80.0% of clean documents), the fusion score reaches ASR 0.000 versus the baseline's 0.294. This is the fair comparison; the operating-point figures above are not, because the two block at very different rates."
+  },
+  "caveats": [
+    "The conflict detector (evidence vs. parametric knowledge) is not built; that signal is absent rather than zero-filled.",
+    "Entailment uses the query as the hypothesis because generation is not in the loop. Replace with the generated claim before quoting headline figures.",
+    "Detectors running on FALLBACK backends: anomaly, injection, entailment. Every figure above is structural evidence that the fusion layer works, not a measurement of detection performance. Install the production models and refit.",
+    "Signals dropped for being anti-correlated with the label on training data: unsupport, anomaly. See signal_separation in this file for the figures.",
+    "Feature ladder is at the underpowered rung; coefficients are indicative and the case taxonomy remains the primary control."
+  ]
+}
