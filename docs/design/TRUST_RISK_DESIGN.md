@@ -3,7 +3,7 @@
 **Project:** Hallucinations in AI-Driven Cybersecurity Systems (Healthcare Sector)
 **Team:** Zetabyte — Deloitte Capstone Program 2026, Manipal University Jaipur
 **Document:** `docs/design/TRUST_RISK_DESIGN.md`
-**Document version:** `design-v1.1`
+**Document version:** `design-v1.2`
 **Status:** Authoritative. Per project convention, this document is the source of truth
 for case definitions, feature encoding, and threshold-derivation procedure. Later work
 must not redefine these ad hoc; changes require a version bump and a note in §10.
@@ -355,6 +355,94 @@ The nine grid cells (3 tiers × 3 outcomes) are C1–C9. C10 and C11 are cross-c
 defined on set-level structure rather than the grid. Every (tier, outcome) pair therefore has
 exactly one owning case, and the precedence order in §2.7 makes assignment total and
 deterministic.
+
+---
+
+### 2.9 Headline classification — GREEN / ORANGE / RED
+
+The four actions of §2.6 are operationally precise but are not what an analyst reads first.
+This section defines a **three-state headline band** derived from the final action and the
+governing tier. It is a presentation layer over §2.6, not a replacement: the action still
+determines what the system *does*; the band determines what the analyst *sees at a glance*.
+
+The band is **derived, never stored as an independent judgement.** No code path sets it
+directly, and it cannot disagree with the action it was derived from.
+
+#### 2.9.1 The rule
+
+Evaluated in this order, first match wins:
+
+```
+RED     if final_action in (Reject, Escalate)
+          sub-type: tier_governing == 1  ->  TRUSTED_SOURCE_COMPROMISE
+                    otherwise            ->  ATTACK_DETECTED
+
+ORANGE  if final_action == Review
+        or tier_governing != 1                    (§2.9.3 — the tier overrides)
+
+GREEN   if final_action == Accept and tier_governing == 1
+
+ORANGE  otherwise                                 (§2.9.4 — the fail-safe default)
+```
+
+| Band | Label | Meaning |
+|---|---|---|
+| **GREEN** | Good to Go | Verified authoritative source, clean signals, automatic Accept. Normal operation. |
+| **ORANGE** | Mid-Suspicious, Review Recommended | Answer returned marked *unverified* and queued for an analyst. |
+| **RED** — `ATTACK_DETECTED` | Reject / Escalate — Attack Detected | Malicious or irregular content from a source we had not already vouched for. **The document is the unit of concern.** |
+| **RED** — `TRUSTED_SOURCE_COMPROMISE` | Reject / Escalate — Trusted Source Compromise Suspected | A source we had already verified is behaving anomalously. **The source is the unit of concern.** |
+
+#### 2.9.2 Why RED is sub-classified
+
+The sub-type carries the Reject/Escalate distinction of §2.6 into the headline. A malicious
+document from an unverified blog and an anomaly in a CISA advisory can produce the same action
+and the same risk score while requiring completely different responses: the first is closed by
+quarantining a document; the second is a finding about our own trust infrastructure that
+outlives the query. Collapsing both into an undifferentiated RED would discard the most
+decision-relevant fact available — the same argument that motivates C4 outranking C9 (§2.4).
+
+The sub-type keys on `tier_governing == 1` rather than on a fixed case list, so it tracks the
+taxonomy automatically. C4 and C5 are its principal members; C11 joins them whenever the
+isolated outlier is itself carried by a Tier-1 source, which is the correct reading of that
+situation.
+
+#### 2.9.3 The tier overrides — GREEN is affirmative, not residual
+
+Two constraints narrow GREEN beyond the action alone. Both are one-directional: they can only
+move a response *away* from GREEN, never toward it.
+
+**Tier 3 can never be GREEN.** An unverified source with quiet signals is unremarkable, not
+trustworthy. The absence of evidence against a document is not evidence for it, and Tier 3 is
+precisely the population where there is no provenance to fall back on.
+
+**Tier 2 can never be GREEN.** A moderated but community-writable feed is trusted enough to
+retrieve from, not trusted enough to return unexamined. This demotes C2 (Community
+Corroboration) from its Accept action to an ORANGE headline — a deliberate acceptance of
+review load in exchange for a narrower automatic-pass surface.
+
+Together these reduce GREEN to a single case, **C1**. The redundancy is intentional and both
+rules are enforced and tested independently, because they encode different commitments: the
+Tier-3 rule is a property of unverified provenance; the Tier-2 rule is a policy choice about
+review capacity. Either could be revisited without disturbing the other.
+
+*Coverage check at design-v1.2.* The Tier-3 governing cases are **C3, C8 and C9**. Under the
+action rule alone they map to ORANGE, RED and RED respectively — **none reaches GREEN**, so
+the Tier-3 override is presently a no-op. It is retained as an enforced invariant rather than
+a comment because only two cases (C1, C2) route to Accept at all, and a future case or a
+relaxed trigger is exactly how the guarantee would be lost silently. A test asserts it
+directly against the case table rather than against a hard-coded list.
+
+#### 2.9.4 Fail-safe
+
+**GREEN is reachable only by an affirmative conjunction** — an explicit Accept action *and* a
+governing tier of 1. Every other path terminates at ORANGE, including an unrecognised action,
+an unknown or missing governing tier, and a response the classifier could not resolve. There
+is no `else: GREEN` branch anywhere in the implementation.
+
+This is the same structural commitment as escalation dominance (§3.9): a degraded or
+incompletely-specified input may cost the system precision, but it may never cost it safety.
+An implementation that returns GREEN when it does not know what else to return has inverted
+the guarantee.
 
 ---
 
@@ -1476,9 +1564,10 @@ later.
 12. Apply confidence floor: Confidence < 0.35 -> at least Review            (§4.5)
 13. Reconcile by escalation dominance -> final_action                       (§3.9)
 14. Write query_events row (both proposals + final action + all versions)   (§5.2)
-15. Deliver to analyst per action semantics                                 (§2.6)
-16. On analyst action: append analyst_decisions row, extend hash chain      (§5.3)
-17. With probability 0.03 on auto-Accept: enqueue as verification sample    (§5.6)
+15. Derive headline band GREEN / ORANGE / RED (+ RED sub-type)              (§2.9)
+16. Deliver to analyst per action semantics                                 (§2.6)
+17. On analyst action: append analyst_decisions row, extend hash chain      (§5.3)
+18. With probability 0.03 on auto-Accept: enqueue as verification sample    (§5.6)
 ```
 
 ---
@@ -1555,6 +1644,8 @@ what is authoritative about them is the *procedure* that produces them, not the 
 | Bootstrap replicates `B` | 200 | §4.2 |
 | Near-duplicate cosine threshold | 0.95 | §4.2 |
 | Verification sampling rate | 0.03 | §5.6 |
+| Minimum governing tier for a GREEN headline | Tier 1 | §2.9.3 |
+| Default headline band (fail-safe) | ORANGE | §2.9.4 |
 | Test holdout fraction | 0.20 | §3.6 |
 | CV configuration | 5 folds × 5 repeats, nested | §3.6 |
 | Target corpus | ≥200 poisoned, ≥600 clean | §3.3 |
@@ -1579,6 +1670,7 @@ what is authoritative about them is the *procedure* that produces them, not the 
 | Version | Date | Change |
 |---|---|---|
 | `design-v1.0` | 2026-09-02 | Initial design: case taxonomy (C1–C11), logistic-regression scoring methodology, five-component confidence measure, `analyst_decision` audit schema. |
+| `design-v1.2` | 2026-09-04 | Added §2.9 (three-state headline classification GREEN/ORANGE/RED with RED sub-typed into `ATTACK_DETECTED` and `TRUSTED_SOURCE_COMPROMISE`, the Tier-2/Tier-3 GREEN exclusions, and the fail-safe default). Amends §6 step ordering and adds two constants to §9.1. No case definition, trigger, priority or action altered — §2.9 is derived from §2.6 and §2.2, not a redefinition of them. |
 | `design-v1.1` | 2026-09-03 | Added §5.8 (decision lifecycle and the never-auto-populated invariant, plus three columns amending §5.3), §5.9 (storage and query patterns for future recalibration), §5.10 (limits of the analyst-decision data). No existing section altered other than a cross-reference added to §5.3. |
 
 ---
@@ -1589,6 +1681,10 @@ what is authoritative about them is the *procedure* that produces them, not the 
   retrieved document.
 - **Band** — the Clean / Suspicious / Malicious classification of a response's signals (§2.1).
 - **Case** — a (tier, band) situation type with a defined priority and action (§2.3).
+- **Headline band** — the analyst-facing GREEN / ORANGE / RED classification derived from the
+  final action and the governing tier (§2.9). Derived, never stored independently.
+- **RED sub-type** — `ATTACK_DETECTED` or `TRUSTED_SOURCE_COMPROMISE`, distinguishing whether
+  the document or the source is the unit of concern (§2.9.2).
 - **Cited docs** — retrieved documents the generation step actually drew on.
 - **Escalation dominance** — the reconciliation rule that the more conservative of the two
   tracks' proposed actions wins (§3.9).

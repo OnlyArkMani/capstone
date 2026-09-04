@@ -1,541 +1,578 @@
-# Hallucinations in AI-Driven Cybersecurity Systems: A Healthcare Sector Perspective
+# Detecting Attacker-Induced Hallucination in Healthcare Threat-Intelligence RAG Systems
 
 **Team Zetabyte** — Deloitte Capstone Programme 2026, Manipal University Jaipur
 
-A trust-and-risk layer for healthcare threat-intelligence RAG pipelines, built to detect
-**attacker-induced** hallucination — corpus poisoning engineered to make a security
-assistant confidently produce a specific wrong conclusion — and to distinguish it from an
-honest mistake.
+A trust-and-risk layer for retrieval-augmented generation pipelines in healthcare
+security operations. The system detects **corpus poisoning** — adversarial documents
+inserted into a knowledge base to make a security assistant confidently produce a
+specific false conclusion — and distinguishes it from ordinary model error.
 
-> **📄 [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md)** — the comprehensive report:
-> every design decision with its rationale, full implementation detail, the decision log,
-> known limitations, and the architecture figures. Start there for the complete picture.
->
-> **📐 [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md)** — the
-> authoritative specification (`design-v1.1`) for case definitions, feature encoding,
-> thresholds and the audit schema.
-
-### Status
-
-| Component | State |
+| Document | Purpose |
 |---|---|
-| Decision-logic design (`design-v1.1`) | ✅ Complete, authoritative |
-| Corpus — 72 clean + 12 poisoned, all three trust tiers | ✅ Built, validated, 0 errors |
-| Baseline RAG pipeline (control condition) | ✅ Built, 45 checks passing |
-| Level 2 detectors (3 + 1 derived) | ✅ Built, 20 checks passing |
-| Level 3 fusion and case classifier | 📐 Designed, not implemented |
-| Report generator · dashboard · audit log | 📐 Designed, not implemented |
-| Evaluation harness | ⬜ Not started |
-
-All measured figures to date are **provisional**: no development environment could reach
-PyPI or Hugging Face, so results used fallback backends. Structure and direction are
-verified; performance is not yet measured.
-
-### Quick start
-
-```bash
-pip install -r requirements.txt
-export GROQ_API_KEY=...                  # free key: https://console.groq.com
-
-python corpus/build_clean_corpus.py    --ingestion-date 2026-09-02 --clean
-python corpus/build_poisoned_corpus.py --ingestion-date 2026-09-03 --clean
-python corpus/validate_corpus.py --corpus clean    --strict
-python corpus/validate_corpus.py --corpus poisoned --strict
-
-python -m pipeline.check_backends        # verify models and API access
-python -m pipeline.build_index
-python -m pipeline.test_pipeline
-python -m detectors.test_detectors -v
-```
+| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.2`): case definitions, feature encoding, thresholds, audit schema |
+| [`docs/FINAL_PROJECT_LOG.md`](docs/FINAL_PROJECT_LOG.md) | Executive summary, development history, evaluation results, limitations |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Installation, verification and demonstration procedure |
+| [`docs/AUDIT_REPORT.md`](docs/AUDIT_REPORT.md) | Independent verification of deliverables against specification |
 
 ---
 
-## 1. Problem Statement
+## 1. Overview
 
-Healthcare organizations are increasingly deploying LLM + Retrieval-Augmented Generation (RAG) systems to triage threat intelligence, summarize security advisories, and support SOC (Security Operations Center) analysts. These systems retrieve evidence from a knowledge base and generate a conclusion — e.g., "Is this IP associated with known ransomware infrastructure?"
+### 1.1 Problem
 
-This introduces a security-specific failure mode that generic AI hallucination research does not address: **an attacker can deliberately poison the retrieval corpus to make the model confidently generate a specific false conclusion.** This is different from an ordinary hallucination (the model making an unforced factual error). It is an *engineered* failure, and in a healthcare-cybersecurity context — where a wrong SOC conclusion can mean a missed ransomware indicator, a misclassified breach, or a delayed clinical-system lockdown — the cost of not detecting it is severe.
+Healthcare organisations increasingly deploy LLM systems with retrieval-augmented
+generation to triage threat intelligence and support security operations centre
+analysts. These systems retrieve evidence from a knowledge base and generate a
+conclusion — for example, *"Is this IP address associated with known ransomware
+infrastructure?"*
 
-Existing hallucination-mitigation tools (Galileo, Cleanlab, Ragas, Guardrails AI, etc.) treat hallucination as a data-quality problem: *did the model make something up?* None of them are built to answer the security question: *did an adversary engineer the retrieval context to produce this specific wrong answer, and can the system tell the difference from an honest mistake?*
+This introduces a failure mode that generic hallucination research does not address:
+**an adversary who can introduce documents into the retrieval corpus can cause the
+model to confidently generate a chosen false conclusion.** This differs from an
+unforced factual error. It is engineered, it is reproducible, and in a healthcare
+security context the consequences include missed ransomware indicators, misclassified
+breaches, and delayed response to compromised clinical systems.
 
-**That gap — attack-induced vs. ordinary hallucination, in a healthcare threat-intelligence RAG pipeline — is the problem this project solves.**
+Existing RAG evaluation tools treat hallucination as a data-quality problem — *did the
+model fabricate content?* None addresses the security question: *did an adversary
+engineer the retrieval context to produce this specific conclusion, and can the system
+distinguish that from an honest error?*
 
-The system additionally distinguishes two further failure modes that a purely factuality-oriented tool conflates with poisoning: a **trusted source behaving anomalously** (which may indicate compromise of the source itself rather than of this query) and **two authoritative sources contradicting each other** (which is usually a legitimate advisory revision, not an attack at all).
+### 1.2 Approach
+
+A trust-and-risk layer positioned between retrieval and answer delivery. Rather than
+accepting retrieved evidence by default, the system:
+
+1. Attaches provenance and a source trust tier to every retrieved document
+2. Runs three independent detectors over the retrieval set
+3. Classifies the situation into one of eleven named cases and, in parallel, fuses the
+   detector signals into a calibrated composite risk score with a separate confidence
+   estimate
+4. Reconciles the two assessments conservatively and emits a three-state disposition
+5. Records every decision, and every subsequent human judgement, in a tamper-evident
+   audit trail
+
+The design is defence-in-depth and risk-adaptive: no single detector is trusted alone,
+and computational cost is spent in proportion to assessed risk. This follows the
+consistent conclusion of the seven papers surveyed (§10).
+
+### 1.3 Threat model
+
+The adversary can write documents into the retrieval corpus but cannot modify the
+model, the retriever, or the detection layer. This is the setting established by
+PoisonedRAG (Zou et al., USENIX Security 2025), which demonstrated empirically that a
+small number of crafted documents suffices to control a RAG system's output.
+
+Three failure modes are distinguished, because they require different responses:
+
+| Failure mode | Characterisation | System response |
+|---|---|---|
+| **Corpus poisoning** | Adversarial content from a source not previously verified | Reject the answer; quarantine the document |
+| **Trusted-source anomaly** | A previously verified source behaving irregularly | Escalate — the source, not the query, is the concern |
+| **Authoritative divergence** | Two verified sources contradicting each other | Present both; never adjudicate |
+
+The third is explicitly **not** an attack. It is usually an advisory revision, and a
+system that silently selects a winner conceals the most decision-relevant fact
+available to the analyst.
 
 ---
 
-## 2. Our Solution
+## 2. System Architecture
 
-We propose a **trust-and-risk layer that sits between retrieval and generation** in a healthcare-sector security RAG pipeline. Instead of trusting retrieved evidence and generated conclusions by default, the system:
-
-1. Tags and monitors the provenance and retrieval behavior of every piece of evidence
-2. Runs independent, lightweight detectors for the most common attack surfaces (poisoned embeddings, prompt injection, evidence conflict, unsupported claims)
-3. Classifies the situation into a named case and, in parallel, fuses the detector signals into a fitted composite risk score with an accompanying confidence measure
-4. Escalates only the high-risk cases for deeper checking or human review — instead of running expensive verification on every single query
-5. Records the analyst's disposition of every flagged case in a tamper-evident audit trail
-
-This is a **defense-in-depth, risk-adaptive** design: no single detector is trusted alone, and computational cost is spent only where risk is highest. This isn't our opinion — it's the consistent conclusion across all seven papers we reviewed (see [Section 11](#11-key-findings-from-the-literature)).
-
----
-
-## 3. Why This Is a Real Problem (Not a Toy Exercise)
-
-- **PoisonedRAG** (USENIX Security 2025) empirically demonstrated that a small number of carefully crafted documents can manipulate a RAG system into attacker-chosen answers — this is a peer-reviewed, reproducible attack, not a hypothetical.
-- **TrustRAG** (arXiv 2025) exists specifically because production RAG systems have no built-in defense against this; it had to be built as a bolt-on layer.
-- Commercial RAG-evaluation tools (Galileo, Arize Phoenix, Cleanlab, Patronus, Ragas) are a fast-growing category — proof the market takes RAG trust seriously — but every one of them evaluates *factuality*, not *adversarial intent*. We found no existing system that frames hallucination detection as a security problem specifically for healthcare threat intelligence.
-- Healthcare is a uniquely high-stakes sector for this: AI-assisted SOC tools are being adopted faster than their trust infrastructure is maturing, and a poisoned conclusion here has downstream clinical and operational consequences, not just an embarrassing wrong answer.
-
-**This is where our novelty sits:** not inventing a new detection technique, but being the first (to our research) to combine existing RAG-security techniques into a system explicitly framed around attacker-induced hallucination in a healthcare cybersecurity context.
-
----
-
-## 4. Architecture (Level 0 → Level 3)
-
-We organized every finding from the seven papers into five difficulty levels (Level 0 = foundation, Level 5 = full agentic system). **This capstone builds Levels 0–3.** Full breakdown below.
+The system is organised into four levels. Levels 0–3 are implemented.
 
 ```mermaid
 flowchart TD
-    Q[Security Query<br/>SOC analyst asks about an IOC] --> RET
+    Q[Security query] --> RET
 
     subgraph L0["Level 0 — Foundation"]
-        CORPUS[(Healthcare Threat-Intel Corpus<br/>clean: 72 docs · poisoned: 12 docs<br/>all three trust tiers, identical schema<br/>ground truth held OUT of the documents)]
-        GT[(Ground Truth Manifests<br/>clean.json / poisoned.json<br/>evaluation harness only)]
-        RET[Retrieval Engine<br/>bge-small-en-v1.5 + FAISS IndexFlatIP<br/>84 docs indexed, partition-blind]
+        CORPUS[(Threat-intelligence corpus<br/>72 genuine + 12 adversarial documents<br/>three source trust tiers, identical schema)]
+        GT[(Ground-truth manifests<br/>evaluation harness only)]
+        RET[Retrieval engine<br/>bge-small-en-v1.5 + FAISS IndexFlatIP<br/>84 documents, partition-blind]
     end
 
     CORPUS --> RET
     RET --> LOG1
 
-    subgraph L1["Level 1 — Passive Observability"]
-        LOG1[Provenance Tagging<br/>Source Trust Tier 1/2/3<br/>+ Retrieval Logging — retrieval_log.jsonl<br/>structured records: score + provenance]
+    subgraph L1["Level 1 — Provenance and observability"]
+        LOG1[Provenance tagging + retrieval logging<br/>source trust tier assigned at ingestion<br/>structured records: similarity + full provenance]
     end
 
     LOG1 --> D1
     LOG1 --> D2
-    LOG1 --> GEN[LLM Generates Conclusion<br/>Llama 3.1 8B via Ollama, or Groq free tier<br/>+ per-document attribution]
-    GEN --> D3
-    GEN --> D4
+    LOG1 --> GEN[Answer generation<br/>Groq or Ollama<br/>NOT WIRED IN — extractive stub in use]
+    GEN -.entailment currently scores<br/>the query, not the answer.-> D3
 
-    subgraph L2["Level 2 — Independent Detectors"]
-        D1[Embedding Anomaly Detector — built<br/>k-means + robust z, per document]
-        D2[Prompt-Injection Classifier — built<br/>deberta-v3 protectai, per document]
-        D3[Claim-Evidence Verifier — built<br/>nli-deberta-v3 cross-encoder]
-        D4[Evidence Conflict Check<br/>conflict_score vs. parametric knowledge]
-        DER[Derived: intra-evidence conflict — built<br/>d_conflict_max, pairwise NLI reuse]
-        SIG[Signal Bundle<br/>4 detector signals + derived conflict<br/>per-document and per-response]
+    subgraph L2["Level 2 — Independent detectors"]
+        D1[Embedding anomaly<br/>k-means + robust median/MAD z-score]
+        D2[Prompt-injection classifier<br/>deberta-v3-base-prompt-injection-v2]
+        D3[Claim-evidence entailment<br/>nli-deberta-v3-base cross-encoder]
+        D4[Evidence conflict<br/>NOT BUILT — signal treated as absent]
+        DER[Derived: intra-evidence conflict<br/>pairwise NLI reuse]
+        SIG[Signal bundle<br/>per document and per response]
     end
 
     D3 -.reuses NLI model.-> DER
-
     D1 --> SIG
     D2 --> SIG
     D3 --> SIG
-    D4 --> SIG
+    D4 -.absent.-> SIG
     DER --> SIG
 
+    SIG --> BAND
     SIG --> ENC
-    SIG --> CASE
     SIG --> CONF
 
-    subgraph L3["Level 3 — Fusion, Confidence & Adaptive Response"]
-        CASE[Rule Track<br/>Case Classifier C1–C11<br/>Trust Tier x Signal Outcome<br/>+ precedence order]
-        ENC[Feature Encoding<br/>logit transform, robust z-score<br/>tier dummies + tier x signal interactions]
-        LR[Statistical Track<br/>Logistic Regression<br/>calibrated risk score + bootstrap interval]
-        CONF[Confidence Measure<br/>volume, agreement, independence,<br/>coherence, model stability]
-        RECON{Escalation Dominance<br/>more conservative track wins}
+    subgraph L3["Level 3 — Fusion, confidence and adaptive response"]
+        BAND[Signal banding<br/>Q95 / Q99 of the clean distribution<br/>degenerate signals excluded]
+        CASE[Rule track — case classifier<br/>C1–C11 under fixed precedence]
+        ENC[Feature encoding<br/>logit transform, tier dummies,<br/>tier x signal interactions]
+        LR[Statistical track<br/>logistic regression, Platt-calibrated<br/>200-sample bootstrap interval]
+        CONF[Confidence estimate<br/>five components, geometric mean<br/>caps and review floor]
+        RECON{Escalation dominance<br/>more conservative track wins}
+        HEAD[Headline band<br/>GREEN / ORANGE / RED<br/>RED sub-typed by governing tier]
     end
 
+    BAND --> CASE
     ENC --> LR
     LR --> CONF
     LR --> RECON
     CASE --> RECON
     CONF --> RECON
+    RECON --> HEAD
 
-    RECON -->|Accept| A1[Auto-return answer<br/>+ provenance panel]
-    RECON -->|Review| A2[Return marked unverified<br/>+ analyst queue]
-    RECON -->|Reject| A3[Suppress answer<br/>+ evidence trail<br/>+ quarantine document]
-    RECON -->|Escalate| A4[Security event to<br/>threat-intel owner<br/>possible source compromise]
+    RECON -->|Accept| A1[Return answer + provenance panel]
+    RECON -->|Review| A2[Return marked unverified + analyst queue]
+    RECON -->|Reject| A3[Suppress answer + evidence trail + quarantine]
+    RECON -->|Escalate| A4[Security event to threat-intelligence owner]
 
-    A1 --> SAMPLE{3 percent<br/>verification sampling}
-    SAMPLE -->|sampled| A2
+    HEAD --> REP[Analyst report<br/>headline, case, score, interval, risk tier,<br/>per-document breakdown, indicators,<br/>template-grounded reasoning]
 
     A1 --> AUDIT
     A2 --> AUDIT
     A3 --> AUDIT
     A4 --> AUDIT
+    REP --> AUDIT
+    REP --> DASH
 
-    AUDIT[(Audit Log — SQLite<br/>query_events: signals, features, case,<br/>both track proposals, versions)]
-    AUDIT --> DASH[SOC Dashboard<br/>Streamlit]
-    DASH --> AD[(analyst_decisions<br/>Accept / Reject / Override<br/>append-only, hash-chained)]
+    subgraph L3B["Level 3 — Record and operate"]
+        AUDIT[(Audit log — SQLite<br/>query_events: signals, features, case,<br/>both proposals, versions, reference ID)]
+        DASH[Analyst console — Streamlit<br/>headline banner, evidence, decision capture]
+        AD[(analyst_decisions<br/>written only by the console<br/>append-only, hash-chained)]
+    end
 
-    AUDIT --> EVAL[Evaluation Harness<br/>the ONLY consumer of ground truth]
-    GT -.answer key, never reaches<br/>retrieval or detectors.-> EVAL
+    AUDIT --> DASH
+    DASH -->|human decision only| AD
+
+    EVAL[Evaluation harness<br/>three configurations<br/>sole consumer of ground truth]
+    AUDIT --> EVAL
+    GT -.answer key, never reaches<br/>retrieval or detection.-> EVAL
 ```
 
-### Component breakdown
+### 2.1 Component summary
 
-| Level | Component | What it does | Source papers |
+| Level | Component | Implementation | Basis |
 |---|---|---|---|
-| L0 | RAG baseline | Retrieve → generate, no security layer. `pipeline/` — bge-small-en-v1.5 embeddings, FAISS flat index, Ollama or Groq generation. The control condition the trust layer is measured against | Baseline across all papers |
-| L0 | Clean corpus | 72 healthcare threat-intel documents spanning all three source trust tiers, deterministically assembled and validated before downstream use | Section 6 |
-| L0 | Poisoned corpus | 12 adversarial documents built using PoisonedRAG's S+I construction across six attack families and all three trust tiers, rendered by the clean corpus's own renderers so structure carries no signal | P5 |
-| L0 | Ground-truth manifests | Clean/poisoned labels held outside the document files; the evaluation harness is their only consumer | Section 6 |
-| L1 | Source provenance tagging | Every doc gets a source ID + Source Trust Tier (1/2/3), assigned at ingestion and never modified by detector output | P2, P4, P6 |
-| L1 | Retrieval logging | Every query and its retrieved records — similarity, full provenance, set-level geometry — appended to `logs/retrieval_log.jsonl`. Passive only: no scoring, filtering or flagging | P1, P5, P6 |
-| L1 | Perplexity | **Not computed anywhere.** Scoped out on the literature review: clean and adversarial text overlap in perplexity, and no perplexity term appears in the composite score. A test asserts it never reaches a log record | P1, P5 |
-| L2 | Embedding anomaly detection | `detectors/anomaly.py` — k-means over the retrieval set, robust median/MAD z-score per document. Expected to be the *weakest* of the three: PoisonedRAG documents are built to sit near the query | P1 (TrustRAG), P4, P5 |
-| L2 | Prompt-injection classifier | `detectors/injection.py` — `protectai/deberta-v3-base-prompt-injection-v2`, positive class resolved by label name | P4, P6, P7 |
-| L2 | Claim-evidence verification | `detectors/entailment.py` — `cross-encoder/nli-deberta-v3-base`. The one signal where higher = safer — **our core differentiator** | P3, P5 |
-| L2 | Evidence conflict resolution | Compares retrieved evidence against the LLM's own internal knowledge; flags disagreement | P1, P3 |
-| L2 | Intra-evidence conflict (derived) | `detectors/entailment.py` — pairwise contradiction reusing the NLI model. `tier1_conflict_max` is the quantity case C10 turns on | P1, P3 |
-| L3 | Case classifier (rule track) | Assigns one of eleven named cases by crossing Source Trust Tier with Content Signal Outcome, under a fixed precedence order | Design §2 |
-| L3 | Composite risk score (statistical track) | Fitted logistic regression over the four signals, tier dummies and tier×signal interactions — not a hand-picked weighted sum | Supported across all 7 papers |
-| L3 | Confidence measure | Five-component geometric composite reported alongside the risk score, never folded into it | Design §4 |
-| L3 | Risk-adaptive escalation | Accept / Review / Reject / Escalate, reconciled between the two tracks by escalation dominance | P1, P4, P6 |
-| L3 | Audit log | Every query, evidence set, signal, feature vector, case, both track proposals, and version stamp recorded | P3, P6 |
-| L3 | Analyst decision capture | Append-only, hash-chained record of every analyst disposition, with controlled-vocabulary override reasons | P3, P6 |
+| L0 | Retrieval corpus | `corpus/` — 72 genuine, 12 adversarial, three tiers, ground truth held externally | §4 |
+| L0 | Baseline RAG | `pipeline/` — the control condition, no security layer | Baseline across all sources |
+| L1 | Provenance tagging | Source trust tier assigned at ingestion, never modified by detector output | P2, P4, P6 |
+| L1 | Retrieval logging | Structured records with similarity and full provenance to `logs/retrieval_log.jsonl` | P1, P5, P6 |
+| L2 | Embedding anomaly | `detectors/anomaly.py` — k-means with robust median/MAD normalisation | P1, P4, P5 |
+| L2 | Prompt-injection classifier | `detectors/injection.py` — positive class resolved by label name | P4, P6, P7 |
+| L2 | Claim-evidence entailment | `detectors/entailment.py` — the principal differentiator | P3, P5 |
+| L2 | Intra-evidence conflict | Derived by pairwise reuse of the NLI model; no additional dependency | P1, P3 |
+| L3 | Case classifier | `fusion/cases.py` — eleven cases, fixed precedence | Design §2 |
+| L3 | Composite risk score | `fusion/model.py` — fitted logistic regression, not a hand-weighted sum | All sources |
+| L3 | Confidence estimate | `fusion/confidence.py` — reported alongside risk, never folded into it | Design §4 |
+| L3 | Adaptive response | `fusion/scorer.py` — Accept / Review / Reject / Escalate | P1, P4, P6 |
+| L3 | Headline classification | `fusion/cases.py` — GREEN / ORANGE / RED with RED sub-typing | Design §2.9 |
+| L3 | Analyst report | `reports/` — template-grounded reasoning, regex indicator extraction | Design §2.9, §5.3 |
+| L3 | Audit trail | `logs/audit.py` — hash-chained, append-only | P3, P6 |
+| L3 | Analyst console | `dashboard/` — headline-first presentation, decision capture | P3, P6 |
 
 ---
 
-## 5. Decision Logic
+## 3. Decision Logic
 
-The full specification lives in [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md), which is the authoritative source for case definitions, feature encoding, thresholds and schema. The summary below is orientation only.
+The full specification is [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md).
+The summary below is orientation.
 
-### 5.1 Four separate outputs, not one number
+### 3.1 Source trust tiers
 
-For every query the layer produces a **case**, a **risk score**, a **confidence value**, and — once an analyst acts — a **decision record**. These are kept distinct because a high-risk finding backed by five independent corroborating documents and a high-risk guess drawn from a single document require different human responses, and a single scalar cannot express the difference.
-
-### 5.2 Two tracks, reconciled conservatively
-
-A **rule track** (the case taxonomy) and a **statistical track** (the fitted score) run over the same inputs. The final disposition is the more conservative of the two proposals, on the ordering `Accept < Review < Reject < Escalate`. This guarantees the statistical track can never make the system less safe than the rules alone, and the disagreement rate between the two is itself a reported evaluation result.
-
-Only the rule track can produce **Escalate**, because escalation is a claim about the *system* rather than about the answer, and that requires the semantic structure of a case rather than a scalar.
-
-### 5.3 Case taxonomy
-
-Eleven cases cross Source Trust Tier (1/2/3) with Content Signal Outcome (Clean/Suspicious/Malicious). Signal band thresholds are set as quantiles of the clean-only calibration distribution, so the false-positive rate is designed in rather than discovered. Two cases carry the taxonomy's principal claims:
-
-- **Anomalous behaviour from a Tier 1 source is higher priority than malicious content from Tier 3.** The tier is a prior; an anomaly that is improbable under that prior carries more information, has a far larger blast radius because everything downstream trusts Tier 1 by default, and admits only serious explanations — source compromise, interception of the fetch path, provenance mislabelling, or insider modification. Each is a finding about the system, not the query, so the action is **Escalate**, not Reject.
-- **Two Tier 1 sources contradicting each other is a distinct failure mode, not poisoning.** It is characterised by high inter-document contradiction with quiet attack indicators, and is usually advisory revision, scope difference, or genuine analytic disagreement. The system is bound never to silently pick a winner; the response is a dual-evidence presentation with both claims, sources and dates.
-
-### 5.4 Scoring
-
-Logistic regression fitted on the labelled corpus. Bounded signals are logit-transformed; the anomaly distance is robustly normalised within each query's own retrieval set. **Source tier is dummy-coded, never ordinal** — an ordinal encoding would force a monotone relationship and make the Tier-1 inversion structurally unlearnable — and **tier × signal interaction terms** are what allow the model to represent "an anomaly means more from Tier 1."
-
-Evaluation follows from one stated assumption, that a missed attack costs roughly ten times a false alarm: PR-AUC for model selection, F₃ as the headline scalar, and recall at a fixed alert budget as the operating metric. Data is split by attack template rather than at random, with a locked test set, nested cross-validation, and a leave-one-attack-family-out evaluation that measures generalisation to unseen attack strategies. Precision is additionally reported corrected to realistic deployment prevalence.
-
-### 5.5 Confidence
-
-Five components — evidence volume, evidence agreement, source independence, detector coherence, and model stability under bootstrap — combined by geometric mean so that one weak component drags the composite down. A single-document answer is hard-capped and can never be high confidence. Low confidence widens the risk interval and pushes borderline cases toward Review; it can never downgrade a disposition. The measure carries its own falsification test: high-confidence predictions must demonstrably err less often than low-confidence ones, or the weights are refitted and failing components dropped.
-
-### 5.6 Audit trail
-
-`query_events` records every signal, the encoded feature vector, both track proposals, the final action and a full version stamp. `analyst_decisions` records the human disposition as **Accept / Reject / Override** — always a judgement about the content, with `Override` reserved for disagreement with the system's recommendation — plus a controlled-vocabulary reason code, per-document verdicts, and decision latency. The table is append-only and hash-chained; corrections supersede rather than modify. A random 3% of auto-accepted responses is routed for blind analyst review so that future recalibration is not restricted to cases the current system already flags.
-
-The field is **never auto-populated.** It is written only as the direct result of a human acting
-in the dashboard: there is no default, no code path in the pipeline that sets it, and no timeout
-that ages an unreviewed case into `Accept`. An unreviewed event is represented by the *absence of
-a row* rather than by a `NULL` or a `PENDING` sentinel, so the undecided state cannot be confused
-with a verdict. Three independent layers enforce this — a `NOT NULL` column with no `DEFAULT`,
-separation of the write path from the scoring pipeline, and a `decision_source` provenance column
-that excludes any non-analyst row from recalibration by default.
-
-Two SQL views (`v_current_decisions`, `v_labelled_decisions`) are the sanctioned extraction
-surface for a future recalibration pass, resolving supersede chains and the analyst-only filter
-once rather than in every query. A trap worth knowing: a response-level `Reject` is *not* the risk
-model's target — an analyst rejects answers for staleness and weak support as well as for
-poisoning — so per-document verdicts, not response-level decisions, are the preferred label
-source.
-
----
-
-## 6. Corpus
-
-Full detail in [`corpus/README.md`](corpus/README.md). The clean partition is built and
-validated; the poisoned partition is not yet constructed.
-
-### 6.1 Composition of the clean corpus
-
-72 documents, deliberately spread across all three source trust tiers.
-
-| Tier | Sources | Count |
+| Tier | Definition | Examples |
 |---|---|---|
-| **1** — verified / authoritative | CISA ICS Medical Advisories (8), CISA Cybersecurity Advisories (7), MITRE ATT&CK techniques (12), NVD CVE records (7), HHS HC3 briefs (4), vendor PSIRT bulletins (2) | **40** |
-| **2** — trusted but open | Health-ISAC member bulletins (6), security vendor research (7), curated OSINT feeds (8) | **21** |
-| **3** — unverified / unknown | unattributed reports (4), community forum threads (4), uploaded analyst notes (3) | **11** |
+| 1 | Verified authoritative | CISA advisories, HHS bulletins, vendor PSIRT |
+| 2 | Trusted but community-writable | ISAC member bulletins, moderated feeds |
+| 3 | Unverified | Open-source intelligence, unattributed reporting |
 
-Tier 2 and Tier 3 documents are present by necessity, not for variety. Four of the eleven
-cases in the taxonomy are defined at those tiers, and signal band thresholds are calibrated
-*per tier* from clean data — with no clean Tier 2 or Tier 3 documents there is no reference
-distribution against which an anomaly at those tiers could be judged.
+The tier is a property of the **source**, assigned at ingestion, and is never modified
+by detector output. It functions as a prior, not a verdict.
 
-**A Tier 3 document is not a malicious document.** Source trust and content integrity are
-separate axes, which is why the taxonomy crosses them. All Tier 3 documents in the clean
-partition are clean, and they populate case C3, "Unverified but Unremarkable".
+### 3.2 Five distinct outputs
 
-### 6.2 Provenance
+Each query produces a headline band, a case classification, a risk score, a confidence
+value, and — once an analyst acts — a decision record. These are kept separate because
+a high-risk finding corroborated by five independent sources and a high-risk estimate
+derived from a single document require different responses, and a single scalar cannot
+express that difference.
 
-Every document body is authored for this benchmark and labelled
-`content_origin: synthesized_representative`. Bodies reproduce the structure, register and
-field conventions of the source type they model; none is a copy of a published advisory.
+### 3.3 Two tracks, reconciled conservatively
 
-27 of the 72 documents are anchored to **verified public identifiers** — 8 CISA medical
-advisory IDs, 12 MITRE ATT&CK technique IDs, 7 CVE records — each with its canonical URL and
-flagged `reference_verified: true`. That flag attests to the identifier and title, and makes
-no claim about the body text. All network indicators are fabricated and drawn from ranges
-reserved for documentation.
+A **rule track** (the case taxonomy) and a **statistical track** (the fitted model)
+evaluate the same inputs. The final disposition is the more conservative of the two on
+the ordering `Accept < Review < Reject < Escalate`. This guarantees that introducing
+the statistical track cannot make the system less safe than the rules alone. Only the
+rule track can produce Escalate, because escalation is a claim about the system rather
+than about the answer and requires the semantic structure of a case.
 
-This is a deliberate design property rather than a limitation of what could be fetched. It
-keeps the artifact honest under examination, avoids redistributing licensed third-party
-content, and lets the corpus stay fixed while the advisories it models continue to change.
+### 3.4 Case taxonomy — eleven cases
 
-### 6.3 The poisoned partition
+Nine cases arise from crossing three trust tiers with three content outcomes; two are
+cross-cutting cases defined on the structure of the retrieval set. Assignment is
+deterministic under a fixed precedence order.
 
-12 adversarial documents built following the PoisonedRAG methodology (P5), as **defensive
-security research**: synthetic, every assertion deliberately false, all indicators drawn from
-ranges reserved for documentation, never inserted into any live retrieval system and never
-directed at any third-party system. They exist to provide ground-truth positives for
-evaluating this project's own detection layer.
+| Precedence | Case | Condition | Priority | Action |
+|---|---|---|---|---|
+| 1 | C5 Authoritative Channel Compromise | Tier 1 × Malicious | P0 | Escalate |
+| 2 | C4 Trusted-Source Anomaly | Tier 1 × Suspicious | P1 | Escalate |
+| 3 | C11 Isolated Retrieval Outlier | Set-level | P1 | Escalate |
+| 4 | C10 Authoritative Divergence | Tier 1 vs Tier 1 | P2 | Review |
+| 5 | C7 Open-Feed Poisoning | Tier 2 × Malicious | P2 | Reject |
+| 6 | C9 Expected-Path Poisoning | Tier 3 × Malicious | P2 | Reject |
+| 7 | C6 Open-Feed Irregularity | Tier 2 × Suspicious | P3 | Review |
+| 8 | C8 Unverified Irregularity | Tier 3 × Suspicious | P3 | Reject |
+| 9 | C3 Unverified but Unremarkable | Tier 3 × Clean | P3 | Review |
+| 10 | C2 Community Corroboration | Tier 2 × Clean | P4 | Accept |
+| 11 | C1 Authoritative Confirmation | Tier 1 × Clean | P5 | Accept |
 
-| Attack family | Count | What it does |
-|---|---|---|
-| `ioc_reputation_flip` | 3 | Asserts a known-malicious indicator is benign, or that a listing was withdrawn |
-| `authority_spoof` | 2 | Impersonates a Tier 1 channel — an advisory "update" reversing isolation guidance |
-| `severity_downgrade` | 2 | Concedes the vulnerability but understates reachability so remediation is deprioritised |
-| `remediation_misdirection` | 2 | Concedes the finding but recommends an action that weakens the defensive position |
-| `attribution_fabrication` | 2 | Invents confident attribution that displaces defensive effort |
-| `direct_prompt_injection` | 1 | Embeds instruction text addressed to the generating model rather than a human reader |
+Two entries carry the taxonomy's principal claims:
 
-Tier distribution is 2 / 5 / 5. The two Tier-1 documents simulate a **compromised
-authoritative channel** — a spoofed advisory update declaring a dangerous device safe to
-reconnect, and a bulletin claiming exposed key material was silently rotated, both
-instructing removal of the compensating controls actually holding the risk down. These are
-the cases the taxonomy ranks highest (C4/C5), and without them that claim cannot be validated
-at all. Six families exist because leave-one-attack-family-out (§5.4) withholds an entire
-family to measure generalisation to unseen attacks.
+**C4 outranks C9** — a *suspicious* Tier-1 document is ranked above a *malicious*
+Tier-3 one. Anomalous behaviour is improbable from Tier 1 by construction, so observing
+it carries substantially more information. Tier-1 sources are trusted by every
+downstream consumer, so the blast radius is larger. And every plausible explanation —
+source compromise, intercepted fetch path, provenance mislabelling, insider
+modification — constitutes a finding about the system itself. The action is therefore
+Escalate rather than Reject.
 
-**Construction (S + I).** Each document pairs a retrieval-optimising segment `S`, generated
-from the target query since the black-box attacker cannot probe the embedding model, with a
-corruption payload `I` carrying the intended false conclusion. `S` restates the query as a
-natural subject line rather than pasting it verbatim, which would be detectable by
-inspection. A BM25 pre-check ranks all 12 first or second against the whole clean corpus for
-their target queries — a **pre-check, not verification**, since pipeline retrieval is dense
-rather than lexical.
+**C10 is not poisoning** — high inter-document contradiction with quiet attack
+indicators characterises advisory revision or genuine analytic disagreement. The system
+is bound never to select between two authorities. The quiet-indicator condition
+matters: contradiction accompanied by a live injection signal is handled by C5 instead.
 
-### 6.4 Ground truth is held outside the documents
+### 3.5 Headline classification
 
-**The clean/poisoned label is not stored in any document file.** It lives in
-`corpus/ground_truth/<partition>.json`, and the validator fails any document carrying an
-answer-key field.
+Derived from the reconciled action and the governing tier; never stored as an
+independent judgement, so it cannot contradict the disposition actually taken.
 
-A document file is what the retrieval pipeline loads. A label inside it is reachable by the
-detection layer through any code path that touches the document dict, and the leak need not
-be deliberate — a field populated on poisoned documents and null on clean ones is a perfect
-classifier available for free. The subtler half is **schema symmetry**: removing the label is
-not enough if the shape of the record still separates the partitions, so the validator
-compares key sets across partitions and errors on any difference.
-
-For the same reason, poisoned documents are rendered by the **clean corpus's own renderers**,
-imported directly. Separate rendering code would give the poisoned partition a stylistic
-signature, and the detectors would learn the signature rather than the attack.
-
-### 6.5 Build and validation
-
-The build is **deterministic** — identical inputs produce byte-identical output, and the
-network is never touched during a build. A corpus that varies between runs cannot support
-reproducible evaluation.
-
-```bash
-cd corpus
-python build_clean_corpus.py    --ingestion-date 2026-09-02 --clean
-python build_poisoned_corpus.py --ingestion-date 2026-09-03 --clean \
-       --retrieval-report ../eval/poison_retrieval_check.json
-python validate_corpus.py --corpus clean    --strict --report ../eval/corpus_validation_clean.json
-python validate_corpus.py --corpus poisoned --strict --report ../eval/corpus_validation_poisoned.json
+```
+RED     if action in (Reject, Escalate)
+          sub-type: governing tier == 1  ->  TRUSTED_SOURCE_COMPROMISE
+                    otherwise            ->  ATTACK_DETECTED
+ORANGE  if action == Review, or governing tier != 1
+GREEN   if action == Accept and governing tier == 1
+ORANGE  otherwise                                    (fail-safe default)
 ```
 
-`validate_corpus.py` must pass before any embedding, retrieval or scoring work. Corpus
-faults do not fail loudly downstream; they quietly distort a metric. Beyond field
-completeness, date validity, identifier uniqueness, index agreement and checksum integrity,
-three checks carry the weight:
+**RED is sub-typed** because a malicious document from an unverified source and an
+anomaly in a verified advisory can carry the same risk score while requiring different
+responses: the first is closed by quarantining a document, the second is a finding
+about trust infrastructure that outlives the query.
 
-- **Tier agreement with the source registry.** Tier is assigned in exactly one place and
-  documents inherit it from their source. A document whose tier has drifted is rejected,
-  because tier is the foundation of the case taxonomy — a wrong tier silently corrupts every
-  case assignment and every per-tier threshold derived from it. This is the corpus-side
-  counterpart of the `TIER_MISLABELLED` override reason code.
-- **Tier coverage.** Error if any tier is empty; warning if a tier is too thin for stable
-  per-tier quantile thresholds.
-- **Near-duplicate detection.** Documents rendered from shared templates cluster tightly in
-  embedding space and would hand the Level 2 anomaly detector an artificially clean baseline —
-  an evaluation artifact presented as a result. The builder varies phrasing per document and
-  the validator measures whether that worked. Current maximum pairwise Jaccard overlap is
-  **0.34** clean / **0.20** poisoned, against a 0.70 warning threshold.
-- **Benchmark validity.** No document may carry an answer-key field; clean and poisoned
-  documents must expose identical key sets; the ground-truth manifest must label exactly its
-  partition's documents; and every poisoned document must name a `poison_family_id` and a
-  `target_query_id`, with at least three families and at least one Tier-1 poisoned document
-  present.
+**GREEN is reachable only by affirmative conjunction** — an explicit Accept *and* a
+Tier-1 governing source. Every other path terminates at ORANGE, including unrecognised
+actions and missing tiers. There is no `else: GREEN` branch. The Tier-2 and Tier-3
+exclusions are enforced and tested independently, and verification confirms no Tier-2 or
+Tier-3 source produces GREEN under any tested input.
 
-The validator was itself tested against seven deliberately injected faults (wrong tier,
-tampered content, missing field, uncitable verified reference, missing index entry,
-impossible date, clean document tagged as poisoned) and detected all seven.
+### 3.6 Scoring methodology
 
-### 6.6 A naming distinction that matters downstream
+Logistic regression fitted on the labelled corpus. Bounded signals receive a logit
+transform; the anomaly distance is robustly normalised within each query's retrieval
+set.
 
-The design document calls the per-document grouping key `source_doc_id`; in the corpus it is
-`doc_id`. `source_id` is a different field identifying the publishing feed, shared across
-many documents. **Grouped splitting must group by `doc_id`** — grouping by `source_id` would
-place all 12 MITRE ATT&CK documents in one group and collapse the split.
+**Source tier is dummy-coded, never ordinal.** An ordinal encoding would impose a
+monotone relationship between tier number and risk, rendering the C4/C9 inversion
+structurally unrepresentable. Tier × signal interaction terms allow the model to
+express that a given signal carries different weight depending on source tier.
+
+Evaluation derives from one stated assumption — a missed attack costs approximately ten
+times a false alarm: PR-AUC for model selection, F₃ as the headline scalar, recall at a
+fixed alert budget as the operating metric. Splits are grouped by attack family with a
+locked test set. Precision is additionally reported corrected to realistic deployment
+prevalence.
+
+### 3.7 Confidence
+
+Five components — evidence volume, evidence agreement, source independence, detector
+coherence, and model stability under bootstrap — combined by geometric mean, so a single
+weak component constrains the composite. A single-document answer is capped and can
+never be high confidence. Low confidence widens the risk interval and moves borderline
+cases toward Review; it can never relax a disposition.
+
+### 3.8 Audit trail
+
+`query_events` records every signal, the encoded feature vector, both track proposals,
+the final action, the headline band, and a full version stamp. `analyst_decisions`
+records the human disposition as Accept / Reject / Override with a controlled-vocabulary
+reason code, per-document verdicts, and decision latency.
+
+**The analyst decision is never populated by the system.** An unreviewed event has no
+row — not a null, and not a `PENDING` sentinel, because a sentinel in the same column as
+real verdicts requires every future aggregate to exclude it, and the first query that
+omits the exclusion is silently wrong. Three mechanisms enforce this: the column is
+`NOT NULL` with no `DEFAULT`; the class held by the scoring pipeline has no method that
+writes to the table; and every row records its write path, with non-analyst sources
+excluded from the labelled view. Corrections append a superseding row rather than
+editing. Each row hashes its own content plus its predecessor's, so modifying any
+historical row invalidates every subsequent hash.
 
 ---
 
-## 7. Baseline Pipeline
+## 4. Corpus
 
-Full detail in [`pipeline/README.md`](pipeline/README.md). This is the **control
-condition**: retrieve → generate → log, with no security layer at all. Everything built
-afterwards is measured against it, so it stays naive by design — no provenance weighting,
-no filtering, no refusal behaviour, and no trust language in the prompt.
+Full detail in [`corpus/README.md`](corpus/README.md).
 
-```bash
-pip install -r pipeline/requirements.txt
-python -m pipeline.build_index
-python -m pipeline.run_query "Is 198.51.100.47 associated with ransomware infrastructure?"
-python -m pipeline.test_pipeline
-```
+| Partition | Documents | Tier 1 | Tier 2 | Tier 3 |
+|---|---|---|---|---|
+| Genuine | 72 | 40 | 21 | 11 |
+| Adversarial | 12 | 2 | 5 | 5 |
 
-### 7.1 Three independently callable stages
+Construction is deterministic: identical inputs produce byte-identical output. Source
+trust tier is assigned in exactly one place — a source registry — and never within a
+document file.
 
-| Function | Returns |
-|---|---|
-| `embed_query(query)` | L2-normalised vector |
-| `retrieve_top_k(query, k=5)` | `RetrievalResult` — `.records` is a list of `RetrievedRecord` |
-| `generate_answer(query, retrieved_docs)` | `GenerationResult` |
+**Ground truth is held outside the documents.** Both partitions share an identical
+27-field schema, so document structure carries no signal distinguishing them. Labels
+reside in `corpus/ground_truth/`, which only evaluation code reads; the validator fails
+if any answer-key field appears inside a document, and an AST-based check confirms no
+module in `pipeline/` or `detectors/` references the manifests.
 
-Separate on purpose: later instrumentation needs retrieval without generation (to compute
-detector signals over a retrieval set) and generation without re-retrieval (to replay a
-logged set).
-
-### 7.2 Retrieval returns structured records, not strings
-
-Each record carries its rank and **similarity score**, the document text, and full
-**provenance** — `source_id`, `source_tier`, tier label, source type, publisher,
-publication date, verification status, content hash — plus tags, CVE IDs and ATT&CK
-techniques. `RetrievalResult` adds the set-level geometry (`n_retrieved`, similarity
-spread, `tier_min`, `top_tier`) that the anomaly detector and confidence measure need.
-
-The report generator, the audit log and all four detectors read these fields. Returning
-text alone would force each of them to re-fetch metadata independently and drift apart in
-how they did it.
-
-**`top_tier` is not `tier_governing`.** The latter is the tier of the highest-*attribution*
-cited document (§5.3), which needs the generation step. `top_tier` is the retrieval-time
-approximation; the fusion layer recomputes it.
-
-### 7.3 Passive retrieval logging (Level 1)
-
-Every query and everything it retrieved, with scores and provenance, is appended to
-`logs/retrieval_log.jsonl` — one line per query, flushed and `fsync`ed so a crash cannot
-lose the record of what the pipeline saw. Nothing is scored, filtered or flagged.
-
-JSONL rather than the SQLite `query_events` table (§5.6) because that table carries
-detector signals and case identifiers that do not exist yet; writing rows with those
-columns null would give the audit trail a large block of meaningless history. Each line
-carries a schema version so the audit writer can migrate them later.
-
-### 7.4 Partition blindness is enforced in code
-
-The pipeline indexes both partitions together and is never told which is which. The loader
-discards the directory of origin, passes through only an allowlist of fields, and **raises**
-if a document carries an answer-key field — so a corpus regression fails at index time
-rather than inflating a score later. A test asserts no module in the package opens the
-ground-truth directory. `build_prompt()` also withholds source tier from the model:
-telling the baseline which sources are authoritative would be a trust signal it is meant
-to lack.
-
-### 7.5 Backends, and what is provisional
-
-Each layer resolves a real backend and falls back with a visible warning, so the pipeline
-runs without model weights or network.
-
-| Layer | Real | Fallback | Fallback is |
-|---|---|---|---|
-| Embeddings | `bge-small-en-v1.5` | hashing vectors | **not semantic** — quality figures meaningless |
-| Index | FAISS `IndexFlatIP` | exact numpy | **identical results** — both exact |
-| Generation | Llama 3.1 8B / Qwen2.5 7B | extractive stub | **not an LLM** — labels itself in its output |
-
-Flat index rather than IVF/HNSW: at 84 documents an approximate index is slower to build,
-no faster to query, and introduces recall error into a benchmark whose purpose is measuring
-what gets retrieved.
-
-**Every retrieval figure to date is provisional** — the build environment cannot reach PyPI
-or Hugging Face, so results so far used the fallback embedder. Under it, the poisoned
-"withdrawn indicator" entry and the spoofed CISA advisory each retrieved at **rank 1**
-above their genuine counterparts, which is the behaviour the benchmark exists to
-demonstrate — encouraging, not conclusive, until the real model is installed.
+The adversarial partition follows the PoisonedRAG method across six attack families:
+indicator reputation inversion, severity downgrading, authority spoofing, remediation
+misdirection, attribution fabrication, and direct prompt injection. Each carries a
+`target_query_id` identifying the question it was constructed to intercept.
 
 ---
 
-## 8. Detectors (Level 2)
+## 5. Detectors
 
-Full detail in [`detectors/README.md`](detectors/README.md). Three detectors over the
-retrieval set, deliberately **independent** — none sees another's output, and fusion happens
-later. Every score is in [0, 1] and every detector returns **per-document** values, never
-only an aggregate; fusion takes the **max** over cited documents, not the mean (§5.1), since
-one crafted document among four clean ones is the entire attack.
-
-```bash
-pip install -r detectors/requirements.txt
-python -m detectors.test_detectors -v
-```
+Full detail in [`detectors/README.md`](detectors/README.md). Three detectors operate over
+the retrieval set, deliberately independent — none observes another's output. All scores
+are normalised to [0, 1] and returned **per document**, never only as an aggregate.
+Fusion takes the maximum over cited documents rather than the mean, since one crafted
+document among several genuine ones constitutes the entire attack.
 
 | Detector | Model | Note |
 |---|---|---|
-| Embedding anomaly | k-means + robust median/MAD z | Expected weakest — see below |
-| Prompt injection | `protectai/deberta-v3-base-prompt-injection-v2` | Positive class resolved by label *name* |
-| Entailment | `cross-encoder/nli-deberta-v3-base` | Higher = **safer**; risk complement returned as `.score` |
-| Intra-evidence conflict (derived) | same NLI model, pairwise | `tier1_conflict_max` is what case C10 turns on |
+| Embedding anomaly | k-means with robust median/MAD z-score | Expected weakest; see below |
+| Prompt injection | `protectai/deberta-v3-base-prompt-injection-v2` | Positive class resolved by label name |
+| Entailment | `cross-encoder/nli-deberta-v3-base` | Higher = safer; risk complement returned |
+| Intra-evidence conflict | Same NLI model, pairwise | Quantity on which C10 turns |
 
-### 8.1 Three decisions worth knowing
+**Min-max normalisation was rejected.** Min-max over a retrieval set always assigns one
+document 1.0 and another 0.0 regardless of whether anything is anomalous, manufacturing
+a maximum-severity outlier in every clean set. The anomaly detector scales by dispersion
+instead, so a clean set scores near zero throughout. Below four documents it does not
+cluster; at one document it returns 0.0.
 
-**Not min-max normalisation.** Min-max over a retrieval set always assigns one document 1.0
-and one 0.0 whether or not anything is anomalous — it would manufacture a maximum-severity
-outlier in every clean set the system ever sees. Anomaly scales by *dispersion* instead, so
-a clean set scores near zero throughout. Below four documents it doesn't cluster at all; at
-one document it returns 0.0.
+**Label positions are resolved by name, not index.** Both DeBERTa models have shipped
+with differing label orderings across releases. An inverted injection classifier flags
+every clean document; an inverted NLI model exchanges entailment for contradiction.
 
-**Label positions resolved by name, not index.** Both DeBERTa models have shipped with
-different label orderings across releases. An inverted injection classifier flags every
-clean document; an inverted NLI model swaps entailment for contradiction — inverting the
-most important signal in the system while still producing plausible numbers.
+**The anomaly detector is expected to be the weakest, and this is a finding rather than
+a defect.** PoisonedRAG documents are constructed to sit close to the query in embedding
+space — that is the attack mechanism. A document engineered for retrieval proximity can
+fall inside the cluster it targets.
 
-**The anomaly detector is expected to be the weakest, and that is a finding.** PoisonedRAG
-documents are constructed to sit *near* the query in embedding space — that is the attack.
-A document engineered for retrieval proximity can land inside the cluster it was aimed at.
-A low anomaly score on a poisoned document is a true observation about the attack, not a
-defect.
+---
 
-### 8.2 Sanity check, not evaluation
+## 6. Fusion and Analyst Report
 
-`test_detectors.py` asks one question before fusion is built on top: given documents whose
-answer we know, does each detector point the right way? A detector wired backwards produces
-confident, plausible, wrong numbers.
+Full detail in [`fusion/README.md`](fusion/README.md) and
+[`reports/README.md`](reports/README.md).
 
-20 structural checks pass. Directionally, on the fallback backends: the attacker's claim is
-supported at **0.67** by the poisoned document versus **0.30** by the genuine one (10 of 12
-poisoned documents separate correctly); the single injection-bearing document scores 1.00
-against 0.00 for everything else; 5 of 12 poisoned documents rank most-anomalous in their
-set, consistent with the expectation above.
+### 6.1 Signal banding
 
-**These are structural results only** — all three detectors ran on fallbacks here, and the
-harness prints `RUN IS NOT CONCLUSIVE` naming each one. Install the real models before
-quoting any of it.
+Thresholds are quantiles of each signal's distribution over **genuine** documents —
+`θ_suspicious = Q95`, `θ_malicious = Q99` — not hand-selected. This makes the
+false-positive rate a design input rather than a post-deployment discovery, and the
+thresholds move automatically when a detector is replaced.
 
-The script reads `corpus/ground_truth/`, which is the boundary: detectors are the system
-under test, test and evaluation code see the answer key. An AST check asserts no module in
-`detectors/` or `pipeline/` reads the manifest — it inspects executable code rather than
-string-matching, because both packages *document* that they don't read it and a naive search
-flags exactly the modules being most careful.
+Injection alone is sufficient for a MALICIOUS band; the other signals are not.
+Anomalous embeddings, unsupported claims and knowledge conflicts all admit benign
+explanations. Instruction text directed at a language model inside a threat-intelligence
+document does not.
+
+A **missing** signal is excluded rather than zero-filled, since zero asserts an absence
+of conflict for which there is no evidence. A **degenerate** signal — one whose clean
+distribution has negligible spread — is marked unusable and excluded entirely, because
+its quantiles are the constant rather than thresholds.
+
+### 6.2 Template-grounded reasoning
+
+The reasoning narrative in each analyst report is generated by template substitution,
+not by a language model. Every numeric value is supplied by a `Fact` object carrying the
+value together with a JSON pointer into the report structure. Templates contain slots
+and never literals, and refuse to render when a value is absent.
+
+> Flagged because `claim_unsupport_score` = 1.000 on document cisa-adv-9, exceeding the
+> malicious threshold of 0.990 by +0.010, on a Tier 1 source.
+
+This constraint is enforced by test: every numeric token is extracted from the
+**rendered** narrative and must resolve to a real value at a real path in the report
+object. Two negative controls confirm the check can fail — an injected fabricated figure
+must be detected, and a pointer to a non-existent field must fail to resolve.
+
+The rationale is specific. A model asked to explain a flag is correct most of the time;
+when incorrect it produces a plausible figure attached to a real detector, in a report
+indistinguishable from a correct one. That is the precise failure mode the system exists
+to prevent. Additionally, the input to such a generation step would be a document the
+system may already assess as adversarial.
+
+### 6.3 Indicator extraction
+
+IP addresses, domains, URLs, file hashes and CVE identifiers are extracted by pattern
+matching only. Analysts pivot on these values — an invented indicator directs
+investigation toward something that was never present. Defanged indicators are
+re-fanged before matching; version strings, filenames and citation domains are
+suppressed; each indicator records the documents in which it appeared.
+
+---
+
+## 7. Evaluation
+
+Harness: [`eval/run_evaluation.py`](eval/run_evaluation.py). Results:
+[`eval/results/`](eval/results/). Narrative treatment:
+[`docs/sprint_logs/SESSION_10_evaluation.md`](docs/sprint_logs/SESSION_10_evaluation.md).
+
+Three configurations over the same 84-document corpus, 40 queries (10 target, 30
+control), k = 5.
+
+| Metric | A · No retrieval | B · Baseline RAG | C · Full system |
+|---|---|---|---|
+| Attack success — adversarial content reached the user | 0%\* | 100% | **90.0%** |
+| Attack success — system vouched for the content | 0%\* | 100% | **0.0%** |
+| False positive rate — genuine documents blocked | 0%\* | 0%\* | **18.1%** |
+| Genuine queries routed to human review | 0%\* | 0%\* | **93.3%** |
+| Adversarial documents reaching the user | 0%\* | 100%\* | **86.2%** |
+| Automatically accepted without human review | 100% | 100% | **5.0%** |
+| Routed to human review | 0% | 0% | **77.5%** |
+| Blocked | 0% | 0% | **17.5%** |
+| Added latency per query | — | 0.1 ms | **~24 ms** |
+
+\* True by the configuration's definition rather than measured. A system without
+retrieval cannot be poisoned; a system without a security layer cannot flag anything.
+Neither zero constitutes a security result.
+
+### 7.1 Interpretation
+
+The system did not, in any case, return adversarial content within a response it
+vouched for, where the baseline did so in every case. On that measure the reduction is
+100% → 0%.
+
+Adversarial content nevertheless reached the user in 9 of 10 attack cases, flagged as
+unverified. The system achieves its safety result by automatically accepting 5% of
+queries and routing 93% of genuine traffic to human review. At this operating point the
+layer functions as a review-generation mechanism rather than a filter.
+
+### 7.2 Metric definition
+
+The initial evaluation reported 0.0% attack success and 100% detection across all attack
+families. This was an artefact of the metric definition: attack success was defined as
+adversarial content returned within a vouched-for response, and the system rarely
+vouches for anything. A Review disposition nevertheless **returns the answer** to the
+user. The evaluation now reports both definitions permanently, alongside the acceptance
+and review rates, since an attack-success rate is not interpretable without the
+disposition mix that produced it.
+
+### 7.3 Detection by attack family
+
+| Attack family | Blocked | Rate |
+|---|---|---|
+| Direct prompt injection | 1 / 1 | 100% |
+| Authority spoofing | 2 / 5 | 40% |
+| Remediation misdirection | 1 / 7 | 14% |
+| Attribution fabrication | 0 / 3 | 0% |
+| Indicator reputation inversion | 0 / 7 | 0% |
+| Severity downgrading | 0 / 6 | 0% |
+
+Three of six families were not blocked in any instance. Every retrieved adversarial
+document was assigned C1, C2 or C3 — the three clean cases. At document level, no
+adversarial document was flagged by the detectors. The protection observed derives from
+the tier and case rules rather than from detection.
+
+### 7.4 Measurement constraints
+
+These results were produced with all three detectors operating on fallback backends,
+because the development environment could not reach the model repository. Lexical
+overlap, substituting for the entailment model, **cannot detect contradiction** — which
+is precisely what a severity-downgrade or reputation-inversion attack constitutes.
+
+Consequently the evaluation demonstrates that the **architecture** functions end to end.
+It does not establish detection performance. Attack success is measured as a containment
+proxy rather than at answer level, since no generation backend was available; because a
+document must reach the model for the attack to succeed, the proxy is a strict upper
+bound on the true rate.
+
+**Installing the production detector models and re-running this evaluation is the single
+highest-value remaining action on the project.**
+
+---
+
+## 8. Installation and Operation
+
+Complete procedure: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+
+### 8.1 Docker (recommended)
+
+```bash
+docker compose build
+docker compose run --rm verify        # build index, run all six test suites
+docker compose up dashboard           # analyst console at http://localhost:8501
+docker compose run --rm evaluate      # three-configuration comparison
+```
+
+### 8.2 Local installation
+
+```bash
+python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+
+python -m pipeline.check_backends     # verify model availability before anything else
+python -m pipeline.build_index
+python -m fusion.train
+
+streamlit run dashboard/app.py
+```
+
+### 8.3 Verification
+
+```bash
+python -m pipeline.test_pipeline      #  55 checks
+python -m detectors.test_detectors    #  20 checks
+python -m fusion.test_fusion          # 115 checks (112 without scikit-learn)
+python -m reports.test_reports        # 100 checks
+python -m logs.test_audit             #  62 checks
+python -m dashboard.test_dashboard    #  55 checks
+```
+
+### 8.4 Programmatic use
+
+```python
+from pipeline.rag import BaselineRAG
+from fusion import score_query
+from reports import build_report, render_text
+from logs.audit import AuditLog
+
+records = BaselineRAG.from_disk().retrieve_top_k(query, k=5).records
+score   = score_query(query, records)
+report  = build_report(query, score, records)
+
+print(render_text(report))
+event_id = AuditLog().record_query(report)
+```
 
 ---
 
@@ -543,163 +580,159 @@ flags exactly the modules being most careful.
 
 ```
 Capstone/
-  README.md                  # this document — current state of the whole project
-  requirements.txt           # all dependencies, one install
+  README.md                  This document
+  requirements.txt           Consolidated dependencies
+  Dockerfile                 Container image definition
+  docker-compose.yml         Service definitions: verify, dashboard, evaluate, shell
   docs/
-    PROJECT_REPORT.md        # comprehensive report — decisions, rationale, decision log
-    design/                  # authoritative design specifications
-      TRUST_RISK_DESIGN.md   # case taxonomy, scoring, confidence, audit schema
-    sprint_logs/             # work-session logs (.md tracked; .docx generated, gitignored)
+    RUNBOOK.md               Installation, verification and demonstration procedure
+    FINAL_PROJECT_LOG.md     Executive summary, development history, limitations
+    AUDIT_REPORT.md          Independent verification against specification
+    PROJECT_REPORT.md        Extended technical report (superseded in part; see §12)
+    design/
+      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.2
+    sprint_logs/             Development session records (.md and .docx)
   corpus/
-    README.md                # corpus schema, composition, provenance, validation
-    schema.py                # shared field names, enums, bounds, tier rules
-    build_clean_corpus.py    # deterministic clean-partition assembler
-    build_poisoned_corpus.py # poisoned-partition assembler (PoisonedRAG S+I)
-    validate_corpus.py       # pre-use validator (run before anything downstream)
-    sources/
-      registry.json          # source registry — the only place tier is assigned
-      seeds_tier1.json       # structured document seeds, Tier 1 sources
-      seeds_tier2.json       # structured document seeds, Tier 2 sources
-      seeds_tier3.json       # structured document seeds, Tier 3 sources
-      poison_seeds.json      # target queries, attack families, corruption payloads
-    clean/                   # generated: one JSON per document + index.json
-    poisoned/                # generated: same schema, same renderers, false content
-    ground_truth/            # generated: the answer key — evaluation harness only
-  pipeline/                  # baseline RAG — the control condition, no security layer
-    README.md                # API, record shape, logging, backends
-    config.py                # paths, models, env overrides
-    records.py               # Provenance, RetrievedRecord, RetrievalResult, GenerationResult
-    corpus_loader.py         # partition-blind loading + ground-truth leak guard
-    embeddings.py            # sentence-transformers / hashing fallback
-    vector_index.py          # FAISS / exact numpy fallback
-    retrieval.py             # embed_query, retrieve_top_k
-    generation.py            # Ollama / Groq / extractive stub
-    retrieval_log.py         # passive JSONL logging (Level 1)
-    rag.py                   # BaselineRAG facade
-    build_index.py           # CLI: build and persist the index
-    run_query.py             # CLI: run queries
-    test_pipeline.py         # 45 smoke checks, no pytest dependency
-  detectors/                 # Level 2 — three independent detectors
-    README.md                # contracts, decisions, backends
-    base.py                  # BackendInfo, robust_z, squash, input normalisation
-    anomaly.py               # detector 1: embedding anomaly
-    injection.py             # detector 2: prompt injection
-    entailment.py            # detector 3: entailment + derived pairwise conflict
-    isolation_check.py       # AST assertion that a package never reads the answer key
-    test_detectors.py        # sanity check (20 structural checks)
-  fusion/                    # Level 3: case classifier + composite scoring + confidence
-  reports/                   # SOC analyst report generator
-  dashboard/                 # Streamlit app
-  eval/                      # target_queries.txt, validation reports, harness to follow
-  logs/                      # retrieval_log.jsonl (Level 1) — audit log SQLite database to follow
+    schema.py                Shared field names, enumerations, tier rules
+    build_clean_corpus.py    Deterministic genuine-partition builder
+    build_poisoned_corpus.py Adversarial-partition builder
+    validate_corpus.py       Pre-use validator
+    sources/                 Source registry and document seeds
+    clean/                   72 documents + index
+    poisoned/                12 documents + index
+    ground_truth/            Answer key — evaluation harness only
+  pipeline/                  Baseline RAG: embeddings, retrieval, generation, logging
+  detectors/                 Three independent detectors + derived conflict signal
+  fusion/                    Banding, case classifier, model, confidence, headline
+    artifacts/               Fitted thresholds and coefficients
+  reports/                   Analyst report: narrative engine, indicators, renderers
+  logs/                      Audit log (SQLite) and retrieval log
+  dashboard/                 Streamlit analyst console
+    pages/                   Audit log viewer
+  eval/
+    run_evaluation.py        Three-configuration comparison harness
+    results/                 Comparison table, chart, full JSON output
 ```
 
 ---
 
-## 10. Tech Stack
+## 10. Technology Stack
 
-Open-source and free tooling only; no paid API dependency anywhere in the system.
-Install everything with `pip install -r requirements.txt`.
+Open-source components only; no paid API dependency.
 
-| Layer | Choice |
+| Layer | Selection |
 |---|---|
-| Generation | **Groq free tier, `llama-3.1-8b-instant`** (project default) · Ollama `llama3.2:3b` for local iteration |
-| Embeddings | sentence-transformers |
-| Vector store | FAISS or Chroma |
-| Entailment / NLI | Pretrained NLI model via sentence-transformers / Hugging Face |
-| Injection classifier | Pretrained prompt-injection classifier (Hugging Face) |
-| Fusion & scoring | scikit-learn (logistic regression, calibration, grouped CV) |
-| Service layer | FastAPI |
-| Dashboard | Streamlit |
-| Audit log | SQLite |
+| Embeddings | `sentence-transformers` (`bge-small-en-v1.5`) |
+| Vector index | FAISS `IndexFlatIP` |
+| Generation | Groq free tier, or Ollama for local operation |
+| Entailment | `cross-encoder/nli-deberta-v3-base` |
+| Injection classification | `protectai/deberta-v3-base-prompt-injection-v2` |
+| Fusion and calibration | scikit-learn |
+| Audit store | SQLite |
+| Analyst console | Streamlit |
+| Containerisation | Docker, Docker Compose |
+
+Every layer implements a fallback backend that activates when its model is unavailable,
+reports `is_model=False`, and is named in the output of any script that produces a
+figure. No fallback result can be presented as a measurement without an accompanying
+warning.
 
 ---
 
-## 11. Key Findings from the Literature
+## 11. Research Basis
 
-| Question | Answer from the papers | Supporting papers |
+| Question | Finding | Sources |
 |---|---|---|
-| Can RAG be deliberately poisoned? | Yes — empirically demonstrated, not theoretical | P5, P2, P4 |
-| Is one detector enough? | No — use defense-in-depth | P1, P4, P6 |
-| Should perplexity be the main signal? | No — clean and malicious text overlap in perplexity | P1, P5 |
+| Can RAG be deliberately poisoned? | Yes — empirically demonstrated | P5, P2, P4 |
+| Is a single detector sufficient? | No — defence in depth required | P1, P4, P6 |
+| Should perplexity be a primary signal? | No — clean and adversarial text overlap | P1, P5 |
 | Should retrieval itself be monitored? | Yes | P1, P2, P5, P6 |
-| Should generated output be checked against evidence? | Yes | P1, P3, P7 |
-| Should an LLM alone judge its own security? | No — combine model-based and independent checks | P4, P7 |
-| Is computational cost a real constraint? | Yes — use risk-adaptive escalation | P1, P4, P6 |
-| Should flagged documents be auto-deleted? | No — naive deletion removes clean docs and misses lone poisoned ones | P1 |
-| Is RAG grounding alone sufficient? | No — PoisonedRAG shows malicious content can still look "grounded" | P5 |
+| Should output be verified against evidence? | Yes | P1, P3, P7 |
+| Should an LLM judge its own security? | No — combine model-based and independent checks | P4, P7 |
+| Is computational cost a real constraint? | Yes — risk-adaptive escalation required | P1, P4, P6 |
+| Should flagged documents be deleted? | No — deletion removes genuine documents and misses isolated adversarial ones | P1 |
+| Is RAG grounding alone sufficient? | No — poisoned content can appear well-grounded | P5 |
 
----
+Perplexity is **not computed anywhere in this system**. This is a documented exclusion
+based on the literature, not an omission, and a test asserts it never reaches a log
+record.
 
-## 12. Why We Are Stopping at Level 3
-
-This capstone has a short build window and no paid API budget (open-source models only). Levels 4 and 5 involve real cost/complexity jumps — a second LLM call per query for cross-verification, agentic tool firewalls, full human-in-the-loop review workflows — that would either blow the timeline or dilute focus away from proving the core thesis.
-
-**Level 0–3 is not a "reduced" version of the idea — it is a complete, defensible system.** It demonstrates the exact principle the literature argues for: no single detector should be trusted alone (P1, P4, P6), and computational cost should be spent adaptively based on risk (P1, P4, P6). Stopping here lets us build every component with real evaluation, rather than a longer list of shallow, unverified components.
-
-Our goal for this capstone is **not to build a production-grade system** — it is to demonstrate, with working code and measurable results, that attacker-induced hallucination in a healthcare-cybersecurity RAG pipeline is detectable and that a layered, risk-adaptive defense measurably reduces attack success rate compared to a vanilla RAG baseline.
-
----
-
-## 13. Security Research Framing
-
-Construction of poisoned and adversarial documents in this project is **defensive security research**, following the published PoisonedRAG methodology (P5). The adversarial corpus is synthetic, internal, and exists solely to provide ground-truth labels for benchmarking our own defensive layer. It is never deployed to any live retrieval system and is never directed at any third-party system. This framing is restated in the corpus module documentation and in the generator source itself rather than being left implicit.
-
----
-
-## 14. Future Scope (Level 4 & 5 — Roadmap Beyond This Capstone)
-
-- **Cross-LLM verification** — a second model provides an independent opinion, but only on high-risk cases flagged by Level 3 (P1, P2, P7)
-- **Secondary/deeper retrieval** — re-query with a different strategy when evidence conflict is detected
-- **Nuanced poisoning response** — route ambiguous singleton documents for special handling instead of blanket deletion (P1's own caution)
-- **Agent/tool firewalls** — gate any automated security actions the system might eventually take (P2, P6)
-- **Full human-in-the-loop audit workflow** — structured SOC analyst review and sign-off, not just a flag
-- **Recalibration from analyst decisions** — the `analyst_decisions` schema exists now so this data is available later; it is not used for retraining within this capstone
-- **Knowledge graph / multimodal RAG** — the source papers themselves identify this as open future work (P3)
-
----
-
-## 15. References
+### References
 
 1. **P1** — TrustRAG: Enhancing Robustness and Trustworthiness in Retrieval-Augmented Generation. arXiv:2501.00879v3 (2025).
 2. **P2** — Mu, Y. et al. Towards Secure Retrieval-Augmented Generation: A Comprehensive Review of Threats, Defenses and Benchmarks. arXiv:2603.21654v1 (2026).
 3. **P3** — Trustworthiness in Retrieval-Augmented Generation Systems: A Survey. arXiv:2409.10102v2 (2026 update).
-4. **P4** — Gulyamov, S. et al. Prompt Injection Attacks in Large Language Models and AI Agent Systems: A Comprehensive Review of Vulnerabilities, Attack Vectors, and Defense Mechanisms. *Information* 17, 54 (2026).
+4. **P4** — Gulyamov, S. et al. Prompt Injection Attacks in Large Language Models and AI Agent Systems. *Information* 17, 54 (2026).
 5. **P5** — Zou, W., Geng, R., Wang, B., Jia, J. PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models. 34th USENIX Security Symposium (2025).
-6. **P6** — Khonde, S.R. et al. End-to-End Security Threats and Defenses in Retrieval-Augmented LLM Agents. *Discover Artificial Intelligence* (2026), article in press in the reviewed version.
-7. **P7** — Gokcimen, T., Das, B. A Novel System for Strengthening Security in Large Language Models Against Hallucination and Injection Attacks with Effective Strategies. *Alexandria Engineering Journal* 123 (2025), 71–90.
+6. **P6** — Khonde, S.R. et al. End-to-End Security Threats and Defenses in Retrieval-Augmented LLM Agents. *Discover Artificial Intelligence* (2026).
+7. **P7** — Gokcimen, T., Das, B. A Novel System for Strengthening Security in Large Language Models Against Hallucination and Injection Attacks. *Alexandria Engineering Journal* 123 (2025), 71–90.
 
 ---
 
-## 16. Project Status
+## 12. Limitations
 
-- [x] Literature synthesis complete (7 papers reviewed and mapped)
-- [x] Architecture designed (Level 0–3 scoped for this capstone)
-- [x] Repository structure established
-- [x] Trust-layer decision logic specified — case taxonomy, scoring methodology, confidence measure, and the analyst-decision audit schema including its write-time lifecycle rules and recalibration query surface (`docs/design/TRUST_RISK_DESIGN.md`, `design-v1.1`)
-- [x] Clean corpus built and validated — 72 documents across all three source trust tiers, deterministic build, validator passing with zero errors and zero warnings
-- [x] Poisoned corpus built and validated — 12 adversarial documents across six attack families and all three tiers, including two Tier-1 compromised-source cases; ground truth held outside the document files with leakage and schema-symmetry checks enforced
-- [ ] Query-instance set (design targets ≥200 poisoned / ≥600 clean *query instances*, which are a different unit from documents)
-- [x] Baseline RAG pipeline implemented — `embed_query` / `retrieve_top_k` / `generate_answer`, structured retrieval records with score and provenance, passive Level 1 logging, 45 checks passing (figures provisional until production dependencies are installed)
-- [x] Level 2 detectors implemented — embedding anomaly, prompt injection, claim-evidence entailment, plus the derived intra-evidence conflict signal; per-document [0,1] scores, 20 structural checks passing (directional results provisional until the real models are installed)
-- [x] Comprehensive project report (`docs/PROJECT_REPORT.md`) with full decision log
-- [ ] Level 3 fusion, scoring and confidence implementation
-- [ ] Audit log and Streamlit dashboard
-- [ ] Evaluation against baselines (grouped CV + leave-one-attack-family-out)
-- [ ] Final report & demo
+Stated directly, since each affects how the results above should be read.
 
-### Known dependencies and open questions
+1. **The detector models have not been executed.** No development environment could
+   reach the model repository, so all three detectors ran on fallback backends
+   throughout. Every accuracy figure is structural evidence that the layer functions,
+   not a measurement of detection performance.
+2. **No language model has been in the loop.** Generation falls back to an extractive
+   stub. Answer-level attack success could not be measured, and the entailment signal
+   currently scores against the query rather than the generated answer.
+3. **The corpus is small.** Twelve adversarial documents across six families. The
+   statistical model operates at its underpowered setting; coefficients are indicative.
+4. **The operating point is not deployable.** A 5% automatic acceptance rate with 93% of
+   genuine queries routed to review is not a viable configuration.
+5. **The evidence-conflict detector is not implemented.** It is specified but absent, and
+   is treated throughout as absent rather than zero-valued.
+6. **`docs/PROJECT_REPORT.md` predates the fusion, report, audit and dashboard work** and
+   describes those components as unimplemented. It is retained for its corpus and
+   pipeline sections; `docs/FINAL_PROJECT_LOG.md` supersedes it for current state.
 
-| Question | What it blocks | Route to resolution |
-|---|---|---|
-| Does the generation step expose usable per-document attribution? | Governing tier, effective evidence count | Test during baseline pipeline build; top-3-by-similarity fallback is specified |
-| Is pairwise NLI across retrieved documents fast enough at k=5–8? | Intra-evidence conflict, case C10, confidence agreement | Benchmark during detector build; restrict to cited documents if not |
-| Can enough Tier-1 poisoned instances be constructed? | Validation of the two principal taxonomy cases | Poisoned corpus construction; reduced feature ladder is the fallback |
-| How many query instances can be derived per document? | Whether 72 clean documents is sufficient | Determine during query-set construction, before writing further documents |
-| Can one injection-family example support a threshold? | Any reportable figure for the injection detector | No — write more `direct_prompt_injection` poisoned documents before quoting a threshold or false-positive rate |
-| Why did entailment not separate two of the twelve poisoned documents? | Whether those attacks are subtler or the proxy is too crude | Re-run with `cross-encoder/nli-deberta-v3-base` installed; the fallback cannot detect contradiction at all |
-| Is the authored document style varied enough in embedding space? | Validity of the anomaly detector's clean baseline | Measurable once the corpus is embedded; current lexical overlap of 0.34 is favourable but not conclusive |
-| Are the poisoned documents actually retrieved under dense retrieval? | Whether the benchmark exercises the detectors at all | Pipeline now exists; install `sentence-transformers` and rebuild the index, then measure rank@k. Fallback-embedder runs put poisoned documents at rank 1 for both queries tried |
-| Can a detector shortcut Tier-1 poisoning via `reference_verified: false`? | Whether Tier-1 detection results are meaningful | Watch for near-perfect Tier-1 detection alongside weaker Tier-2/3; that pattern indicates the shortcut |
-| Is the assumed 10:1 cost of a miss to a false alarm defensible? | Metric selection and class weighting | Revisit once analyst decision-latency data exists |
-| Do the confidence component weights pass their validation criteria? | The confidence measure | Run the falsification test once labelled data exists; refit or drop failing components |
+### Future work
+
+- **Cross-model verification** — a second independent model consulted only on cases the
+  fusion layer has already flagged as high risk (P1, P2, P7)
+- **Secondary retrieval** — re-query with a different strategy when evidence conflicts
+- **Refined handling of isolated suspicious documents** — quarantine is currently blunt;
+  P1 cautions that naive deletion removes genuine documents
+- **Tool and action firewalls** — required if the system is extended beyond answering
+  (P2, P6)
+- **Recalibration from analyst decisions** — the schema exists and is deliberately unused
+  within this capstone
+- **Knowledge-graph and multimodal retrieval** — identified as open work in P3
+
+---
+
+## 13. Security Research Statement
+
+Construction of adversarial documents in this project constitutes **defensive security
+research**, following the published PoisonedRAG methodology (P5). The adversarial corpus
+is synthetic, internal, and exists solely to provide ground-truth positives for
+evaluating this project's own detection layer. It contains no real indicators, is never
+deployed to any live retrieval system, and is never directed at any third-party system.
+This framing is restated in the corpus module documentation and in the generator source.
+
+---
+
+## 14. Project Status
+
+| Component | Status |
+|---|---|
+| Decision-logic specification (`design-v1.2`) | Complete |
+| Corpus — 72 genuine, 12 adversarial, three tiers | Complete, validated, 0 errors |
+| Baseline RAG pipeline | Complete, 55 checks passing |
+| Level 2 detectors | Complete, 20 checks passing |
+| Level 3 fusion, scoring, confidence | Complete, 115 checks passing |
+| Analyst report generator | Complete, 100 checks passing |
+| Audit log | Complete, 62 checks passing |
+| Analyst console | Complete, 55 checks passing |
+| Evaluation harness | Complete; results in `eval/results/` |
+| Containerisation | Complete |
+| Detector models installed and evaluation re-run | **Outstanding** |
+| Generation backend in the loop | **Outstanding** |
+| Evidence-conflict detector | **Outstanding** |
+| Leave-one-attack-family-out evaluation | **Outstanding** |
+
+Total automated verification: **407 checks** across six suites, all passing.

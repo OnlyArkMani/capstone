@@ -33,9 +33,25 @@ env/
 # Vector index: rebuilt from the corpus in seconds, binary, machine-specific.
 pipeline/index/
 
+# Fitted model weights: a build product of `python -m fusion.train`, binary, and
+# tied to the installed scikit-learn version. The readable sidecars beside it --
+# band_thresholds.json, operating_thresholds.json and trust_model.json -- ARE
+# tracked, so a reviewer can read the fitted thresholds and coefficients without
+# unpickling anything.
+fusion/artifacts/*.joblib
+fusion/artifacts/*.pkl
+
 # Run logs: per-execution by-products, not project artefacts.
 logs/*.jsonl
 logs/queries/
+
+# The audit database is created at first use and holds run-time state, not project
+# content. The schema lives in logs/audit.py, which IS tracked, so the database is
+# reproducible from source; committing it would put one machine's demo history into
+# everyone's checkout.
+logs/*.db
+logs/*.db-journal
+logs/*.sqlite3
 
 # Upstream response cache, if live fetch adapters are ever added.
 corpus/sources/cache/
@@ -51,6 +67,11 @@ corpus/sources/cache/
 *.docx
 *.pdf
 ~$*
+
+# Files delivered into the chat and saved back by the desktop app. These are
+# copies of things already tracked under docs/ — keeping them out of git stops
+# a stale duplicate from being reviewed as if it were the current version.
+Claude outputs/
 
 # ---------------------------------------------------------------------------
 # Editor and OS noise
