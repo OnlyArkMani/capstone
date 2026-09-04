@@ -1,0 +1,141 @@
+# Trust & Risk Layer — service definitions.
+#
+#   docker compose build
+#   docker compose run --rm fetch-models    # optional, ~750 MB, needs internet
+#   docker compose run --rm verify          # build index, fit model, run all suites
+#   docker compose up dashboard             # http://localhost:8501
+#   docker compose run --rm evaluate        # three-configuration comparison
+#
+# Every service shares one image and one set of volumes. Three named volumes rather
+# than bind mounts, because these hold build products and run-time state that should
+# survive `docker compose down` without appearing as untracked files in the repository:
+#
+#   models     downloaded detector weights (~750 MB) — the expensive one to refetch
+#   index      the FAISS index, rebuilt from the corpus in seconds
+#   audit      the SQLite audit database and the retrieval log
+#
+# `results` IS a bind mount, because evaluation output is a deliverable that belongs
+# in the repository rather than inside a volume.
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: zetabyte/trust-risk-layer:1.0.0
+  environment:
+    # Generation is optional. Set GROQ_API_KEY in a .env file beside this one to
+    # enable it; without it the pipeline uses its extractive stub and says so.
+    GROQ_API_KEY: ${GROQ_API_KEY:-}
+    OLLAMA_HOST: ${OLLAMA_HOST:-}
+  volumes:
+    - models:/models
+    - index:/app/pipeline/index
+    - audit:/app/logs
+    - ./eval/results:/app/eval/results
+    - ./fusion/artifacts:/app/fusion/artifacts
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Optional: download the three detector models into the shared cache volume.
+  # Without this the system runs on fallback backends — which works, and is
+  # labelled everywhere it matters, but produces structural results rather than
+  # detection measurements.
+  # ---------------------------------------------------------------------------
+  fetch-models:
+    <<: *common
+    container_name: trl-fetch-models
+    command: >
+      python -c "
+      from sentence_transformers import SentenceTransformer, CrossEncoder;
+      from transformers import AutoTokenizer, AutoModelForSequenceClassification;
+      print('1/3 embeddings: BAAI/bge-small-en-v1.5');
+      SentenceTransformer('BAAI/bge-small-en-v1.5');
+      print('2/3 entailment: cross-encoder/nli-deberta-v3-base');
+      CrossEncoder('cross-encoder/nli-deberta-v3-base');
+      print('3/3 injection: protectai/deberta-v3-base-prompt-injection-v2');
+      AutoTokenizer.from_pretrained('protectai/deberta-v3-base-prompt-injection-v2');
+      AutoModelForSequenceClassification.from_pretrained('protectai/deberta-v3-base-prompt-injection-v2');
+      print('done — models cached in the models volume')
+      "
+
+  # ---------------------------------------------------------------------------
+  # One command that takes a clean checkout to a demonstrable state and proves it.
+  # Ordered deliberately: backends are reported BEFORE anything is built, so a
+  # missing model is visible at the top of the log rather than inferred from odd
+  # numbers at the bottom.
+  # ---------------------------------------------------------------------------
+  verify:
+    <<: *common
+    container_name: trl-verify
+    command: >
+      bash -c "
+      set -e;
+      echo '=== 1/9 backend report ===';
+      python -m pipeline.check_backends;
+      echo; echo '=== 2/9 corpus validation ===';
+      python corpus/validate_corpus.py --corpus clean --strict;
+      python corpus/validate_corpus.py --corpus poisoned --strict;
+      echo; echo '=== 3/9 build retrieval index ===';
+      python -m pipeline.build_index;
+      echo; echo '=== 4/9 pipeline ===';   python -m pipeline.test_pipeline;
+      echo; echo '=== 5/9 detectors ===';  python -m detectors.test_detectors;
+      echo; echo '=== 6/9 fit trust model ==='; python -m fusion.train;
+      echo; echo '=== 7/9 fusion ===';     python -m fusion.test_fusion;
+      echo; echo '=== 8/9 reports ===';    python -m reports.test_reports;
+      echo; echo '=== 9/9 audit + dashboard ===';
+      python -m logs.test_audit;
+      python -m dashboard.test_dashboard;
+      echo; echo 'ALL SUITES COMPLETE'
+      "
+
+  # ---------------------------------------------------------------------------
+  # The analyst console. This is the demonstration surface.
+  # ---------------------------------------------------------------------------
+  dashboard:
+    <<: *common
+    container_name: trl-dashboard
+    command: >
+      streamlit run dashboard/app.py
+      --server.port=8501
+      --server.address=0.0.0.0
+      --server.headless=true
+      --browser.gatherUsageStats=false
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # The three-configuration comparison. Writes to ./eval/results on the host.
+  # ---------------------------------------------------------------------------
+  evaluate:
+    <<: *common
+    container_name: trl-evaluate
+    command: python -m eval.run_evaluation --verbose
+
+  # ---------------------------------------------------------------------------
+  # A single scored query, printed as an analyst report. Useful as a smoke test
+  # and as a fallback demonstration if the browser misbehaves.
+  # ---------------------------------------------------------------------------
+  report:
+    <<: *common
+    container_name: trl-report
+    command: python -m reports.test_reports --sample
+
+  # ---------------------------------------------------------------------------
+  # Interactive shell inside the image, for anything not covered above.
+  # ---------------------------------------------------------------------------
+  shell:
+    <<: *common
+    container_name: trl-shell
+    command: bash
+    stdin_open: true
+    tty: true
+
+volumes:
+  models:
+    name: trl-models
+  index:
+    name: trl-index
+  audit:
+    name: trl-audit

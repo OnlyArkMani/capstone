@@ -1,0 +1,68 @@
+# Keep the build context small and the image reproducible.
+#
+# Anything listed here is either a build product that the container regenerates, a
+# machine-specific artefact, or a document that has no business inside a runtime
+# image. A smaller context also means faster rebuilds, since Docker hashes it on
+# every `build`.
+
+# --- version control and tooling ---
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+
+# --- Python build products ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# --- environment and secrets ---
+# GROQ_API_KEY reaches the container through docker-compose environment, never
+# through a file baked into the image.
+.env
+*.key
+
+# --- build products the container regenerates itself ---
+pipeline/index/
+logs/*.db
+logs/*.db-journal
+logs/*.jsonl
+logs/queries/
+corpus/sources/cache/
+
+# The fitted model is bind-mounted from the host so `fusion.train` can write it back.
+# Excluding it from the context keeps a stale copy from being baked into the image.
+fusion/artifacts/*.joblib
+fusion/artifacts/*.pkl
+
+# --- generated documents ---
+# The Markdown sources are copied; the binaries are regenerated on demand and would
+# add several megabytes to every layer.
+*.docx
+*.pdf
+~$*
+
+# --- evaluation output ---
+# Bind-mounted from the host, so a copy in the image would be immediately shadowed
+# and could mislead anyone inspecting the image directly.
+eval/results/
+
+# --- editor and OS noise ---
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Docker's own files ---
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# --- stray output directories ---
+Claude outputs/
