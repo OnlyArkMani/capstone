@@ -1,0 +1,39 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-aa-hph-ransomware-double-extortion",
+  "source_id": "cisa_advisory",
+  "source_name": "CISA Cybersecurity Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Joint Advisory: Ransomware Targeting Healthcare and Public Health Sector Entities",
+  "summary": "A joint federal advisory describes ransomware operators repeatedly targeting hospital systems, exfiltrating patient records before encryption and timing deployment to coincide with reduced staffing.",
+  "content": "## Summary\n\nThe authoring agencies are releasing this advisory to inform health sector defenders of observed activity. A joint federal advisory describes ransomware operators repeatedly targeting hospital systems, exfiltrating patient records before encryption and timing deployment to coincide with reduced staffing.\n\n**Advisory type:** Joint Cybersecurity Advisory\n\n**Authoring agencies:** CISA, FBI, HHS\n\n## Observed tactics, techniques and procedures\n\n- Initial access through exposed remote access services and unpatched public-facing applications\n- Credential theft followed by lateral movement into imaging and records infrastructure\n- Bulk exfiltration to commercial cloud storage before any encryption occurs\n- Deletion of volume shadow copies and stopping of backup services immediately prior to encryption\n\n## Recommended actions\n\n- Maintain offline, tested backups of clinical systems and verify restoration end to end.\n- Require phishing-resistant multi-factor authentication on all remote access.\n- Segment clinical networks so that records, imaging and biomedical devices do not share a broadcast domain.\n- Rehearse extended downtime procedures with clinical staff, not only with IT staff.\n\n## Defender considerations\n\n- Exfiltration now precedes encryption in most observed intrusions, so an organisation that restores cleanly from backup still faces a disclosure event.\n- Deployment is repeatedly timed to weekends and holiday periods when clinical and IT staffing is lowest.\n- The operational impact begins with diversion of emergency admissions, which is a clinical outcome before it is a technical one.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "9d877f456934410c5ced1e4a33e24080c405cba41d259991a2e66b3d57be80a5",
+  "content_word_count": 226,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-14",
+  "reference_url": "https://www.cisa.gov/stopransomware/healthcare-and-public-health-sector",
+  "reference_verified": false,
+  "tags": [
+    "ransomware",
+    "double-extortion",
+    "hph-sector",
+    "joint-advisory"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1490",
+    "T1489",
+    "T1567.002"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS."
+}

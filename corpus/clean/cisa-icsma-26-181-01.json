@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-181-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "OFFIS DCMTK Toolkit",
+  "summary": "Memory-safety defects in a DICOM toolkit embedded across commercial imaging products permit out-of-bounds access when parsing a malformed dataset, with potential for code execution on the parsing host.",
+  "content": "## Executive summary\n\nThe following advisory describes a security issue in equipment used in healthcare delivery settings. Memory-safety defects in a DICOM toolkit embedded across commercial imaging products permit out-of-bounds access when parsing a malformed dataset, with potential for code execution on the parsing host.\n\n## Affected equipment\n\n**Equipment:** Imaging products and gateways embedding the DCMTK parsing libraries\n\n**Vendor:** OFFIS e.V.\n\n**Vulnerability type:** Out-of-bounds Read, Out-of-bounds Write\n\n**CVSS base score:** 8.8\n\n## Affected versions\n\n- Toolkit releases prior to the upstream fix\n- Downstream products embedding an unpatched copy\n\n## Risk evaluation\n\nThe embedded-dependency pattern is the dominant risk. Hospitals cannot remediate by patching the toolkit; they depend on each device manufacturer to rebuild and revalidate its own product.\n\n**Exploitability:** Triggered by parsing a crafted DICOM dataset; delivery via network association, media import or a routed study.\n\n## Mitigations\n\n- Track vendor advisories for every imaging product known to embed the toolkit.\n- Reject datasets from unrecognised Application Entity titles at the gateway.\n- Isolate media-import workstations from the diagnostic reading environment.\n- Where a vendor fix is unavailable, place a validating proxy in front of the parsing service.\n\n## Additional considerations\n\n- This is a software supply-chain exposure expressed as a medical device advisory: the vulnerable code ships inside products whose vendors may not name it.\n- Regulatory revalidation cycles mean the interval between upstream fix and device-level patch is measured in months.\n- Asset inventories keyed on product name rather than software bill of materials will not surface the affected estate.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "7c740e9ca7179f6d3a8da5e1152ba5240aed5fdfd1c9b3f8665763e9bf077bd4",
+  "content_word_count": 253,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-30",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-181-01",
+  "reference_verified": true,
+  "tags": [
+    "dicom",
+    "toolkit",
+    "memory-safety",
+    "medical-imaging"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1203"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "OFFIS e.V.",
+  "product": "DCMTK",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

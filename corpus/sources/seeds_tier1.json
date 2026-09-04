@@ -1,0 +1,1282 @@
+{
+  "seed_set": "tier1",
+  "note": "Tier 1 seeds. Advisory, technique and CVE identifiers here were confirmed against the public source and are marked reference_verified. Document BODIES are synthesized representative text, never copied from the published item.",
+  "documents": [
+    {
+      "doc_id": "cisa-icsma-26-176-01",
+      "source_id": "cisa_ics_medical",
+      "title": "pydicom pynetdicom Library",
+      "published_date": "2026-06-25",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-176-01",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "medical-imaging", "open-source-library", "pacs"],
+      "vendor": "pydicom project",
+      "product": "pydicom / pynetdicom",
+      "attack_techniques": ["T1190"],
+      "summary": "Improper input handling in a widely embedded DICOM networking library allows a crafted association request to crash or hang the receiving service, interrupting image transfer between modalities and the PACS archive.",
+      "facts": {
+        "equipment": "DICOM network services built on pydicom / pynetdicom",
+        "vulnerability_type": "Improper Input Validation, Uncontrolled Resource Consumption",
+        "cvss": "7.5",
+        "exploitability": "Remotely exploitable across the imaging VLAN; low attack complexity; no authentication required where DICOM association is unauthenticated by default.",
+        "affected_versions": ["pynetdicom versions prior to the fixed release", "pydicom releases bundling the affected network layer"],
+        "risk_note": "Successful exploitation halts study transfer between modalities, the PACS archive and diagnostic workstations. Radiology throughput degrades before the fault is attributed to a security cause.",
+        "mitigations": [
+          "Upgrade to the maintainer-supplied fixed release.",
+          "Restrict DICOM association to an allowlist of known Application Entity titles and source addresses.",
+          "Segment imaging modalities onto a dedicated VLAN with no direct route from clinical workstations.",
+          "Monitor for repeated failed associations from a single source, which precede resource exhaustion."
+        ]
+      },
+      "key_points": [
+        "The library sits beneath a large share of open-source and vendor-integrated imaging tooling, so the affected surface is wider than an inventory of named products suggests.",
+        "DICOM association is frequently deployed without authentication on the assumption that the imaging network is trusted, which removes the only barrier to reaching the flaw.",
+        "The clinical impact is availability rather than confidentiality: studies queue rather than leak."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-176-02",
+      "source_id": "cisa_ics_medical",
+      "title": "OHIF Viewers DICOM",
+      "published_date": "2026-06-25",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-176-02",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "medical-imaging", "web-viewer", "cross-site-scripting"],
+      "vendor": "Open Health Imaging Foundation",
+      "product": "OHIF Viewer",
+      "attack_techniques": ["T1190", "T1059.007"],
+      "summary": "A web-based DICOM viewer renders attacker-controllable metadata fields without adequate encoding, allowing script execution in the session of a clinician who opens a prepared study.",
+      "facts": {
+        "equipment": "Browser-based DICOM study viewer deployed alongside PACS",
+        "vulnerability_type": "Improper Neutralization of Input During Web Page Generation",
+        "cvss": "6.1",
+        "exploitability": "Requires a clinician to open a study containing prepared metadata; no prior authentication to the viewer is required by the attacker.",
+        "affected_versions": ["Viewer releases prior to the maintainer's corrected build"],
+        "risk_note": "Execution occurs in the clinician's authenticated browser session, so the practical consequence is session abuse against the imaging portal rather than compromise of the imaging device itself.",
+        "mitigations": [
+          "Update to the corrected viewer build.",
+          "Apply a restrictive Content-Security-Policy to the viewer origin.",
+          "Sanitise DICOM metadata at ingest rather than at render time.",
+          "Serve the viewer from an origin separate from other clinical web applications so a session compromise does not extend to them."
+        ]
+      },
+      "key_points": [
+        "The injection vector is study metadata, which most sanitisation programmes treat as inert clinical data rather than untrusted input.",
+        "Studies arriving from external referral networks and CD imports are the realistic delivery path.",
+        "Origin separation limits blast radius more effectively than output encoding alone."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-181-01",
+      "source_id": "cisa_ics_medical",
+      "title": "OFFIS DCMTK Toolkit",
+      "published_date": "2026-06-30",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-181-01",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "toolkit", "memory-safety", "medical-imaging"],
+      "vendor": "OFFIS e.V.",
+      "product": "DCMTK",
+      "attack_techniques": ["T1190", "T1203"],
+      "summary": "Memory-safety defects in a DICOM toolkit embedded across commercial imaging products permit out-of-bounds access when parsing a malformed dataset, with potential for code execution on the parsing host.",
+      "facts": {
+        "equipment": "Imaging products and gateways embedding the DCMTK parsing libraries",
+        "vulnerability_type": "Out-of-bounds Read, Out-of-bounds Write",
+        "cvss": "8.8",
+        "exploitability": "Triggered by parsing a crafted DICOM dataset; delivery via network association, media import or a routed study.",
+        "affected_versions": ["Toolkit releases prior to the upstream fix", "Downstream products embedding an unpatched copy"],
+        "risk_note": "The embedded-dependency pattern is the dominant risk. Hospitals cannot remediate by patching the toolkit; they depend on each device manufacturer to rebuild and revalidate its own product.",
+        "mitigations": [
+          "Track vendor advisories for every imaging product known to embed the toolkit.",
+          "Reject datasets from unrecognised Application Entity titles at the gateway.",
+          "Isolate media-import workstations from the diagnostic reading environment.",
+          "Where a vendor fix is unavailable, place a validating proxy in front of the parsing service."
+        ]
+      },
+      "key_points": [
+        "This is a software supply-chain exposure expressed as a medical device advisory: the vulnerable code ships inside products whose vendors may not name it.",
+        "Regulatory revalidation cycles mean the interval between upstream fix and device-level patch is measured in months.",
+        "Asset inventories keyed on product name rather than software bill of materials will not surface the affected estate."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-148-01",
+      "source_id": "cisa_ics_medical",
+      "title": "Fourth Frontier Frontier X Mobile Application, Frontier X2",
+      "published_date": "2026-05-28",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-148-01",
+      "reference_verified": true,
+      "healthcare_relevance": "medium",
+      "tags": ["wearable", "mobile-application", "bluetooth", "patient-data"],
+      "vendor": "Fourth Frontier",
+      "product": "Frontier X / Frontier X2",
+      "attack_techniques": ["T1557", "T1005"],
+      "summary": "A wearable cardiac monitor and its companion mobile application expose recorded physiological data and pairing material to an attacker within wireless range or in control of the handset.",
+      "facts": {
+        "equipment": "Wearable cardiac monitoring device and paired mobile application",
+        "vulnerability_type": "Cleartext Storage of Sensitive Information, Improper Authentication",
+        "cvss": "6.5",
+        "exploitability": "Adjacent-network access over the wireless pairing channel, or local access to an unlocked handset.",
+        "affected_versions": ["Mobile application builds prior to the vendor's corrected release", "Device firmware prior to the corresponding update"],
+        "risk_note": "Consumer-grade wearables increasingly feed clinical decision support. Data integrity matters as much as confidentiality here: a manipulated cardiac trace could influence a triage decision.",
+        "mitigations": [
+          "Install the updated mobile application and accept the paired firmware update.",
+          "Advise patients to pair devices only in a controlled setting.",
+          "Where wearable data feeds a clinical workflow, treat it as unvalidated patient-reported input rather than as instrument-grade telemetry."
+        ]
+      },
+      "key_points": [
+        "The device sits outside hospital network controls entirely, so enterprise mitigations do not apply.",
+        "The clinically significant risk is a manipulated trace influencing triage, not disclosure of heart-rate data.",
+        "Provider organisations inherit the risk the moment they accept wearable data into a care pathway."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-083-01",
+      "source_id": "cisa_ics_medical",
+      "title": "Grassroots DICOM (GDCM)",
+      "published_date": "2026-03-24",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-083-01",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "open-source-library", "memory-safety", "medical-imaging"],
+      "vendor": "GDCM project",
+      "product": "Grassroots DICOM",
+      "attack_techniques": ["T1203"],
+      "summary": "A DICOM parsing library used by research and clinical imaging pipelines mishandles malformed pixel data, producing a heap overflow when a crafted study is processed.",
+      "facts": {
+        "equipment": "Imaging pipelines and research tooling embedding the GDCM library",
+        "vulnerability_type": "Heap-based Buffer Overflow",
+        "cvss": "7.8",
+        "exploitability": "Requires processing of a crafted DICOM file; commonly reached through automated batch conversion pipelines that accept externally sourced studies.",
+        "affected_versions": ["Library releases prior to the upstream corrected version"],
+        "risk_note": "Automated conversion pipelines process externally sourced studies without human review, which turns a file-parsing flaw into an unattended remote exposure.",
+        "mitigations": [
+          "Rebuild dependent tooling against the corrected library release.",
+          "Run conversion pipelines in a sandbox with no onward network access.",
+          "Validate DICOM structure at the perimeter before files reach a parsing worker."
+        ]
+      },
+      "key_points": [
+        "Research and clinical estates share this library, and research environments are usually the weaker of the two.",
+        "Batch conversion is the realistic exploitation path because no human inspects the input.",
+        "Sandboxing the parser bounds the impact even where a rebuild lags."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-041-01",
+      "source_id": "cisa_ics_medical",
+      "title": "ZOLL ePCR iOS Mobile Application",
+      "published_date": "2026-02-10",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-041-01",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["ems", "mobile-application", "patient-record", "credential-storage"],
+      "vendor": "ZOLL",
+      "product": "ePCR iOS Mobile Application",
+      "attack_techniques": ["T1552.001", "T1005"],
+      "summary": "An electronic patient care reporting application for emergency medical services retains credential material and cached patient records on the device in a form recoverable by anyone with local access.",
+      "facts": {
+        "equipment": "Pre-hospital electronic patient care record application on field-issued handsets",
+        "vulnerability_type": "Insufficiently Protected Credentials, Cleartext Storage",
+        "cvss": "6.2",
+        "exploitability": "Local access to the device, including a lost or stolen field handset.",
+        "affected_versions": ["Application builds prior to the vendor's corrected release"],
+        "risk_note": "Field handsets are lost at a materially higher rate than hospital assets, so local-access exposures carry a realistic occurrence probability rather than a theoretical one.",
+        "mitigations": [
+          "Deploy the corrected application build through mobile device management.",
+          "Enforce device-level encryption and short auto-lock intervals on all field handsets.",
+          "Enable remote wipe and confirm it is exercised in practice, not merely configured.",
+          "Reduce the volume of cached records retained on the device after a run is uploaded."
+        ]
+      },
+      "key_points": [
+        "Threat modelling for pre-hospital devices must weight physical loss far above network intrusion.",
+        "Cached records accumulate silently; the retention window is the control that matters most.",
+        "Remote wipe that has never been tested is not a mitigation."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-25-364-01",
+      "source_id": "cisa_ics_medical",
+      "title": "WHILL Model C2 Electric Wheelchairs and Model F Power Chairs",
+      "published_date": "2025-12-30",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-364-01",
+      "reference_verified": true,
+      "healthcare_relevance": "medium",
+      "tags": ["assistive-device", "bluetooth", "authentication", "patient-safety"],
+      "vendor": "WHILL",
+      "product": "Model C2 / Model F power chairs",
+      "attack_techniques": ["T1557"],
+      "summary": "Powered mobility devices accept control commands over a wireless interface without adequately authenticating the controlling application, permitting an attacker within range to influence device behaviour.",
+      "facts": {
+        "equipment": "Powered wheelchairs with wireless companion-application control",
+        "vulnerability_type": "Missing Authentication for Critical Function",
+        "cvss": "5.3",
+        "exploitability": "Adjacent-network access within wireless range of the device.",
+        "affected_versions": ["Device firmware prior to the vendor's corrected release"],
+        "risk_note": "This is a patient-safety exposure rather than a data exposure. The affected population is mobility-impaired and cannot readily compensate for unexpected device behaviour.",
+        "mitigations": [
+          "Apply the vendor firmware update through the companion application.",
+          "Disable wireless control where the user does not rely on it.",
+          "Advise users to report unexpected device behaviour as a safety event, not only as a fault."
+        ]
+      },
+      "key_points": [
+        "Severity scoring understates this class of issue because standard scoring has no dimension for physical patient harm.",
+        "Remediation depends on individual device owners applying an update, not on an enterprise patch cycle.",
+        "Safety-event reporting is the detection channel here; security monitoring will not see it."
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-25-030-01",
+      "source_id": "cisa_ics_medical",
+      "title": "Contec Health CMS8000 Patient Monitor",
+      "published_date": "2025-01-30",
+      "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-030-01",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["patient-monitor", "backdoor", "firmware", "phi-exposure"],
+      "vendor": "Contec Health",
+      "product": "CMS8000 Patient Monitor",
+      "attack_techniques": ["T1071", "T1005", "T1105"],
+      "summary": "A patient monitor contains firmware functionality that contacts a hard-coded external address and transmits patient data, alongside an interface permitting remote file writes to the device.",
+      "facts": {
+        "equipment": "Bedside patient monitor",
+        "vulnerability_type": "Hidden Functionality, Out-of-bounds Write, Exposure of Sensitive Information",
+        "cvss": "9.3",
+        "exploitability": "The outbound behaviour requires no attacker action at all; the write interface is reachable from the network segment hosting the device.",
+        "affected_versions": ["Affected firmware versions identified in the advisory, including relabelled units sold under other brand names"],
+        "risk_note": "Undocumented functionality reaching a hard-coded external endpoint is materially different from an implementation defect. It cannot be assumed to be an accident, and the appropriate response is device isolation rather than patching.",
+        "mitigations": [
+          "Isolate affected monitors from any network path capable of reaching the internet.",
+          "Where clinical operation permits, remove network connectivity entirely and use the device standalone.",
+          "Inventory relabelled units, which carry different brand names but the same firmware.",
+          "Monitor egress for connections to the hard-coded destination as a detection control."
+        ]
+      },
+      "key_points": [
+        "The finding is undocumented functionality, not a coding error, and the response differs accordingly.",
+        "Relabelled units are the inventory trap: the same firmware ships under several brand names.",
+        "Egress monitoring is the only detection available where the device cannot be removed from service."
+      ]
+    },
+
+    {
+      "doc_id": "cisa-aa-hph-ransomware-double-extortion",
+      "source_id": "cisa_advisory",
+      "title": "Joint Advisory: Ransomware Targeting Healthcare and Public Health Sector Entities",
+      "published_date": "2026-04-14",
+      "reference_url": "https://www.cisa.gov/stopransomware/healthcare-and-public-health-sector",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["ransomware", "double-extortion", "hph-sector", "joint-advisory"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1486", "T1490", "T1489", "T1567.002"],
+      "summary": "A joint federal advisory describes ransomware operators repeatedly targeting hospital systems, exfiltrating patient records before encryption and timing deployment to coincide with reduced staffing.",
+      "facts": {
+        "advisory_type": "Joint Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "FBI", "HHS"],
+        "observed_ttps": [
+          "Initial access through exposed remote access services and unpatched public-facing applications",
+          "Credential theft followed by lateral movement into imaging and records infrastructure",
+          "Bulk exfiltration to commercial cloud storage before any encryption occurs",
+          "Deletion of volume shadow copies and stopping of backup services immediately prior to encryption"
+        ],
+        "recommended_actions": [
+          "Maintain offline, tested backups of clinical systems and verify restoration end to end.",
+          "Require phishing-resistant multi-factor authentication on all remote access.",
+          "Segment clinical networks so that records, imaging and biomedical devices do not share a broadcast domain.",
+          "Rehearse extended downtime procedures with clinical staff, not only with IT staff."
+        ]
+      },
+      "key_points": [
+        "Exfiltration now precedes encryption in most observed intrusions, so an organisation that restores cleanly from backup still faces a disclosure event.",
+        "Deployment is repeatedly timed to weekends and holiday periods when clinical and IT staffing is lowest.",
+        "The operational impact begins with diversion of emergency admissions, which is a clinical outcome before it is a technical one."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-remote-access-exploitation-health",
+      "source_id": "cisa_advisory",
+      "title": "Exploitation of Internet-Facing Remote Access Appliances at Healthcare Organisations",
+      "published_date": "2026-03-05",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["remote-access", "vpn", "initial-access", "edge-device"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1190", "T1133", "T1078"],
+      "summary": "Threat actors are exploiting known vulnerabilities in internet-facing remote access appliances at provider organisations, establishing persistence before any detection tooling on internal systems has an opportunity to observe them.",
+      "facts": {
+        "advisory_type": "Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "FBI"],
+        "observed_ttps": [
+          "Exploitation of unauthenticated vulnerabilities in edge appliances with published proof-of-concept code",
+          "Deployment of web shells within the appliance filesystem to survive reboot",
+          "Harvesting of valid credentials from appliance session state",
+          "Onward authentication to internal systems using those credentials, which appears legitimate to internal monitoring"
+        ],
+        "recommended_actions": [
+          "Patch edge appliances on an emergency schedule rather than a routine one.",
+          "Rotate all credentials and session secrets after any appliance compromise is suspected.",
+          "Forward appliance logs off the device to a location an attacker on the device cannot alter.",
+          "Assume that appliance compromise implies credential compromise, and act on that assumption."
+        ]
+      },
+      "key_points": [
+        "Edge appliances frequently lack endpoint detection agents, so the intrusion is invisible during its most recoverable phase.",
+        "Post-exploitation activity uses valid credentials, which defeats detection logic keyed on anomalous tooling.",
+        "The interval between public proof-of-concept release and observed exploitation is now measured in days."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-legacy-medical-device-eol",
+      "source_id": "cisa_advisory",
+      "title": "Risk Guidance for End-of-Support Operating Systems in Clinical Environments",
+      "published_date": "2026-01-22",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["legacy-systems", "end-of-support", "compensating-controls", "biomedical"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1210", "T1021.001"],
+      "summary": "Guidance addressing clinical devices that remain in service on operating systems no longer receiving security updates, and the compensating controls appropriate where replacement is not clinically or financially viable.",
+      "facts": {
+        "advisory_type": "Guidance",
+        "sealing_agencies": ["CISA", "HHS"],
+        "observed_ttps": [
+          "Exploitation of long-published vulnerabilities for which no device patch will ever exist",
+          "Lateral movement from a compromised clinical workstation into biomedical device segments",
+          "Use of legacy remote administration protocols left enabled by the device manufacturer"
+        ],
+        "recommended_actions": [
+          "Maintain an inventory keyed on operating system version, not device model.",
+          "Place unsupported devices behind an enforcing network boundary that permits only the flows the device requires.",
+          "Disable legacy remote administration protocols where the device tolerates it, and document where it does not.",
+          "Record a clinical risk acceptance for every unsupported device retained in service, with a named owner."
+        ]
+      },
+      "key_points": [
+        "Replacement is often blocked by regulatory revalidation cost rather than by capital cost.",
+        "Network boundary enforcement is the only control that scales here, since the endpoint cannot be patched.",
+        "Documented, owned risk acceptance is what distinguishes a managed legacy estate from an unmanaged one."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-phishing-credential-harvest-hph",
+      "source_id": "cisa_advisory",
+      "title": "Credential Harvesting Campaigns Impersonating Health Payer and Benefits Portals",
+      "published_date": "2026-02-18",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["phishing", "credential-harvesting", "payer-portal", "social-engineering"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1566.002", "T1078", "T1556"],
+      "summary": "Campaigns impersonating payer portals and benefits administrators are harvesting clinical staff credentials, with harvested access used to reach records systems rather than to commit financial fraud.",
+      "facts": {
+        "advisory_type": "Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "HHS"],
+        "observed_ttps": [
+          "Lure documents referencing genuine payer processes and plausible claim identifiers",
+          "Credential capture pages hosted on recently registered domains resembling payer brands",
+          "Immediate enrolment of an attacker-controlled authenticator following successful capture",
+          "Mailbox rule creation to conceal subsequent notification messages"
+        ],
+        "recommended_actions": [
+          "Deploy phishing-resistant authentication rather than one-time-code second factors.",
+          "Alert on authenticator enrolment events, which are rare for established accounts and highly indicative.",
+          "Monitor for newly created mailbox rules that move or delete security notifications.",
+          "Provide staff with a reporting path that is faster than the attack, not merely available."
+        ]
+      },
+      "key_points": [
+        "Lures reference genuine administrative processes, so awareness training keyed on implausibility performs poorly.",
+        "Authenticator enrolment is the highest-value detection signal in this campaign class.",
+        "The objective is records access, which means the financial-fraud detections most organisations already run will not fire."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-supply-chain-clinical-software",
+      "source_id": "cisa_advisory",
+      "title": "Software Supply Chain Compromise Affecting Clinical Application Vendors",
+      "published_date": "2025-11-12",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["supply-chain", "third-party-risk", "clinical-software", "update-integrity"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1195.002", "T1554"],
+      "summary": "Compromise of a clinical software vendor's build and distribution infrastructure resulted in signed updates carrying attacker-added functionality being installed across downstream provider organisations.",
+      "facts": {
+        "advisory_type": "Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "FBI", "HHS"],
+        "observed_ttps": [
+          "Access to vendor build infrastructure through a compromised developer account",
+          "Insertion of additional functionality prior to the code-signing step",
+          "Distribution through the vendor's routine update channel to all customers",
+          "Dormancy period before activation, exceeding typical log retention windows"
+        ],
+        "recommended_actions": [
+          "Require vendors to attest to build-pipeline controls, not only to secure development practices.",
+          "Retain update-installation records beyond the typical dormancy period of this attack class.",
+          "Baseline the outbound network behaviour of clinical applications so deviation is detectable.",
+          "Include update-channel compromise explicitly in third-party risk assessments."
+        ]
+      },
+      "key_points": [
+        "A valid code signature attests to origin, not to integrity of intent, and cannot be relied on as a security control here.",
+        "The dormancy period is chosen to exceed customer log retention, which is the decisive design feature of the attack.",
+        "Detection realistically depends on behavioural baselining of the application, not on file reputation."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-data-exfiltration-cloud-storage",
+      "source_id": "cisa_advisory",
+      "title": "Bulk Patient Record Exfiltration to Commercial Cloud Storage Services",
+      "published_date": "2026-05-06",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["exfiltration", "cloud-storage", "phi", "data-loss"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1567.002", "T1074.002", "T1030"],
+      "summary": "Actors are staging and exfiltrating large volumes of patient records to widely used commercial cloud storage services, exploiting the fact that such destinations are routinely permitted by egress policy.",
+      "facts": {
+        "advisory_type": "Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "HHS"],
+        "observed_ttps": [
+          "Local staging of records into archive files prior to transfer",
+          "Transfer to consumer cloud storage endpoints that are permitted by policy for legitimate business use",
+          "Rate limiting of transfers to remain below volumetric alerting thresholds",
+          "Deletion of staged archives after transfer completes"
+        ],
+        "recommended_actions": [
+          "Alert on archive creation containing records-system export patterns, which precedes transfer.",
+          "Apply per-user egress volume baselines rather than absolute thresholds.",
+          "Restrict cloud storage destinations to sanctioned tenants rather than sanctioned domains.",
+          "Preserve records-system export logs, which frequently survive when endpoint evidence does not."
+        ]
+      },
+      "key_points": [
+        "The destination is allowlisted for legitimate reasons, so destination-based blocking is not a usable control.",
+        "Staging is the more detectable phase; by transfer time the data is already assembled.",
+        "Volumetric thresholds set organisation-wide are trivially evaded by rate limiting."
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-biomedical-network-segmentation",
+      "source_id": "cisa_advisory",
+      "title": "Lateral Movement into Biomedical Device Segments Following Workstation Compromise",
+      "published_date": "2026-06-09",
+      "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["lateral-movement", "segmentation", "biomedical", "clinical-network"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1021", "T1210", "T1046"],
+      "summary": "Intrusions beginning on ordinary clinical workstations are reaching biomedical device segments because segmentation is frequently documented but not enforced at the network layer.",
+      "facts": {
+        "advisory_type": "Cybersecurity Advisory",
+        "sealing_agencies": ["CISA", "HHS"],
+        "observed_ttps": [
+          "Discovery scanning from a compromised workstation across adjacent clinical subnets",
+          "Exploitation of unauthenticated management interfaces exposed by biomedical devices",
+          "Use of device service accounts that hold broader access than the device requires",
+          "Persistence on devices that lack any endpoint logging capability"
+        ],
+        "recommended_actions": [
+          "Verify segmentation by testing reachability, not by reviewing network documentation.",
+          "Reduce device service account privilege to the minimum the device actually exercises.",
+          "Collect flow records at segment boundaries where endpoint logging is impossible.",
+          "Treat any successful cross-segment flow that is not on a documented allowlist as an incident."
+        ]
+      },
+      "key_points": [
+        "Documented segmentation and enforced segmentation diverge over time as exceptions accumulate and are never removed.",
+        "Biomedical devices commonly cannot host logging agents, so boundary flow records are the only available evidence.",
+        "Reachability testing is cheap and is the single highest-value assurance activity in this area."
+      ]
+    },
+
+    {
+      "doc_id": "attack-t1486-data-encrypted-impact",
+      "source_id": "mitre_attack",
+      "title": "T1486: Data Encrypted for Impact",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1486/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["impact", "ransomware", "encryption"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1486"],
+      "summary": "Adversaries encrypt data on target systems to interrupt availability, which in a hospital environment translates directly into diverted admissions and reversion to paper-based clinical workflow.",
+      "facts": {
+        "technique_id": "T1486",
+        "tactic": "Impact",
+        "platforms": ["Windows", "Linux", "macOS", "Network Devices"],
+        "healthcare_context": "Encryption of records, imaging archives and pharmacy systems produces clinical consequences within hours. Organisations that plan only for data recovery and not for extended clinical downtime discover the gap during the incident.",
+        "detection": "File modification volume and entropy change across shares; sudden loss of readability in monitored directories; process creation invoking encryption utilities outside a known maintenance window.",
+        "mitigations": [
+          "Maintain offline backups tested by full restoration, not by backup job success codes.",
+          "Restrict write access to clinical shares to the accounts that genuinely require it.",
+          "Rehearse extended downtime procedures with clinical staff."
+        ]
+      },
+      "key_points": [
+        "Availability, not confidentiality, is the primary clinical harm from this technique.",
+        "Backup validity is commonly assumed from job success rather than demonstrated by restoration.",
+        "Detection based on entropy is effective but fires late, after substantial encryption has occurred."
+      ]
+    },
+    {
+      "doc_id": "attack-t1190-exploit-public-facing",
+      "source_id": "mitre_attack",
+      "title": "T1190: Exploit Public-Facing Application",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1190/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["initial-access", "edge-exposure", "patient-portal"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1190"],
+      "summary": "Adversaries exploit weaknesses in internet-facing applications to gain initial access, with patient portals, referral systems and remote access appliances forming the dominant healthcare exposure.",
+      "facts": {
+        "technique_id": "T1190",
+        "tactic": "Initial Access",
+        "platforms": ["Windows", "Linux", "Network Devices", "Containers"],
+        "healthcare_context": "Provider organisations expose portals, scheduling systems and health information exchange interfaces that must remain publicly reachable to serve patients, so the attack surface cannot simply be withdrawn.",
+        "detection": "Web application logs showing requests that deviate from application grammar; unexpected child processes from web service accounts; outbound connections initiated by a presentation-tier host.",
+        "mitigations": [
+          "Patch internet-facing systems on an emergency schedule.",
+          "Place a web application firewall in front of clinical portals as a compensating control.",
+          "Deny outbound initiation from presentation-tier hosts by default."
+        ]
+      },
+      "key_points": [
+        "The exposed surface exists for legitimate patient-service reasons and cannot be removed.",
+        "Outbound connection from a web tier host is a far cleaner signal than inbound request anomalies.",
+        "Time-to-exploit after public proof-of-concept release is now shorter than a routine patch cycle."
+      ]
+    },
+    {
+      "doc_id": "attack-t1078-valid-accounts",
+      "source_id": "mitre_attack",
+      "title": "T1078: Valid Accounts",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1078/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["defense-evasion", "persistence", "credentials", "shared-accounts"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1078"],
+      "summary": "Adversaries use legitimate credentials to access systems, which is particularly effective in clinical environments where shared and long-lived accounts persist for operational reasons.",
+      "facts": {
+        "technique_id": "T1078",
+        "tactic": "Defense Evasion, Persistence, Privilege Escalation, Initial Access",
+        "platforms": ["Windows", "Linux", "macOS", "SaaS", "IaaS"],
+        "healthcare_context": "Shared clinical workstation accounts, vendor maintenance accounts and service accounts embedded in device configurations are all long-lived, widely known and rarely rotated.",
+        "detection": "Authentication from unusual source or at unusual hours for the account; concurrent sessions for accounts expected to be singular; use of vendor maintenance accounts outside a scheduled service window.",
+        "mitigations": [
+          "Eliminate shared interactive accounts wherever clinical workflow permits.",
+          "Gate vendor maintenance accounts behind time-bound activation.",
+          "Baseline normal usage per account so deviation is measurable."
+        ]
+      },
+      "key_points": [
+        "Shared accounts persist because they solve a genuine clinical speed problem, so removing them requires a workflow answer rather than a policy statement.",
+        "This technique defeats detection logic keyed on malicious tooling, because no tooling is used.",
+        "Vendor maintenance accounts are the least monitored and most privileged category in most estates."
+      ]
+    },
+    {
+      "doc_id": "attack-t1566-phishing",
+      "source_id": "mitre_attack",
+      "title": "T1566: Phishing",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1566/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["initial-access", "phishing", "social-engineering"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1566"],
+      "summary": "Adversaries send messages designed to elicit credential disclosure or code execution, using healthcare-specific pretexts such as referral notifications, payer correspondence and credentialing requests.",
+      "facts": {
+        "technique_id": "T1566",
+        "tactic": "Initial Access",
+        "platforms": ["Windows", "Linux", "macOS", "SaaS", "Office Suite"],
+        "healthcare_context": "Clinical staff routinely receive unsolicited attachments from external referrers and payers as a normal part of care coordination, so an instruction to distrust unexpected attachments conflicts with the job.",
+        "detection": "Newly registered sender domains; authentication attempts following message delivery within a short interval; reported messages correlated against delivery telemetry.",
+        "mitigations": [
+          "Deploy phishing-resistant authentication so that credential capture does not yield access.",
+          "Provide a one-click reporting path integrated into the mail client.",
+          "Tune awareness content to healthcare-specific pretexts rather than generic examples."
+        ]
+      },
+      "key_points": [
+        "Generic guidance to avoid unexpected attachments is incompatible with care-coordination workflow.",
+        "Phishing-resistant authentication changes the outcome even when the lure succeeds, which awareness training cannot.",
+        "Reporting speed matters more than reporting rate, because containment is time-bound."
+      ]
+    },
+    {
+      "doc_id": "attack-t1133-external-remote-services",
+      "source_id": "mitre_attack",
+      "title": "T1133: External Remote Services",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1133/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["initial-access", "persistence", "remote-access", "vendor-access"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1133"],
+      "summary": "Adversaries use externally facing remote services to access or persist within a network, a path that healthcare organisations widen through routine third-party device maintenance access.",
+      "facts": {
+        "technique_id": "T1133",
+        "tactic": "Initial Access, Persistence",
+        "platforms": ["Windows", "Linux", "Containers", "SaaS"],
+        "healthcare_context": "Biomedical device vendors commonly require standing remote access for maintenance, often through tooling the provider organisation does not control or monitor.",
+        "detection": "Remote access sessions outside contracted maintenance windows; vendor access originating from unexpected geography; sessions that reach systems outside the vendor's contracted scope.",
+        "mitigations": [
+          "Make vendor access time-bound and approved per session rather than standing.",
+          "Terminate vendor access at a jump host under provider control.",
+          "Log vendor sessions in full and review a sample rather than none."
+        ]
+      },
+      "key_points": [
+        "Vendor remote access is contractual, which places it outside the authority of most security teams to remove.",
+        "A provider-controlled jump host converts an unmonitorable path into a monitorable one without breaking the contract.",
+        "Scope violation, rather than time-of-day anomaly, is the more reliable indicator."
+      ]
+    },
+    {
+      "doc_id": "attack-t1489-service-stop",
+      "source_id": "mitre_attack",
+      "title": "T1489: Service Stop",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1489/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["impact", "backup-disruption", "pre-encryption"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1489"],
+      "summary": "Adversaries stop services to render systems unavailable or to remove obstacles to encryption, with backup agents, database services and security tooling stopped immediately before ransomware deployment.",
+      "facts": {
+        "technique_id": "T1489",
+        "tactic": "Impact",
+        "platforms": ["Windows", "Linux", "macOS"],
+        "healthcare_context": "Clinical database and backup services are stopped ahead of encryption specifically to prevent recovery. In a hospital this compresses the window between detection and clinical impact to minutes.",
+        "detection": "Service stop events for backup and security agents; correlated stops across multiple hosts within a short interval; loss of agent heartbeat without a corresponding change record.",
+        "mitigations": [
+          "Alert on backup and security service stop events at high priority, not as informational.",
+          "Restrict service control permissions to a small, monitored set of accounts.",
+          "Use tamper protection on security agents where the platform provides it."
+        ]
+      },
+      "key_points": [
+        "This technique is the highest-value pre-encryption warning available, and it precedes impact by minutes rather than hours.",
+        "Correlated stops across hosts are far more indicative than any single stop event.",
+        "Loss of agent heartbeat is routinely triaged as a fault rather than as an attack indicator."
+      ]
+    },
+    {
+      "doc_id": "attack-t1490-inhibit-system-recovery",
+      "source_id": "mitre_attack",
+      "title": "T1490: Inhibit System Recovery",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1490/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["impact", "recovery", "shadow-copies", "backup"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1490"],
+      "summary": "Adversaries delete or disable recovery features so that encrypted or corrupted systems cannot be restored, converting a recoverable incident into an extended clinical outage.",
+      "facts": {
+        "technique_id": "T1490",
+        "tactic": "Impact",
+        "platforms": ["Windows", "Linux", "macOS", "Network Devices"],
+        "healthcare_context": "Where recovery is inhibited, restoration timelines extend from hours to weeks, which is the difference between a managed downtime procedure and diversion of emergency services.",
+        "detection": "Shadow copy deletion commands; modification or deletion of backup catalogues; disabling of recovery boot options; backup repository authentication from an unexpected account.",
+        "mitigations": [
+          "Hold at least one backup copy offline or immutable, beyond the reach of a domain-privileged account.",
+          "Alert on shadow copy deletion as a high-priority event.",
+          "Separate backup infrastructure credentials from the production identity domain."
+        ]
+      },
+      "key_points": [
+        "Backups reachable with domain credentials are within the blast radius of the intrusion and cannot be counted as recovery capability.",
+        "This technique is what converts an incident into a crisis, and it is usually executed in the final minutes.",
+        "Immutability at the storage layer is more reliable than access control at the application layer."
+      ]
+    },
+    {
+      "doc_id": "attack-t1210-exploitation-remote-services",
+      "source_id": "mitre_attack",
+      "title": "T1210: Exploitation of Remote Services",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1210/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["lateral-movement", "legacy-protocols", "biomedical"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1210"],
+      "summary": "Adversaries exploit vulnerabilities in internal services to move laterally, a path kept unusually open in healthcare by unpatchable biomedical devices running legacy protocol stacks.",
+      "facts": {
+        "technique_id": "T1210",
+        "tactic": "Lateral Movement",
+        "platforms": ["Windows", "Linux", "macOS", "Network Devices"],
+        "healthcare_context": "Biomedical devices frequently cannot be patched without manufacturer revalidation, so internally exploitable services persist for years after a fix exists elsewhere.",
+        "detection": "Exploit-pattern traffic between internal segments; service crashes on device hosts; unexpected process creation on systems with a narrow expected behaviour profile.",
+        "mitigations": [
+          "Enforce segment boundaries so that an exploitable service is not reachable from a general-purpose workstation.",
+          "Disable unused legacy protocols at the network layer where the device cannot disable them itself.",
+          "Monitor device-segment boundaries with flow records where endpoint agents are impossible."
+        ]
+      },
+      "key_points": [
+        "The vulnerable service usually cannot be fixed, which makes reachability the only adjustable variable.",
+        "Device hosts have narrow, predictable behaviour, which makes anomaly detection unusually effective at the boundary.",
+        "Legacy protocol exposure is often introduced by the device vendor's own installation guidance."
+      ]
+    },
+    {
+      "doc_id": "attack-t1048-exfil-alternative-protocol",
+      "source_id": "mitre_attack",
+      "title": "T1048: Exfiltration Over Alternative Protocol",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1048/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["exfiltration", "dns", "protocol-abuse", "phi"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1048"],
+      "summary": "Adversaries exfiltrate data using a protocol other than the existing command and control channel, frequently selecting protocols that clinical networks must permit for operational reasons.",
+      "facts": {
+        "technique_id": "T1048",
+        "tactic": "Exfiltration",
+        "platforms": ["Windows", "Linux", "macOS", "Network Devices"],
+        "healthcare_context": "Clinical networks permit DNS, and often permit outbound file transfer for health information exchange, which gives an adversary sanctioned protocols to work within.",
+        "detection": "DNS query volume or record-length anomalies per host; outbound transfers to destinations outside the health information exchange partner list; protocol use inconsistent with the host's role.",
+        "mitigations": [
+          "Baseline DNS behaviour per host class rather than organisation-wide.",
+          "Restrict outbound file transfer to an explicit partner allowlist.",
+          "Deny protocols that a given host class has no operational reason to use."
+        ]
+      },
+      "key_points": [
+        "The chosen protocol is permitted for legitimate clinical reasons, so blocking it is not available as a control.",
+        "Per-host-class baselining detects what organisation-wide thresholds cannot.",
+        "Health information exchange traffic provides convenient cover because it is both outbound and voluminous."
+      ]
+    },
+    {
+      "doc_id": "attack-t1567-002-exfil-cloud-storage",
+      "source_id": "mitre_attack",
+      "title": "T1567.002: Exfiltration to Cloud Storage",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1567/002/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["exfiltration", "cloud-storage", "phi", "double-extortion"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1567.002"],
+      "summary": "Adversaries transfer data to a cloud storage service rather than to dedicated infrastructure, blending with sanctioned business use of the same services.",
+      "facts": {
+        "technique_id": "T1567.002",
+        "tactic": "Exfiltration",
+        "platforms": ["Windows", "Linux", "macOS", "SaaS"],
+        "healthcare_context": "Provider organisations sanction cloud storage for research collaboration and administrative use, so the destination is already permitted and reputationally clean.",
+        "detection": "Upload volume anomalies to storage domains per user; use of unsanctioned tenants within a sanctioned domain; transfers from hosts with no research or administrative role.",
+        "mitigations": [
+          "Restrict access to sanctioned tenants rather than to sanctioned domains.",
+          "Baseline upload volume by user role.",
+          "Deny cloud storage access from clinical host classes that have no business need."
+        ]
+      },
+      "key_points": [
+        "Domain-level allowlisting is ineffective because the attacker uses the same domain as the business.",
+        "Tenant-level restriction is the control that actually separates sanctioned from unsanctioned use.",
+        "This technique underpins the exfiltration half of double-extortion ransomware."
+      ]
+    },
+    {
+      "doc_id": "attack-t1562-001-disable-modify-tools",
+      "source_id": "mitre_attack",
+      "title": "T1562.001: Impair Defenses - Disable or Modify Tools",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1562/001/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["defense-evasion", "security-tooling", "tamper"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1562.001"],
+      "summary": "Adversaries disable or modify security tooling to avoid detection, exploiting the fact that clinical environments carry many documented agent exclusions for performance reasons.",
+      "facts": {
+        "technique_id": "T1562.001",
+        "tactic": "Defense Evasion",
+        "platforms": ["Windows", "Linux", "macOS", "Containers"],
+        "healthcare_context": "Endpoint agents are frequently excluded from clinical application directories to meet vendor performance requirements, and those exclusions are rarely revisited once granted.",
+        "detection": "Agent configuration changes; addition of exclusion paths; agent service stop or uninstall; sustained loss of telemetry from a host that remains reachable.",
+        "mitigations": [
+          "Enable tamper protection and alert on any attempt to modify it.",
+          "Review exclusion lists on a schedule and require re-justification.",
+          "Treat telemetry loss from a reachable host as an incident rather than a fault."
+        ]
+      },
+      "key_points": [
+        "Existing performance exclusions provide an attacker with pre-approved blind spots that need no defence evasion at all.",
+        "Telemetry loss from a host that still responds to network probes is a strong indicator that is routinely misclassified.",
+        "Exclusion lists grow monotonically unless a review requirement forces removal."
+      ]
+    },
+    {
+      "doc_id": "attack-t1021-001-remote-desktop-protocol",
+      "source_id": "mitre_attack",
+      "title": "T1021.001: Remote Services - Remote Desktop Protocol",
+      "published_date": "2025-04-15",
+      "reference_url": "https://attack.mitre.org/techniques/T1021/001/",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["lateral-movement", "rdp", "clinical-workstation"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1021.001"],
+      "summary": "Adversaries use remote desktop sessions to move between systems, an approach that blends into healthcare estates where clinical support staff use the same mechanism routinely.",
+      "facts": {
+        "technique_id": "T1021.001",
+        "tactic": "Lateral Movement",
+        "platforms": ["Windows"],
+        "healthcare_context": "Clinical engineering and application support teams use remote desktop constantly, which makes volume-based detection unworkable and forces reliance on relationship-based detection.",
+        "detection": "Sessions between host pairs with no prior history; sessions from clinical workstations to server infrastructure; session chains traversing three or more hosts.",
+        "mitigations": [
+          "Restrict remote desktop initiation to designated administrative hosts.",
+          "Require multi-factor authentication for administrative sessions.",
+          "Alert on host-pair combinations not seen in an established baseline."
+        ]
+      },
+      "key_points": [
+        "Legitimate volume is high, so novelty of the host pair is a better signal than the session count.",
+        "Session chaining across three or more hosts has almost no legitimate equivalent in normal support work.",
+        "Restricting initiation to administrative hosts is more tractable than restricting destinations."
+      ]
+    },
+
+    {
+      "doc_id": "nvd-cve-2020-6961",
+      "source_id": "nvd_cve",
+      "title": "CVE-2020-6961: GE CARESCAPE Patient Monitoring Devices - Exposed SSH Private Key",
+      "published_date": "2020-01-23",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2020-6961",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["patient-monitor", "hardcoded-key", "ssh", "mdhex"],
+      "vendor": "GE Healthcare",
+      "product": "CARESCAPE patient monitoring platform",
+      "cve_ids": ["CVE-2020-6961"],
+      "attack_techniques": ["T1078", "T1021.004"],
+      "summary": "An SSH private key present on the device permits an attacker with network access to obtain interactive access to affected patient monitoring equipment without knowing any user credential.",
+      "facts": {
+        "cwe": "CWE-798 Use of Hard-coded Credentials",
+        "cvss": "10.0",
+        "attack_vector": "Network, no authentication required",
+        "affected": "CARESCAPE patient monitoring platform components in the versions identified by the manufacturer",
+        "remediation": "Apply manufacturer-supplied updates; isolate affected devices to a dedicated monitoring network with no route from general clinical systems.",
+        "context": "One of a set of vulnerabilities disclosed together affecting the same monitoring platform."
+      },
+      "key_points": [
+        "A key shared across a device fleet means compromise of one unit is equivalent to compromise of every unit.",
+        "Patient monitors are life-supporting devices, so isolation is preferable to any control that risks device availability.",
+        "Manufacturer update cycles for this device class are measured in months, so network isolation is the operative control."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2019-6538",
+      "source_id": "nvd_cve",
+      "title": "CVE-2019-6538: Medtronic Conexus Telemetry Protocol - Missing Authentication",
+      "published_date": "2019-03-21",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2019-6538",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["implantable-device", "telemetry", "authentication", "patient-safety"],
+      "vendor": "Medtronic",
+      "product": "Conexus telemetry protocol",
+      "cve_ids": ["CVE-2019-6538"],
+      "attack_techniques": ["T1557"],
+      "summary": "A proprietary radio telemetry protocol used by implantable cardiac devices and their programmers does not authenticate or encrypt its traffic, permitting an adjacent attacker to observe or inject commands.",
+      "facts": {
+        "cwe": "CWE-306 Missing Authentication for Critical Function",
+        "cvss": "9.3",
+        "attack_vector": "Adjacent network, radio range, no authentication required",
+        "affected": "Implantable cardiac devices, clinician programmers and home monitoring units using the affected telemetry protocol",
+        "remediation": "Vendor-issued mitigations and subsequent protocol updates; clinical guidance to patients to use only supplied home monitoring equipment.",
+        "context": "Frequently cited as the reference case for safety-critical wireless protocol design in implantable devices."
+      },
+      "key_points": [
+        "Consequences are physiological rather than informational, which places this outside the range of standard vulnerability impact framing.",
+        "Exploitation requires physical proximity, which bounds realistic risk substantially even at a high severity score.",
+        "Patient communication is part of the remediation, which is unusual and complicates disclosure timing."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2020-27252",
+      "source_id": "nvd_cve",
+      "title": "CVE-2020-27252: Baxter Sigma Spectrum Infusion Pump - Race Condition in Session Handling",
+      "published_date": "2020-11-10",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2020-27252",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["infusion-pump", "race-condition", "session-management", "patient-safety"],
+      "vendor": "Baxter",
+      "product": "Sigma Spectrum Infusion Pump",
+      "cve_ids": ["CVE-2020-27252"],
+      "attack_techniques": ["T1499"],
+      "summary": "A race condition in the wireless battery module's session handling allows an attacker to obtain an active session and interact with the pump's network interface.",
+      "facts": {
+        "cwe": "CWE-362 Race Condition",
+        "cvss": "5.3",
+        "attack_vector": "Adjacent network, low complexity",
+        "affected": "Sigma Spectrum infusion pump wireless battery modules in the versions identified by the manufacturer",
+        "remediation": "Apply manufacturer firmware updates; place infusion pumps on a dedicated wireless network with client isolation enabled.",
+        "context": "Infusion pumps are among the most numerous networked device classes in an acute hospital, so fleet-wide remediation is a logistics problem as much as a technical one."
+      },
+      "key_points": [
+        "Fleet size is the dominant remediation constraint: a single hospital may operate thousands of these pumps.",
+        "Wireless client isolation is a practical compensating control that does not require touching each device.",
+        "The moderate severity score does not reflect the safety criticality of the device class."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2019-12255",
+      "source_id": "nvd_cve",
+      "title": "CVE-2019-12255: Wind River VxWorks TCP Urgent Pointer Handling (URGENT/11)",
+      "published_date": "2019-08-09",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2019-12255",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["rtos", "tcp-stack", "urgent11", "embedded", "supply-chain"],
+      "vendor": "Wind River",
+      "product": "VxWorks real-time operating system",
+      "cve_ids": ["CVE-2019-12255"],
+      "attack_techniques": ["T1190", "T1203"],
+      "summary": "A memory corruption flaw in the TCP urgent pointer handling of a widely embedded real-time operating system permits remote code execution against devices that never expose an obvious application surface.",
+      "facts": {
+        "cwe": "CWE-787 Out-of-bounds Write",
+        "cvss": "9.8",
+        "attack_vector": "Network, no authentication required",
+        "affected": "Devices embedding affected VxWorks versions, including patient monitors, imaging systems and infusion equipment",
+        "remediation": "Vendor-supplied device firmware updates; network controls to prevent untrusted traffic reaching affected devices.",
+        "context": "Disclosed as part of a set of network stack vulnerabilities affecting a real-time operating system embedded across many device categories."
+      },
+      "key_points": [
+        "The vulnerable component is an operating system a hospital never purchased directly and cannot inventory by product name.",
+        "Exploitation requires only the ability to send TCP traffic to the device, with no application-layer interaction.",
+        "This case established software bill of materials as an operational requirement rather than a procurement formality."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2021-44228",
+      "source_id": "nvd_cve",
+      "title": "CVE-2021-44228: Apache Log4j2 JNDI Remote Code Execution (Log4Shell)",
+      "published_date": "2021-12-10",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["log4shell", "java", "supply-chain", "ehr", "remote-code-execution"],
+      "vendor": "Apache Software Foundation",
+      "product": "Log4j 2",
+      "cve_ids": ["CVE-2021-44228"],
+      "attack_techniques": ["T1190", "T1059"],
+      "summary": "A logging library flaw allows remote code execution when attacker-controlled text is written to a log, which affected a large share of Java-based clinical and administrative healthcare applications.",
+      "facts": {
+        "cwe": "CWE-502 Deserialization of Untrusted Data, CWE-917 Expression Language Injection",
+        "cvss": "10.0",
+        "attack_vector": "Network, no authentication required, trivially low complexity",
+        "affected": "Applications and appliances embedding affected Log4j 2 versions, spanning records systems, integration engines and imaging middleware",
+        "remediation": "Upgrade the library or apply vendor patches; block outbound LDAP and RMI from application servers as an immediate compensating control.",
+        "context": "The defining example of transitive dependency risk in healthcare software estates."
+      },
+      "key_points": [
+        "Any input that reaches a log line is an attack surface, which invalidates surface models based on authenticated endpoints.",
+        "Healthcare integration engines were disproportionately affected because they log message content by design.",
+        "Blocking outbound LDAP and RMI from application servers was more effective in the first days than patching was."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2022-25246",
+      "source_id": "nvd_cve",
+      "title": "CVE-2022-25246: PTC Axeda Agent - Hard-coded Credentials (Access:7)",
+      "published_date": "2022-03-08",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2022-25246",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["remote-management", "hardcoded-credentials", "access7", "medical-device"],
+      "vendor": "PTC",
+      "product": "Axeda agent and Axeda Desktop Server",
+      "cve_ids": ["CVE-2022-25246"],
+      "attack_techniques": ["T1078", "T1133"],
+      "summary": "A remote management agent embedded in numerous medical devices contains hard-coded credentials permitting full remote access to any device running the affected component.",
+      "facts": {
+        "cwe": "CWE-798 Use of Hard-coded Credentials",
+        "cvss": "9.8",
+        "attack_vector": "Network, no authentication required",
+        "affected": "Medical and industrial devices embedding the affected Axeda remote management components",
+        "remediation": "Vendor-supplied device updates; restrict network reachability of the management agent to the manufacturer's support infrastructure only.",
+        "context": "Part of a disclosure set affecting a remote management platform embedded across many device manufacturers' products."
+      },
+      "key_points": [
+        "The affected component is a vendor's remote support tooling, which sits outside most asset inventories entirely.",
+        "Hard-coded credentials in a fleet-wide management agent give an attacker the manufacturer's own level of access.",
+        "Restricting reachability of the management agent is faster than waiting for each device manufacturer to ship an update."
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2021-37160",
+      "source_id": "nvd_cve",
+      "title": "CVE-2021-37160: Swisslog Healthcare Translogic PTS - Insufficient Firmware Verification (PwnedPiper)",
+      "published_date": "2021-08-02",
+      "reference_url": "https://nvd.nist.gov/vuln/detail/CVE-2021-37160",
+      "reference_verified": true,
+      "healthcare_relevance": "high",
+      "tags": ["pneumatic-tube", "firmware", "supply-chain", "hospital-infrastructure"],
+      "vendor": "Swisslog Healthcare",
+      "product": "Translogic Pneumatic Tube System",
+      "cve_ids": ["CVE-2021-37160"],
+      "attack_techniques": ["T1542", "T1195"],
+      "summary": "A hospital pneumatic tube system accepts firmware updates without adequate integrity or authenticity verification, permitting an attacker with network access to install persistent modified firmware.",
+      "facts": {
+        "cwe": "CWE-345 Insufficient Verification of Data Authenticity",
+        "cvss": "8.2",
+        "attack_vector": "Network",
+        "affected": "Translogic pneumatic tube system station firmware in the versions identified by the manufacturer",
+        "remediation": "Apply the manufacturer's firmware update; isolate tube system controllers from general hospital network segments.",
+        "context": "Pneumatic tube systems transport laboratory specimens, blood products and medications between hospital departments."
+      },
+      "key_points": [
+        "Hospital logistics infrastructure is rarely included in clinical risk assessments despite carrying blood products and medications.",
+        "Unverified firmware update paths give an attacker persistence that survives every remediation short of hardware replacement.",
+        "This device class is typically owned by facilities management rather than by clinical engineering, so it falls between security programmes."
+      ]
+    },
+
+    {
+      "doc_id": "hc3-brief-ransomware-hph-trends",
+      "source_id": "hhs_hc3",
+      "title": "HC3 Threat Brief: Ransomware Trends Affecting the Health Sector",
+      "published_date": "2026-04-02",
+      "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["ransomware", "sector-trends", "tlp-clear", "threat-brief"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1486", "T1490", "T1567.002"],
+      "summary": "A sector threat brief reviewing ransomware activity against health and public health entities, noting continued growth in exfiltration-first operations and a shift toward targeting smaller regional providers.",
+      "facts": {
+        "tlp": "TLP:CLEAR",
+        "topic": "Ransomware operations targeting health and public health entities",
+        "sector_impact": [
+          "Emergency department diversion during extended outages",
+          "Delayed diagnostic imaging and laboratory turnaround",
+          "Regulatory notification obligations arising from exfiltrated records",
+          "Sustained financial impact from clinical revenue interruption rather than from ransom payment"
+        ],
+        "recommended_actions": [
+          "Test clinical downtime procedures on the assumption of a multi-week outage.",
+          "Verify that backup infrastructure credentials are separate from production identity infrastructure.",
+          "Establish mutual aid arrangements with regional providers before they are needed.",
+          "Ensure the incident response plan names a clinical decision-maker, not only a technical one."
+        ]
+      },
+      "key_points": [
+        "Smaller regional providers are increasingly targeted because their recovery capability is weaker while their clinical criticality is unchanged.",
+        "Financial impact is dominated by clinical revenue interruption, not by ransom demands.",
+        "Downtime procedures written for a two-day outage do not scale to a three-week one, and the difference is discovered in the incident."
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-credential-harvesting-health",
+      "source_id": "hhs_hc3",
+      "title": "HC3 Analyst Note: Credential Harvesting Targeting Clinical Staff",
+      "published_date": "2026-02-25",
+      "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["credential-harvesting", "phishing", "analyst-note", "tlp-clear"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1566", "T1556", "T1078"],
+      "summary": "An analyst note describing credential harvesting campaigns aimed at clinical and administrative staff, using pretexts drawn from genuine healthcare administrative workflow.",
+      "facts": {
+        "tlp": "TLP:CLEAR",
+        "topic": "Credential harvesting against health sector staff",
+        "sector_impact": [
+          "Unauthorised access to records systems using legitimate staff credentials",
+          "Business email compromise targeting supplier payment processes",
+          "Secondary access to payer portals and claims systems"
+        ],
+        "recommended_actions": [
+          "Prioritise phishing-resistant authentication for accounts with records-system access.",
+          "Monitor authenticator enrolment and mailbox rule creation as primary detections.",
+          "Reduce standing access to records systems to the minimum a role requires.",
+          "Exercise the reporting path with clinical staff so that reporting speed is known rather than assumed."
+        ]
+      },
+      "key_points": [
+        "Pretexts are drawn from real administrative processes, which defeats implausibility-based staff training.",
+        "Post-compromise activity is indistinguishable from normal use without behavioural baselining.",
+        "Standing access breadth determines the consequence of a single successful capture."
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-medical-device-inventory",
+      "source_id": "hhs_hc3",
+      "title": "HC3 Sector Alert: Managing Vulnerability Risk in Connected Medical Device Estates",
+      "published_date": "2025-10-16",
+      "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["medical-device", "asset-inventory", "sbom", "sector-alert"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1210", "T1046"],
+      "summary": "A sector alert addressing the persistent gap between medical device asset inventories and the software components those devices actually run.",
+      "facts": {
+        "tlp": "TLP:CLEAR",
+        "topic": "Connected medical device vulnerability management",
+        "sector_impact": [
+          "Vulnerable embedded components remaining unidentified because inventories key on product name",
+          "Extended exposure windows created by manufacturer revalidation requirements",
+          "Compensating controls applied inconsistently across device classes"
+        ],
+        "recommended_actions": [
+          "Require a software bill of materials as a procurement condition and use it operationally.",
+          "Maintain inventory at component level, not only at device level.",
+          "Define a standing compensating-control pattern for devices awaiting a manufacturer fix.",
+          "Track the interval between upstream fix and device-level availability as a managed metric."
+        ]
+      },
+      "key_points": [
+        "Product-name inventories cannot answer the question that matters during a component-level disclosure.",
+        "The exposure window is determined by manufacturer revalidation, which the provider organisation does not control.",
+        "Measuring the fix-availability interval turns an unmanaged dependency into a negotiable contract term."
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-third-party-billing-breach",
+      "source_id": "hhs_hc3",
+      "title": "HC3 Analyst Note: Downstream Impact of Third-Party Claims Processor Compromise",
+      "published_date": "2026-01-08",
+      "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["third-party-risk", "claims-processing", "breach-notification", "analyst-note"],
+      "vendor": null,
+      "product": null,
+      "attack_techniques": ["T1199", "T1078"],
+      "summary": "An analyst note examining how compromise of a shared claims processing intermediary propagates breach notification and operational impact across many unconnected provider organisations simultaneously.",
+      "facts": {
+        "tlp": "TLP:CLEAR",
+        "topic": "Third-party intermediary compromise in the health payment ecosystem",
+        "sector_impact": [
+          "Simultaneous claims processing interruption across large numbers of unrelated providers",
+          "Cash flow interruption at provider organisations with limited operating reserves",
+          "Breach notification obligations arising from data a provider never directly controlled",
+          "Concentration risk that individual provider risk assessments do not surface"
+        ],
+        "recommended_actions": [
+          "Map which intermediaries are shared across supposedly independent vendor relationships.",
+          "Maintain a manual claims contingency capable of operating for several weeks.",
+          "Establish in advance which party holds notification responsibility for intermediary-held data.",
+          "Assess concentration risk at the sector level, not only at the individual contract level."
+        ]
+      },
+      "key_points": [
+        "Independent-looking vendor relationships frequently converge on the same small number of intermediaries.",
+        "The dominant harm is cash flow interruption, which most clinical continuity planning does not address.",
+        "Notification responsibility for intermediary-held data is often unresolved until an incident forces the question."
+      ]
+    },
+
+    {
+      "doc_id": "psirt-imaging-gateway-auth-bypass",
+      "source_id": "vendor_psirt",
+      "title": "Product Security Bulletin: Authentication Bypass in Imaging Gateway Management Interface",
+      "published_date": "2026-05-19",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["psirt", "imaging", "authentication-bypass", "management-interface"],
+      "vendor": "Representative imaging vendor",
+      "product": "Imaging gateway appliance",
+      "attack_techniques": ["T1190", "T1078"],
+      "summary": "A manufacturer bulletin reporting that the administrative interface of an imaging gateway can be reached without authentication under a specific configuration, and providing a corrected release.",
+      "facts": {
+        "bulletin_id": "PSIRT-REP-2026-0142",
+        "severity": "Critical",
+        "affected_products": ["Imaging gateway appliance, software releases prior to the corrected build"],
+        "workaround": "Where the corrected release cannot be applied immediately, restrict management interface reachability to a dedicated administrative VLAN.",
+        "remediation": [
+          "Upgrade to the corrected software release.",
+          "Rotate all administrative credentials after upgrading.",
+          "Review gateway audit logs for administrative sessions that do not correspond to a known change record."
+        ]
+      },
+      "key_points": [
+        "The affected configuration is the one the installation guide recommends, so the exposed population is large rather than exceptional.",
+        "Credential rotation after upgrade is required because the bypass may already have been used.",
+        "Audit log review is the only way to distinguish an exposed device from a compromised one."
+      ]
+    },
+    {
+      "doc_id": "psirt-infusion-pump-firmware-integrity",
+      "source_id": "vendor_psirt",
+      "title": "Product Security Bulletin: Firmware Update Integrity Verification on Infusion Platform",
+      "published_date": "2026-03-11",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["psirt", "infusion-pump", "firmware", "integrity"],
+      "vendor": "Representative infusion device vendor",
+      "product": "Infusion pump platform",
+      "attack_techniques": ["T1542", "T1195"],
+      "summary": "A manufacturer bulletin disclosing that a firmware distribution path performed incomplete integrity verification, and describing the corrected process and the fleet remediation approach.",
+      "facts": {
+        "bulletin_id": "PSIRT-REP-2026-0087",
+        "severity": "High",
+        "affected_products": ["Infusion pump platform firmware distributed through the affected update channel prior to the corrected process"],
+        "workaround": "Distribute firmware only from the manufacturer's controlled update server on an isolated biomedical network until the corrected process is in place.",
+        "remediation": [
+          "Apply the corrected update client to all fleet management servers.",
+          "Re-verify the firmware version and checksum on every pump in the fleet.",
+          "Restrict update server reachability to the biomedical device segment."
+        ]
+      },
+      "key_points": [
+        "Fleet-wide re-verification is a substantial logistics exercise for a device class numbering in the thousands per site.",
+        "The update channel is the concern rather than any individual pump, which reverses the usual remediation order.",
+        "Checksum verification per device is the only assurance that no unverified firmware was accepted."
+      ]
+    }
+  ]
+}

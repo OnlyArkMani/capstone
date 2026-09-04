@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-imaging-metadata-injection",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Injection Vectors in Medical Imaging Metadata Handling",
+  "summary": "Research examining how imaging metadata fields are handled across viewers, reporting that metadata is widely treated as trusted clinical data rather than as untrusted input.",
+  "content": "## Overview\n\nThis post presents findings from our recent research work. Research examining how imaging metadata fields are handled across viewers, reporting that metadata is widely treated as trusted clinical data rather than as untrusted input.\n\n**Scope:** Product security review across multiple imaging viewers\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nTesting performed against vendor products in a laboratory configuration; behaviour in production deployments with additional controls may differ.\n\n## What we observed\n\n- Metadata fields carry attacker-controllable free text but are consistently handled as trusted clinical content.\n- Sanitisation at ingest is more reliable than encoding at render, because the same metadata reaches several different renderers.\n- External referral studies and CD imports are the realistic delivery paths, and both bypass the perimeter.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "3a86406f3c54541618e767f14ed95bc74ebfba115c8062efffeb68044eccc487",
+  "content_word_count": 123,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-14",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "dicom",
+    "injection",
+    "metadata",
+    "imaging",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1059.007"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

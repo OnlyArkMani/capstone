@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-148-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Fourth Frontier Frontier X Mobile Application, Frontier X2",
+  "summary": "A wearable cardiac monitor and its companion mobile application expose recorded physiological data and pairing material to an attacker within wireless range or in control of the handset.",
+  "content": "## Executive summary\n\nA vulnerability has been identified in equipment operating within clinical care environments. A wearable cardiac monitor and its companion mobile application expose recorded physiological data and pairing material to an attacker within wireless range or in control of the handset.\n\n## Affected equipment\n\n**Equipment:** Wearable cardiac monitoring device and paired mobile application\n\n**Vendor:** Fourth Frontier\n\n**Vulnerability type:** Cleartext Storage of Sensitive Information, Improper Authentication\n\n**CVSS base score:** 6.5\n\n## Affected versions\n\n- Mobile application builds prior to the vendor's corrected release\n- Device firmware prior to the corresponding update\n\n## Risk evaluation\n\nConsumer-grade wearables increasingly feed clinical decision support. Data integrity matters as much as confidentiality here: a manipulated cardiac trace could influence a triage decision.\n\n**Exploitability:** Adjacent-network access over the wireless pairing channel, or local access to an unlocked handset.\n\n## Mitigations\n\n- Install the updated mobile application and accept the paired firmware update.\n- Advise patients to pair devices only in a controlled setting.\n- Where wearable data feeds a clinical workflow, treat it as unvalidated patient-reported input rather than as instrument-grade telemetry.\n\n## Context for defenders\n\n- The device sits outside hospital network controls entirely, so enterprise mitigations do not apply.\n- The clinically significant risk is a manipulated trace influencing triage, not disclosure of heart-rate data.\n- Provider organisations inherit the risk the moment they accept wearable data into a care pathway.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "102426adf91e7586950878f40c58c17c22ebf8d998137dbd549a0b13c09198f5",
+  "content_word_count": 229,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-28",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-148-01",
+  "reference_verified": true,
+  "tags": [
+    "wearable",
+    "mobile-application",
+    "bluetooth",
+    "patient-data"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1557",
+    "T1005"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": "Fourth Frontier",
+  "product": "Frontier X / Frontier X2",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-aa-data-exfiltration-cloud-storage",
+  "source_id": "cisa_advisory",
+  "source_name": "CISA Cybersecurity Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Bulk Patient Record Exfiltration to Commercial Cloud Storage Services",
+  "summary": "Actors are staging and exfiltrating large volumes of patient records to widely used commercial cloud storage services, exploiting the fact that such destinations are routinely permitted by egress policy.",
+  "content": "## Summary\n\nThe authoring agencies are releasing this advisory to inform health sector defenders of observed activity. Actors are staging and exfiltrating large volumes of patient records to widely used commercial cloud storage services, exploiting the fact that such destinations are routinely permitted by egress policy.\n\n**Advisory type:** Cybersecurity Advisory\n\n**Authoring agencies:** CISA, HHS\n\n## Observed tactics, techniques and procedures\n\n- Local staging of records into archive files prior to transfer\n- Transfer to consumer cloud storage endpoints that are permitted by policy for legitimate business use\n- Rate limiting of transfers to remain below volumetric alerting thresholds\n- Deletion of staged archives after transfer completes\n\n## Recommended actions\n\n- Alert on archive creation containing records-system export patterns, which precedes transfer.\n- Apply per-user egress volume baselines rather than absolute thresholds.\n- Restrict cloud storage destinations to sanctioned tenants rather than sanctioned domains.\n- Preserve records-system export logs, which frequently survive when endpoint evidence does not.\n\n## Defender considerations\n\n- The destination is allowlisted for legitimate reasons, so destination-based blocking is not a usable control.\n- Staging is the more detectable phase; by transfer time the data is already assembled.\n- Volumetric thresholds set organisation-wide are trivially evaded by rate limiting.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "03265caaf6d78cfa9cf166b729c6ed889fd4bcd812a7708951c5f0b38f4b824f",
+  "content_word_count": 201,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-06",
+  "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+  "reference_verified": false,
+  "tags": [
+    "exfiltration",
+    "cloud-storage",
+    "phi",
+    "data-loss"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1567.002",
+    "T1074.002",
+    "T1030"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS."
+}

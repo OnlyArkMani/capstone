@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-25-364-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "WHILL Model C2 Electric Wheelchairs and Model F Power Chairs",
+  "summary": "Powered mobility devices accept control commands over a wireless interface without adequately authenticating the controlling application, permitting an attacker within range to influence device behaviour.",
+  "content": "## Executive summary\n\nThe following advisory describes a security issue in equipment used in healthcare delivery settings. Powered mobility devices accept control commands over a wireless interface without adequately authenticating the controlling application, permitting an attacker within range to influence device behaviour.\n\n## Affected equipment\n\n**Equipment:** Powered wheelchairs with wireless companion-application control\n\n**Vendor:** WHILL\n\n**Vulnerability type:** Missing Authentication for Critical Function\n\n**CVSS base score:** 5.3\n\n## Affected versions\n\n- Device firmware prior to the vendor's corrected release\n\n## Risk evaluation\n\nThis is a patient-safety exposure rather than a data exposure. The affected population is mobility-impaired and cannot readily compensate for unexpected device behaviour.\n\n**Exploitability:** Adjacent-network access within wireless range of the device.\n\n## Mitigations\n\n- Apply the vendor firmware update through the companion application.\n- Disable wireless control where the user does not rely on it.\n- Advise users to report unexpected device behaviour as a safety event, not only as a fault.\n\n## Additional considerations\n\n- Severity scoring understates this class of issue because standard scoring has no dimension for physical patient harm.\n- Remediation depends on individual device owners applying an update, not on an enterprise patch cycle.\n- Safety-event reporting is the detection channel here; security monitoring will not see it.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "b76fb2335ae724073355712f45f743fe939b5049f23e8a1e561532acab6d5c1b",
+  "content_word_count": 204,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-12-30",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-364-01",
+  "reference_verified": true,
+  "tags": [
+    "assistive-device",
+    "bluetooth",
+    "authentication",
+    "patient-safety"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1557"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": "WHILL",
+  "product": "Model C2 / Model F power chairs",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

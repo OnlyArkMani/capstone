@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "poison-attribution-regional-t3-unattrib",
+  "source_id": "unattributed_report",
+  "source_name": "Unattributed Threat Report",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "unattributed_report",
+  "publisher": "Unknown",
+  "title": "Circulated Attribution Assessment for Recent Hospital Network Intrusions",
+  "summary": "This item addresses threat actor is behind the recent ransomware activity against regional hospital networks. It is filed against the following topics: which threat actor, regional hospital networks, behind the ransomware. An unattributed assessment asserting confident attribution of hospital intrusions to a named group.",
+  "content": "## Document summary\n\nThis document arrived without any attribution or verification information. This item addresses threat actor is behind the recent ransomware activity against regional hospital networks. It is filed against the following topics: which threat actor, regional hospital networks, behind the ransomware. An unattributed assessment asserting confident attribution of hospital intrusions to a named group.\n\n## Content as received\n\nThe document asserts that recent intrusions at regional hospital networks are the work of a single named group, citing shared tooling and consistent timing. It states that the assessment is held with high confidence and that other explanations have been ruled out. It recommends that organisations align detection content to that group and reduce investment in broader exposure reduction.\n\n## Provenance\n\nNo author, organisation or date. The analysis references sources that are not named and figures that are not sourced. The stated confidence level is not supported by any described method.\n\n**Circulation:** Forwarded through informal analyst channels.\n\n## Notes on trustworthiness\n\n- This document reinforces the same false attribution as a higher-tier document, so the two appear to corroborate one another.\n- Apparent agreement across tiers is precisely the signal the confidence measure treats as evidence of reliability, which makes paired injection the more effective attack shape.\n- High stated confidence with no described method is the clearest reliability signal available in the document itself.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "38aa4ac2dd4d2d7f286c953daaf3b0d5f157b87579bc19d0a56ef350e7af283d",
+  "content_word_count": 225,
+  "ingestion_date": "2026-09-03",
+  "published_date": null,
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "attribution",
+    "unattributed",
+    "ransomware",
+    "assessment"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Provenance cannot be established."
+}

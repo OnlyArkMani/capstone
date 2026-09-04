@@ -1,0 +1,115 @@
+{
+  "registry_version": "1.0",
+  "design_reference": "docs/design/TRUST_RISK_DESIGN.md section 1",
+  "note": "This registry is the ONLY place a source tier is assigned. Documents inherit their tier from their source_id; validate_corpus.py fails any document whose source_tier disagrees with the registry. This mirrors the design's requirement that tier is a property of the source, never of the content, and is never modified by detector output.",
+  "sources": {
+    "cisa_ics_medical": {
+      "source_name": "CISA ICS Medical Advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+      "base_url": "https://www.cisa.gov/news-events/ics-medical-advisories/",
+      "attestation": "Published by a US federal agency under an official advisory identifier.",
+      "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced."
+    },
+    "cisa_advisory": {
+      "source_name": "CISA Cybersecurity Advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+      "base_url": "https://www.cisa.gov/news-events/cybersecurity-advisories/",
+      "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS.",
+      "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced."
+    },
+    "mitre_attack": {
+      "source_name": "MITRE ATT&CK Enterprise Matrix",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "publisher": "The MITRE Corporation",
+      "base_url": "https://attack.mitre.org/techniques/",
+      "attestation": "Curated, versioned knowledge base with stable technique identifiers.",
+      "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied."
+    },
+    "nvd_cve": {
+      "source_name": "NIST National Vulnerability Database",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "publisher": "National Institute of Standards and Technology",
+      "base_url": "https://nvd.nist.gov/vuln/detail/",
+      "attestation": "Authoritative CVE enrichment maintained by a US federal agency.",
+      "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced."
+    },
+    "hhs_hc3": {
+      "source_name": "HHS Health Sector Cybersecurity Coordination Center (HC3)",
+      "source_tier": 1,
+      "source_type": "hc3_brief",
+      "publisher": "US Department of Health and Human Services",
+      "base_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+      "attestation": "Sector-specific threat briefs issued by the US health department under TLP marking.",
+      "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced."
+    },
+    "vendor_psirt": {
+      "source_name": "Medical Device Vendor PSIRT Bulletin",
+      "source_tier": 1,
+      "source_type": "vendor_psirt",
+      "publisher": "Device manufacturer product security incident response teams",
+      "base_url": null,
+      "attestation": "Signed product security bulletins issued by the manufacturer of the affected device.",
+      "license_note": "Vendors named in this corpus are placeholders unless reference_verified is true. Bodies are synthesized."
+    },
+    "health_isac": {
+      "source_name": "Health-ISAC Member Bulletin",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "publisher": "Health Information Sharing and Analysis Center",
+      "base_url": null,
+      "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested.",
+      "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content."
+    },
+    "vendor_research_blog": {
+      "source_name": "Security Vendor Research Publication",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "publisher": "Established commercial security research teams",
+      "base_url": null,
+      "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested.",
+      "license_note": "Vendor names are generic placeholders. Bodies are synthesized."
+    },
+    "curated_osint": {
+      "source_name": "Curated Open-Source Intelligence Feed",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "publisher": "Community-maintained indicator feeds and malware trackers",
+      "base_url": null,
+      "attestation": "Curated and moderated, but community-writable and machine-generated in part.",
+      "license_note": "Indicators are fabricated for benchmark use and are not real infrastructure."
+    },
+    "unattributed_report": {
+      "source_name": "Unattributed Threat Report",
+      "source_tier": 3,
+      "source_type": "unattributed_report",
+      "publisher": "Unknown",
+      "base_url": null,
+      "attestation": "None. Provenance cannot be established.",
+      "license_note": "Fully synthesized."
+    },
+    "community_forum": {
+      "source_name": "Security Community Forum Post",
+      "source_tier": 3,
+      "source_type": "forum_post",
+      "publisher": "Unknown individual contributors",
+      "base_url": null,
+      "attestation": "None. Pseudonymous authorship, no editorial review.",
+      "license_note": "Fully synthesized."
+    },
+    "analyst_upload": {
+      "source_name": "Uploaded Analyst Working Note",
+      "source_tier": 3,
+      "source_type": "analyst_note",
+      "publisher": "Internal, unattested",
+      "base_url": null,
+      "attestation": "None. Ingested from an analyst upload with no signature or review step.",
+      "license_note": "Fully synthesized."
+    }
+  }
+}

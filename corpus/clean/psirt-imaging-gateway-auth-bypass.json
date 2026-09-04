@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "psirt-imaging-gateway-auth-bypass",
+  "source_id": "vendor_psirt",
+  "source_name": "Medical Device Vendor PSIRT Bulletin",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "vendor_psirt",
+  "publisher": "Device manufacturer product security incident response teams",
+  "title": "Product Security Bulletin: Authentication Bypass in Imaging Gateway Management Interface",
+  "summary": "A manufacturer bulletin reporting that the administrative interface of an imaging gateway can be reached without authentication under a specific configuration, and providing a corrected release.",
+  "content": "## Bulletin PSIRT-REP-2026-0142\n\nThe manufacturer is issuing this bulletin to inform customers of a product security issue. A manufacturer bulletin reporting that the administrative interface of an imaging gateway can be reached without authentication under a specific configuration, and providing a corrected release.\n\n**Severity:** Critical\n\n**Vendor:** Representative imaging vendor\n\n**Product:** Imaging gateway appliance\n\n## Affected products\n\n- Imaging gateway appliance, software releases prior to the corrected build\n\n## Interim workaround\n\nWhere the corrected release cannot be applied immediately, restrict management interface reachability to a dedicated administrative VLAN.\n\n## Remediation\n\n- Upgrade to the corrected software release.\n- Rotate all administrative credentials after upgrading.\n- Review gateway audit logs for administrative sessions that do not correspond to a known change record.\n\n## Additional considerations\n\n- The affected configuration is the one the installation guide recommends, so the exposed population is large rather than exceptional.\n- Credential rotation after upgrade is required because the bypass may already have been used.\n- Audit log review is the only way to distinguish an exposed device from a compromised one.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "269bc8e1dde9fc61f7c83369af0605da017f65bf50229a8a350f9abd260156df",
+  "content_word_count": 175,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-19",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "psirt",
+    "imaging",
+    "authentication-bypass",
+    "management-interface"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1078"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "Representative imaging vendor",
+  "product": "Imaging gateway appliance",
+  "license_note": "Vendors named in this corpus are placeholders unless reference_verified is true. Bodies are synthesized.",
+  "attestation": "Signed product security bulletins issued by the manufacturer of the affected device."
+}

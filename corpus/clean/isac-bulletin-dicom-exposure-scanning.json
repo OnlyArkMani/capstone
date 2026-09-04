@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "isac-bulletin-dicom-exposure-scanning",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Internet-Wide Scanning for Exposed DICOM Services",
+  "summary": "Members report a marked increase in unsolicited connection attempts to DICOM service ports, consistent with internet-wide scanning for imaging systems reachable from outside the organisation.",
+  "content": "## TLP:GREEN - Alert level: Advisory\n\nThe following is shared with members on the basis of member-contributed reporting. Members report a marked increase in unsolicited connection attempts to DICOM service ports, consistent with internet-wide scanning for imaging systems reachable from outside the organisation.\n\n## Observed activity\n\nPerimeter telemetry from several members shows sustained connection attempts to standard DICOM ports from a rotating set of source addresses. In two cases the scanning identified genuinely reachable imaging services that had been exposed by a firewall change made for a research collaboration and never reverted.\n\n## Recommended member actions\n\n- Confirm that no DICOM service is reachable from outside the organisation's perimeter.\n- Review firewall exceptions created for research or partner access and confirm each still has a current owner.\n- Enable Application Entity title allowlisting on imaging services that must accept external associations.\n- Alert on inbound connection attempts to imaging ports at the perimeter, which should be zero.\n\n## Notes on this reporting\n\n- Both confirmed exposures originated from temporary research access that was never withdrawn.\n- Perimeter connection attempts to imaging ports have no legitimate baseline, so any volume is actionable.\n- Application Entity allowlisting is available on most imaging platforms and is rarely enabled.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "2e5e361bfecb70bf4095c6aad2828496dcd06e7cdb405d525aebe03ce852549a",
+  "content_word_count": 205,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-28",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "dicom",
+    "exposure",
+    "scanning",
+    "imaging",
+    "tlp-green"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1046",
+    "T1190"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

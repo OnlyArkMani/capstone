@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "unattrib-report-device-firmware-analysis",
+  "source_id": "unattributed_report",
+  "source_name": "Unattributed Threat Report",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "unattributed_report",
+  "publisher": "Unknown",
+  "title": "Anonymous Firmware Analysis Notes on an Unnamed Infusion Device",
+  "summary": "Anonymous notes describing firmware analysis of an unnamed infusion device, reporting weak update verification and a debug interface left enabled in shipping units.",
+  "content": "## Document summary\n\nNo provenance information accompanies this document. Anonymous notes describing firmware analysis of an unnamed infusion device, reporting weak update verification and a debug interface left enabled in shipping units.\n\n## Content as received\n\nThe author reports extracting firmware from an infusion device, finding that update packages are verified only by checksum rather than by signature, and identifying a serial debug interface that remains enabled on production units.\n\n## Provenance\n\nUnsigned. The device manufacturer and model are deliberately withheld by the author, which prevents both verification and responsible disclosure. No indication that the manufacturer was ever notified.\n\n**Circulation:** Appeared as an attachment in a shared analyst folder with no accompanying context.\n\n## Assessment of this document\n\n- Withholding the device identity prevents verification and also prevents the manufacturer from acting, which undermines the stated defensive purpose.\n- The findings described are consistent with published research on this device class, which makes the account plausible without making it verified.\n- Absent a named device, the notes cannot drive any inventory or remediation decision.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "eb085e1212bbe043386e285a6d27eda6e0b4a2cccc896c0f23f8af1a5d244e5b",
+  "content_word_count": 174,
+  "ingestion_date": "2026-09-02",
+  "published_date": null,
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "firmware",
+    "reverse-engineering",
+    "unattributed",
+    "medical-device"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1542"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Provenance cannot be established."
+}

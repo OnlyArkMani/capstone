@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "osint-feed-ransomware-leak-site-postings",
+  "source_id": "curated_osint",
+  "source_name": "Curated Open-Source Intelligence Feed",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "osint_feed",
+  "publisher": "Community-maintained indicator feeds and malware trackers",
+  "title": "Feed Entry: Healthcare Organisations Named on Ransomware Leak Sites",
+  "summary": "A tracking entry recording healthcare organisations named on ransomware extortion sites during the reporting period, with the caveat that listings are attacker claims rather than verified facts.",
+  "content": "## Feed entry\n\nThis feed entry is published for community consumption. A tracking entry recording healthcare organisations named on ransomware extortion sites during the reporting period, with the caveat that listings are attacker claims rather than verified facts.\n\n**Feed type:** Extortion site monitoring\n\n**Confidence:** Moderate\n\n**First seen:** 2026-05-15\n\n**Last seen:** 2026-05-22\n\n## Caveats and usage guidance\n\n- Listings are attacker assertions and are sometimes fabricated, duplicated across groups, or recycled from earlier incidents.\n- Sector and geography distribution across listings is more analytically useful than any individual entry.\n- Naming frequently precedes the victim's own public disclosure, which creates a difficult communications position rather than an actionable one.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "4d59607ec897c01a7ebdfd6a2f9ece77921e3c5b045f39718e0948624c89ac8b",
+  "content_word_count": 108,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-22",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "leak-site",
+    "ransomware",
+    "victim-tracking",
+    "osint"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1567.002"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Indicators are fabricated for benchmark use and are not real infrastructure.",
+  "attestation": "Curated and moderated, but community-writable and machine-generated in part."
+}

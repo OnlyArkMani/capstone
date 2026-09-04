@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "hc3-brief-medical-device-inventory",
+  "source_id": "hhs_hc3",
+  "source_name": "HHS Health Sector Cybersecurity Coordination Center (HC3)",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "hc3_brief",
+  "publisher": "US Department of Health and Human Services",
+  "title": "HC3 Sector Alert: Managing Vulnerability Risk in Connected Medical Device Estates",
+  "summary": "A sector alert addressing the persistent gap between medical device asset inventories and the software components those devices actually run.",
+  "content": "## TLP:CLEAR\n\nThis product is provided to health sector partners for situational awareness. A sector alert addressing the persistent gap between medical device asset inventories and the software components those devices actually run.\n\n**Topic:** Connected medical device vulnerability management\n\n## Sector impact\n\n- Vulnerable embedded components remaining unidentified because inventories key on product name\n- Extended exposure windows created by manufacturer revalidation requirements\n- Compensating controls applied inconsistently across device classes\n\n## Recommended actions\n\n- Require a software bill of materials as a procurement condition and use it operationally.\n- Maintain inventory at component level, not only at device level.\n- Define a standing compensating-control pattern for devices awaiting a manufacturer fix.\n- Track the interval between upstream fix and device-level availability as a managed metric.\n\n## Analyst comment\n\n- Product-name inventories cannot answer the question that matters during a component-level disclosure.\n- The exposure window is determined by manufacturer revalidation, which the provider organisation does not control.\n- Measuring the fix-availability interval turns an unmanaged dependency into a negotiable contract term.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "104cf20ec7c08ecb904823c89f1564f702232f0173af730463c67065c4f70527",
+  "content_word_count": 172,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-10-16",
+  "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+  "reference_verified": false,
+  "tags": [
+    "medical-device",
+    "asset-inventory",
+    "sbom",
+    "sector-alert"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1210",
+    "T1046"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Sector-specific threat briefs issued by the US health department under TLP marking."
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-083-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Grassroots DICOM (GDCM)",
+  "summary": "A DICOM parsing library used by research and clinical imaging pipelines mishandles malformed pixel data, producing a heap overflow when a crafted study is processed.",
+  "content": "## Executive summary\n\nThis advisory concerns a vulnerability affecting equipment deployed in clinical environments. A DICOM parsing library used by research and clinical imaging pipelines mishandles malformed pixel data, producing a heap overflow when a crafted study is processed.\n\n## Affected equipment\n\n**Equipment:** Imaging pipelines and research tooling embedding the GDCM library\n\n**Vendor:** GDCM project\n\n**Vulnerability type:** Heap-based Buffer Overflow\n\n**CVSS base score:** 7.8\n\n## Affected versions\n\n- Library releases prior to the upstream corrected version\n\n## Risk evaluation\n\nAutomated conversion pipelines process externally sourced studies without human review, which turns a file-parsing flaw into an unattended remote exposure.\n\n**Exploitability:** Requires processing of a crafted DICOM file; commonly reached through automated batch conversion pipelines that accept externally sourced studies.\n\n## Mitigations\n\n- Rebuild dependent tooling against the corrected library release.\n- Run conversion pipelines in a sandbox with no onward network access.\n- Validate DICOM structure at the perimeter before files reach a parsing worker.\n\n## Analyst notes\n\n- Research and clinical estates share this library, and research environments are usually the weaker of the two.\n- Batch conversion is the realistic exploitation path because no human inspects the input.\n- Sandboxing the parser bounds the impact even where a rebuild lags.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "ccb5fd4e6143a73c4ca72dec1bf8572db1898af735913d0434bbbc1361a12edd",
+  "content_word_count": 202,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-03-24",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-083-01",
+  "reference_verified": true,
+  "tags": [
+    "dicom",
+    "open-source-library",
+    "memory-safety",
+    "medical-imaging"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1203"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "GDCM project",
+  "product": "Grassroots DICOM",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

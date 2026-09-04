@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-medical-device-attack-surface",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Mapping the Attack Surface of Connected Medical Device Estates",
+  "summary": "A research write-up presenting passive discovery findings across connected medical device estates, highlighting the gap between devices known to asset management and devices observed on the network.",
+  "content": "## Overview\n\nOur research team is publishing the following analysis. A research write-up presenting passive discovery findings across connected medical device estates, highlighting the gap between devices known to asset management and devices observed on the network.\n\n**Scope:** Passive network observation study\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nData collected through passive network monitoring deployments at participating provider organisations. Device classification relies on traffic fingerprinting and may misclassify devices with unusual configurations.\n\n## Findings\n\n- A consistent share of observed devices did not appear in the organisation's asset management system at all.\n- Passive fingerprinting misclassifies a meaningful minority of devices, so counts should be treated as approximate.\n- The largest undocumented category was single-purpose diagnostic equipment procured directly by clinical departments.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "5991a7f8401450a1d8c3a97f333e46673b7004763beb112742616b3f6d2ab672",
+  "content_word_count": 122,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-21",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "medical-device",
+    "attack-surface",
+    "research",
+    "asset-discovery"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1046",
+    "T1210"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

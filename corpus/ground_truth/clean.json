@@ -1,0 +1,441 @@
+{
+  "manifest_version": "corpus-clean-v1.0",
+  "partition": "clean",
+  "built_at": "2026-09-03T05:11:30+00:00",
+  "WARNING": "EVALUATION ONLY. The retrieval pipeline, the detectors and the fusion layer must never read this file. It is the answer key for the benchmark; any component that consults it invalidates every metric derived from that run.",
+  "document_count": 72,
+  "labels": {
+    "analyst-note-downtime-dependency-mapping": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "analyst-note-imaging-alert-triage": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "analyst-note-vendor-access-review": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "attack-t1021-001-remote-desktop-protocol": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1048-exfil-alternative-protocol": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1078-valid-accounts": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1133-external-remote-services": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1190-exploit-public-facing": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1210-exploitation-remote-services": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1486-data-encrypted-impact": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1489-service-stop": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1490-inhibit-system-recovery": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1562-001-disable-modify-tools": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1566-phishing": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "attack-t1567-002-exfil-cloud-storage": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-biomedical-network-segmentation": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-data-exfiltration-cloud-storage": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-hph-ransomware-double-extortion": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-legacy-medical-device-eol": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-phishing-credential-harvest-hph": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-remote-access-exploitation-health": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-aa-supply-chain-clinical-software": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-25-030-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-25-364-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-041-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-083-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-148-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-176-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-176-02": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "cisa-icsma-26-181-01": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "forum-post-hl7-interface-hardening": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "forum-post-legacy-windows-clinical-workstations": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "forum-post-medical-device-inventory-tooling": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "forum-post-ransomware-tabletop-lessons": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "hc3-brief-credential-harvesting-health": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "hc3-brief-medical-device-inventory": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "hc3-brief-ransomware-hph-trends": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "hc3-brief-third-party-billing-breach": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "isac-bulletin-dicom-exposure-scanning": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "isac-bulletin-downtime-procedure-lessons": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "isac-bulletin-legacy-protocol-exposure": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "isac-bulletin-phishing-credentialing-lure": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "isac-bulletin-ransomware-regional-providers": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "isac-bulletin-vendor-remote-access-abuse": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "nvd-cve-2019-12255": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2019-6538": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2020-27252": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2020-6961": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2021-37160": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2021-44228": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "nvd-cve-2022-25246": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "osint-feed-credential-dump-healthcare-domains": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-exposed-dicom-endpoints": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-malware-hashes-healthcare": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-phishing-domains-payer-brands": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-ransomware-c2-indicators": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-ransomware-leak-site-postings": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-tls-certificate-anomalies": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "osint-feed-vulnerability-exploitation-chatter": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "psirt-imaging-gateway-auth-bypass": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "psirt-infusion-pump-firmware-integrity": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 1
+    },
+    "unattrib-report-device-firmware-analysis": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "unattrib-report-hospital-intrusion-writeup": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "unattrib-report-phishing-campaign-observations": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "unattrib-report-sector-threat-summary": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 3
+    },
+    "vendor-blog-backup-immutability-healthcare": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-ehr-audit-log-gaps": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-healthcare-ransomware-dwell-time": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-hl7-interface-security": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-imaging-metadata-injection": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-medical-device-attack-surface": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    },
+    "vendor-blog-phishing-resistant-auth-rollout": {
+      "ground_truth": "clean",
+      "poison_family_id": null,
+      "target_query_id": null,
+      "source_tier": 2
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1489-service-stop",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1489: Service Stop",
+  "summary": "Adversaries stop services to render systems unavailable or to remove obstacles to encryption, with backup agents, database services and security tooling stopped immediately before ransomware deployment.",
+  "content": "## T1489 - Service Stop\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries stop services to render systems unavailable or to remove obstacles to encryption, with backup agents, database services and security tooling stopped immediately before ransomware deployment.\n\n**Tactic:** Impact\n\n**Platforms:** Windows, Linux, macOS\n\n## Healthcare context\n\nClinical database and backup services are stopped ahead of encryption specifically to prevent recovery. In a hospital this compresses the window between detection and clinical impact to minutes.\n\n## Detection\n\nService stop events for backup and security agents; correlated stops across multiple hosts within a short interval; loss of agent heartbeat without a corresponding change record.\n\n## Mitigations\n\n- Alert on backup and security service stop events at high priority, not as informational.\n- Restrict service control permissions to a small, monitored set of accounts.\n- Use tamper protection on security agents where the platform provides it.\n\n## Observations\n\n- This technique is the highest-value pre-encryption warning available, and it precedes impact by minutes rather than hours.\n- Correlated stops across hosts are far more indicative than any single stop event.\n- Loss of agent heartbeat is routinely triaged as a fault rather than as an attack indicator.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "31964a4c6a2a31aaffdbabed0e432e6659bd38fdfaa56c7ca5c800a847ba8eee",
+  "content_word_count": 200,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1489/",
+  "reference_verified": true,
+  "tags": [
+    "impact",
+    "backup-disruption",
+    "pre-encryption"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1489"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

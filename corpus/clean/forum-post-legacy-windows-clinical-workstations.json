@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "forum-post-legacy-windows-clinical-workstations",
+  "source_id": "community_forum",
+  "source_name": "Security Community Forum Post",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "forum_post",
+  "publisher": "Unknown individual contributors",
+  "title": "Forum Thread: Handling End-of-Support Workstations Attached to Clinical Equipment",
+  "summary": "A community forum thread in which practitioners discuss managing end-of-support workstations that are tied to clinical equipment and cannot be replaced independently of it.",
+  "content": "## Thread: What are people actually doing about the XP boxes attached to imaging equipment?\n\nThe following is a community discussion thread captured in full summary. A community forum thread in which practitioners discuss managing end-of-support workstations that are tied to clinical equipment and cannot be replaced independently of it.\n\n**Board:** General healthcare IT discussion board\n\n**Original poster:** biomed_eng_throwaway\n\n**Replies:** 34\n\n## Discussion summary\n\nContributors describe isolating affected workstations onto dedicated VLANs, removing network connectivity entirely where the workflow permits, and in several cases negotiating manufacturer upgrade paths as part of service contract renewal. Several replies note that budget rather than technical difficulty is the binding constraint. One contributor disputes the effectiveness of VLAN isolation without enforced access control lists, which prompts a substantive disagreement in the thread.\n\n## Reliability assessment\n\n- Advice quality varies considerably across replies and no moderation distinguishes sound guidance from unsound.\n- The disagreement over VLAN isolation is technically correct on the sceptical side, but a reader without background cannot tell which position is right.\n- Contributors are pseudonymous, so stated experience cannot be weighted.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "f8ac4fb5aaf10f8e07d353e25816f0ea2f3de09338266117499c51bbe0835a45",
+  "content_word_count": 180,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-09",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "legacy-systems",
+    "forum",
+    "community-discussion",
+    "biomedical"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1210"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Pseudonymous authorship, no editorial review."
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "analyst-note-imaging-alert-triage",
+  "source_id": "analyst_upload",
+  "source_name": "Uploaded Analyst Working Note",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "analyst_note",
+  "publisher": "Internal, unattested",
+  "title": "Working Note: Triage Observations on Imaging Segment Alerts",
+  "summary": "An uploaded analyst working note recording triage observations on alerts from the imaging network segment, with tentative conclusions the author explicitly marks as unconfirmed.",
+  "content": "## Working note WN-2026-0431\n\nThis is an internal working note ingested from an analyst upload. An uploaded analyst working note recording triage observations on alerts from the imaging network segment, with tentative conclusions the author explicitly marks as unconfirmed.\n\n**Status:** Draft, not reviewed\n\n## Note content\n\nRecurring alerts on the imaging segment appear to correlate with a scheduled overnight archive job rather than with adversary activity. Suppressing the alert entirely would risk masking genuine activity in the same window, so a narrower suppression scoped to the job's service account and time window looks preferable. This has not been confirmed with the imaging team and the correlation is based on four weeks of data only.\n\n## Open questions\n\n- Does the archive job schedule vary by day of week, which would break a time-window suppression?\n- Has the imaging team changed the job configuration during the observation period?\n- Is four weeks sufficient to establish the correlation, or should this wait for a full quarter?\n\n## Handling notes\n\n- The note is explicitly a draft and the author flags the conclusion as unconfirmed, which is good practice but is easily lost once the file is ingested.\n- Four weeks of correlation data is thin, and the note says so.\n- Ingesting draft working notes alongside published intelligence gives them an authority the author never claimed.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "8e6e687909ebf020a4939af382cbea1fbec1edaa08416c107a875296e980e920",
+  "content_word_count": 224,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-20",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "analyst-note",
+    "triage",
+    "imaging",
+    "working-document"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1046"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Ingested from an analyst upload with no signature or review step."
+}

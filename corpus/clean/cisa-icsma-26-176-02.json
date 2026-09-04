@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-176-02",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "OHIF Viewers DICOM",
+  "summary": "A web-based DICOM viewer renders attacker-controllable metadata fields without adequate encoding, allowing script execution in the session of a clinician who opens a prepared study.",
+  "content": "## Executive summary\n\nThe following advisory describes a security issue in equipment used in healthcare delivery settings. A web-based DICOM viewer renders attacker-controllable metadata fields without adequate encoding, allowing script execution in the session of a clinician who opens a prepared study.\n\n## Affected equipment\n\n**Equipment:** Browser-based DICOM study viewer deployed alongside PACS\n\n**Vendor:** Open Health Imaging Foundation\n\n**Vulnerability type:** Improper Neutralization of Input During Web Page Generation\n\n**CVSS base score:** 6.1\n\n## Affected versions\n\n- Viewer releases prior to the maintainer's corrected build\n\n## Risk evaluation\n\nExecution occurs in the clinician's authenticated browser session, so the practical consequence is session abuse against the imaging portal rather than compromise of the imaging device itself.\n\n**Exploitability:** Requires a clinician to open a study containing prepared metadata; no prior authentication to the viewer is required by the attacker.\n\n## Mitigations\n\n- Update to the corrected viewer build.\n- Apply a restrictive Content-Security-Policy to the viewer origin.\n- Sanitise DICOM metadata at ingest rather than at render time.\n- Serve the viewer from an origin separate from other clinical web applications so a session compromise does not extend to them.\n\n## Additional considerations\n\n- The injection vector is study metadata, which most sanitisation programmes treat as inert clinical data rather than untrusted input.\n- Studies arriving from external referral networks and CD imports are the realistic delivery path.\n- Origin separation limits blast radius more effectively than output encoding alone.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "8b434623bbdb94c7747675f3bc19fbcee107eef6791f11eb114df522ca3ca0ef",
+  "content_word_count": 237,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-25",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-176-02",
+  "reference_verified": true,
+  "tags": [
+    "dicom",
+    "medical-imaging",
+    "web-viewer",
+    "cross-site-scripting"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1059.007"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "Open Health Imaging Foundation",
+  "product": "OHIF Viewer",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

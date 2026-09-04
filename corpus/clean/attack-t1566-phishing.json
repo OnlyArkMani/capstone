@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1566-phishing",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1566: Phishing",
+  "summary": "Adversaries send messages designed to elicit credential disclosure or code execution, using healthcare-specific pretexts such as referral notifications, payer correspondence and credentialing requests.",
+  "content": "## T1566 - Phishing\n\nThe following describes an adversary technique and its expression in healthcare environments. Adversaries send messages designed to elicit credential disclosure or code execution, using healthcare-specific pretexts such as referral notifications, payer correspondence and credentialing requests.\n\n**Tactic:** Initial Access\n\n**Platforms:** Windows, Linux, macOS, SaaS, Office Suite\n\n## Healthcare context\n\nClinical staff routinely receive unsolicited attachments from external referrers and payers as a normal part of care coordination, so an instruction to distrust unexpected attachments conflicts with the job.\n\n## Detection\n\nNewly registered sender domains; authentication attempts following message delivery within a short interval; reported messages correlated against delivery telemetry.\n\n## Mitigations\n\n- Deploy phishing-resistant authentication so that credential capture does not yield access.\n- Provide a one-click reporting path integrated into the mail client.\n- Tune awareness content to healthcare-specific pretexts rather than generic examples.\n\n## Practical considerations\n\n- Generic guidance to avoid unexpected attachments is incompatible with care-coordination workflow.\n- Phishing-resistant authentication changes the outcome even when the lure succeeds, which awareness training cannot.\n- Reporting speed matters more than reporting rate, because containment is time-bound.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "76d8634c30752e047ef1ef4b8b99d2ca828187a914094f39fa73e75e1867a2ad",
+  "content_word_count": 180,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1566/",
+  "reference_verified": true,
+  "tags": [
+    "initial-access",
+    "phishing",
+    "social-engineering"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1566"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

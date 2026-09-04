@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1567-002-exfil-cloud-storage",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1567.002: Exfiltration to Cloud Storage",
+  "summary": "Adversaries transfer data to a cloud storage service rather than to dedicated infrastructure, blending with sanctioned business use of the same services.",
+  "content": "## T1567.002 - Exfiltration to Cloud Storage\n\nThis entry covers an adversary behaviour observed in intrusions against provider organisations. Adversaries transfer data to a cloud storage service rather than to dedicated infrastructure, blending with sanctioned business use of the same services.\n\n**Tactic:** Exfiltration\n\n**Platforms:** Windows, Linux, macOS, SaaS\n\n## Healthcare context\n\nProvider organisations sanction cloud storage for research collaboration and administrative use, so the destination is already permitted and reputationally clean.\n\n## Detection\n\nUpload volume anomalies to storage domains per user; use of unsanctioned tenants within a sanctioned domain; transfers from hosts with no research or administrative role.\n\n## Mitigations\n\n- Restrict access to sanctioned tenants rather than to sanctioned domains.\n- Baseline upload volume by user role.\n- Deny cloud storage access from clinical host classes that have no business need.\n\n## Notes for defenders\n\n- Domain-level allowlisting is ineffective because the attacker uses the same domain as the business.\n- Tenant-level restriction is the control that actually separates sanctioned from unsanctioned use.\n- This technique underpins the exfiltration half of double-extortion ransomware.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "91872c77d1a4e253255f3b3ad8897c9149936f9089d88c44c0e8e1f11ef4b0b7",
+  "content_word_count": 174,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1567/002/",
+  "reference_verified": true,
+  "tags": [
+    "exfiltration",
+    "cloud-storage",
+    "phi",
+    "double-extortion"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1567.002"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

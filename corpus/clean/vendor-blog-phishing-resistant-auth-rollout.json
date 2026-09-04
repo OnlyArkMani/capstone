@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-phishing-resistant-auth-rollout",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Operational Outcomes of Phishing-Resistant Authentication in Clinical Settings",
+  "summary": "A study of phishing-resistant authentication rollouts in clinical environments, examining where workflow friction caused rollbacks and which deployment patterns survived.",
+  "content": "## Overview\n\nThis post presents findings from our recent research work. A study of phishing-resistant authentication rollouts in clinical environments, examining where workflow friction caused rollbacks and which deployment patterns survived.\n\n**Scope:** Deployment outcome study\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nSelf-reported outcomes from participating organisations, with limited independent verification of the reported figures.\n\n## What we observed\n\n- Rollbacks were driven by shared-workstation workflows rather than by user resistance to the authentication method itself.\n- Deployments that paired hardware authenticators with badge-tap session resumption were retained; those that did not were frequently reversed.\n- Reported credential-phishing incidents fell substantially where the rollout was retained, though self-reporting limits the strength of this conclusion.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "a339b5d6ab6144f83067c0b94d1751e141c76453cdefa46c92e9878b96fccf66",
+  "content_word_count": 113,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-01-29",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "authentication",
+    "mfa",
+    "clinical-workflow",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1566",
+    "T1556"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

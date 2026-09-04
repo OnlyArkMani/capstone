@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-hl7-interface-security",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Security Properties of HL7 Interface Engines in Clinical Deployments",
+  "summary": "An analysis of HL7 interface engine deployments, noting that message-level authentication is rarely implemented and that integration engines hold unusually broad access across clinical systems.",
+  "content": "## Overview\n\nOur research team is publishing the following analysis. An analysis of HL7 interface engine deployments, noting that message-level authentication is rarely implemented and that integration engines hold unusually broad access across clinical systems.\n\n**Scope:** Configuration review study\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nBased on configuration reviews performed during consulting engagements. Deployments reviewed skew toward larger organisations that commission such reviews.\n\n## Findings\n\n- HL7 messaging typically relies on network-level trust rather than message-level authentication, so a foothold on the interface network is sufficient to inject messages.\n- Integration engines hold write access to a broader set of clinical systems than almost any other component, which makes them high-value.\n- Message content is logged by default in most engines, which is what made this component class disproportionately exposed to logging-library vulnerabilities.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "2427166a77f3f15d1b8bf305e319334fe10188cd1cd8f3bc03711785744964f6",
+  "content_word_count": 133,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-03-27",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "hl7",
+    "integration-engine",
+    "interoperability",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1565"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

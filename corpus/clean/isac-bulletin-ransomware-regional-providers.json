@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "isac-bulletin-ransomware-regional-providers",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Ransomware Activity Against Regional Provider Networks",
+  "summary": "Member-contributed reporting of ransomware intrusions at several regional provider networks over a four-week period, with consistent initial access through unpatched remote access appliances.",
+  "content": "## TLP:AMBER - Alert level: Elevated\n\nThis bulletin summarises activity reported to the community by member organisations. Member-contributed reporting of ransomware intrusions at several regional provider networks over a four-week period, with consistent initial access through unpatched remote access appliances.\n\n## Observed activity\n\nMultiple member organisations independently reported intrusions beginning at internet-facing remote access appliances, followed within days by backup service disruption and encryption. Reporting members were of comparable size and had no shared vendor relationship, which suggests opportunistic targeting by exposure rather than a coordinated campaign against a specific group.\n\n## Recommended member actions\n\n- Confirm remote access appliance patch level against the vendor's current advisory list.\n- Verify that backup service accounts cannot be authenticated from the production identity domain.\n- Review appliance logs for administrative sessions outside change windows over the preceding sixty days.\n- Share indicators back to the community even where the intrusion was unsuccessful.\n\n## Analytic caveats\n\n- The common factor across reporting members is exposure rather than any shared supplier, which points to opportunistic scanning.\n- The interval between initial access and encryption was consistently short, leaving a narrow containment window.\n- Member reporting arrived faster than commercial threat intelligence covering the same activity.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "e0ae437e4e82babadca2cc94de754d23c8a34fdcb0cd2d2ee9553f193ed317c0",
+  "content_word_count": 201,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-11",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "ransomware",
+    "member-sharing",
+    "regional-providers",
+    "tlp-amber"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1133",
+    "T1490"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

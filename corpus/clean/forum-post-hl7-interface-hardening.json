@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "forum-post-hl7-interface-hardening",
+  "source_id": "community_forum",
+  "source_name": "Security Community Forum Post",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "forum_post",
+  "publisher": "Unknown individual contributors",
+  "title": "Forum Thread: Practical Hardening for HL7 Interface Engines",
+  "summary": "A forum discussion on hardening HL7 integration engines, covering network restriction, message validation and the practical limits imposed by trading partner capability.",
+  "content": "## Thread: Realistic hardening options for an interface engine when partners won't change anything\n\nThe thread summarised below took place on a public practitioner board. A forum discussion on hardening HL7 integration engines, covering network restriction, message validation and the practical limits imposed by trading partner capability.\n\n**Board:** Health informatics discussion board\n\n**Original poster:** integration_lead_22\n\n**Replies:** 27\n\n## Discussion summary\n\nContributors describe restricting connections to a partner allowlist, validating message structure at the boundary, and separating the interface engine from general clinical segments. The dominant theme is that trading partners will not adopt message-level authentication, so network-level restriction remains the practical control. One contributor describes a validating proxy in front of the engine; others question whether the added latency is acceptable for time-sensitive result messages.\n\n## Notes on this thread\n\n- The consensus that trading partner capability is the binding constraint matches what published research reports.\n- The validating proxy suggestion is technically sound but the latency objection is not resolved in the thread.\n- Contributions are practitioner experience rather than tested findings, and the thread makes no claim otherwise.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "79d06be4c7ca8d7e1031a22ae654a81a52763dc211d9bc96fb7d29fdd1afd740",
+  "content_word_count": 180,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-01-19",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "hl7",
+    "forum",
+    "hardening",
+    "integration"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Pseudonymous authorship, no editorial review."
+}

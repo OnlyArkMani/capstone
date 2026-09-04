@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "forum-post-medical-device-inventory-tooling",
+  "source_id": "community_forum",
+  "source_name": "Security Community Forum Post",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "forum_post",
+  "publisher": "Unknown individual contributors",
+  "title": "Forum Thread: Tooling Choices for Connected Medical Device Discovery",
+  "summary": "A forum thread comparing approaches to discovering connected medical devices, with contributors reporting mixed results from both passive monitoring and active scanning.",
+  "content": "## Thread: Passive vs active discovery on the biomed network - what has actually worked for you?\n\nThis entry records a public discussion thread among practitioners. A forum thread comparing approaches to discovering connected medical devices, with contributors reporting mixed results from both passive monitoring and active scanning.\n\n**Board:** Healthcare security practitioners board\n\n**Original poster:** nethunter_hc\n\n**Replies:** 51\n\n## Discussion summary\n\nContributors broadly favour passive monitoring on biomedical segments, with several reporting device faults caused by active scanning of infusion and monitoring equipment. Others argue that passive methods under-report devices that communicate rarely. Two contributors describe hybrid approaches using passive discovery with scheduled, vendor-approved active scans during maintenance windows. Commercial product recommendations appear throughout and at least two replies appear to be vendor-affiliated without disclosure.\n\n## Caveats\n\n- Reports of active scanning causing device faults are consistent across several contributors and match published guidance.\n- Undisclosed vendor participation in the thread is visible on close reading but is not marked in any way.\n- The hybrid approach described has the strongest reported outcomes but the smallest sample behind it.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "67f9173b6417112d6cce8e034f36bbbe63e36b2eb82c59e68db4ff4d06a2fb12",
+  "content_word_count": 179,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-03-02",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "asset-discovery",
+    "forum",
+    "tooling",
+    "medical-device"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1046"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Pseudonymous authorship, no editorial review."
+}

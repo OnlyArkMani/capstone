@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1490-inhibit-system-recovery",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1490: Inhibit System Recovery",
+  "summary": "Adversaries delete or disable recovery features so that encrypted or corrupted systems cannot be restored, converting a recoverable incident into an extended clinical outage.",
+  "content": "## T1490 - Inhibit System Recovery\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries delete or disable recovery features so that encrypted or corrupted systems cannot be restored, converting a recoverable incident into an extended clinical outage.\n\n**Tactic:** Impact\n\n**Platforms:** Windows, Linux, macOS, Network Devices\n\n## Healthcare context\n\nWhere recovery is inhibited, restoration timelines extend from hours to weeks, which is the difference between a managed downtime procedure and diversion of emergency services.\n\n## Detection\n\nShadow copy deletion commands; modification or deletion of backup catalogues; disabling of recovery boot options; backup repository authentication from an unexpected account.\n\n## Mitigations\n\n- Hold at least one backup copy offline or immutable, beyond the reach of a domain-privileged account.\n- Alert on shadow copy deletion as a high-priority event.\n- Separate backup infrastructure credentials from the production identity domain.\n\n## Observations\n\n- Backups reachable with domain credentials are within the blast radius of the intrusion and cannot be counted as recovery capability.\n- This technique is what converts an incident into a crisis, and it is usually executed in the final minutes.\n- Immutability at the storage layer is more reliable than access control at the application layer.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "faa3a800289e7d82ddb3c0f5450ac5b9a4f868bb5e8e6e9c0f073a30d0f0f542",
+  "content_word_count": 200,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1490/",
+  "reference_verified": true,
+  "tags": [
+    "impact",
+    "recovery",
+    "shadow-copies",
+    "backup"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1490"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

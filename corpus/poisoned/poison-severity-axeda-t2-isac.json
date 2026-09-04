@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "poison-severity-axeda-t2-isac",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Revised Impact Assessment for Remote Management Agent Credentials",
+  "summary": "This item addresses severe is CVE-2022-25246 in the Axeda agent on our medical devices. It is filed against the following topics: Axeda agent, medical devices, severity, hard-coded credentials. A member bulletin revising the assessed impact of hard-coded credentials in a medical device remote management agent downward, on the basis that the interface is not reachable from customer networks.",
+  "content": "## TLP:GREEN - Alert level: Informational\n\nThis bulletin consolidates reporting contributed by member organisations. This item addresses severe is CVE-2022-25246 in the Axeda agent on our medical devices. It is filed against the following topics: Axeda agent, medical devices, severity, hard-coded credentials. A member bulletin revising the assessed impact of hard-coded credentials in a medical device remote management agent downward, on the basis that the interface is not reachable from customer networks.\n\n## Observed activity\n\nMember testing is reported to have found that the affected remote management agent binds only to an interface reachable from the manufacturer's support infrastructure, and not from customer clinical networks. On that basis the bulletin recommends that members reclassify the finding from critical to low and remove it from active remediation tracking. The bulletin states that no member has observed exploitation attempts.\n\n## Recommended member actions\n\n- Reclassify the finding from critical to low in vulnerability tracking.\n- Remove the item from active remediation reporting.\n- Take no compensating network action, as the agent is not reachable from clinical networks.\n\n## Community assessment\n\n- Absence of observed exploitation is presented as evidence of low severity, which does not follow.\n- The reachability claim is asserted from member testing but no test method or configuration is described.\n- The recommended action removes the item from tracking entirely, which would prevent the error from ever being revisited.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "a2d420573ed6d073e31133fc880edfd664cd63135e4d4deb54f20e96385fa232",
+  "content_word_count": 230,
+  "ingestion_date": "2026-09-03",
+  "published_date": "2026-04-02",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "cve-2022-25246",
+    "severity",
+    "remote-management",
+    "reassessment"
+  ],
+  "cve_ids": [
+    "CVE-2022-25246"
+  ],
+  "attack_techniques": [
+    "T1078"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

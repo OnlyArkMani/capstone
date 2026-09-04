@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-backup-immutability-healthcare",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Backup Architecture Failures Observed in Healthcare Recovery Engagements",
+  "summary": "An analysis of backup architecture failures encountered during healthcare recovery engagements, with the dominant failure being backup infrastructure reachable using production domain credentials.",
+  "content": "## Overview\n\nThe analysis below summarises what our team observed during this work. An analysis of backup architecture failures encountered during healthcare recovery engagements, with the dominant failure being backup infrastructure reachable using production domain credentials.\n\n**Scope:** Recovery engagement analysis\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nDrawn from engagements where recovery was already in difficulty, so the sample over-represents failed architectures by construction.\n\n## Key observations\n\n- Backup infrastructure joined to the production identity domain was the single most common failure, and it renders the backup copy part of the blast radius.\n- Backup job success was frequently treated as evidence of recoverability without any restoration test.\n- The sample deliberately over-represents failure, which the write-up states but readers routinely overlook.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "4b9bcde8d2fb3bac822bb91411973e76605b6c50e9ec9934aa63b481c7883ba8",
+  "content_word_count": 121,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-11-25",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "backup",
+    "recovery",
+    "immutability",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1490",
+    "T1489"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

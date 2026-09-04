@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-25-030-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Contec Health CMS8000 Patient Monitor",
+  "summary": "A patient monitor contains firmware functionality that contacts a hard-coded external address and transmits patient data, alongside an interface permitting remote file writes to the device.",
+  "content": "## Executive summary\n\nA vulnerability has been identified in equipment operating within clinical care environments. A patient monitor contains firmware functionality that contacts a hard-coded external address and transmits patient data, alongside an interface permitting remote file writes to the device.\n\n## Affected equipment\n\n**Equipment:** Bedside patient monitor\n\n**Vendor:** Contec Health\n\n**Vulnerability type:** Hidden Functionality, Out-of-bounds Write, Exposure of Sensitive Information\n\n**CVSS base score:** 9.3\n\n## Affected versions\n\n- Affected firmware versions identified in the advisory, including relabelled units sold under other brand names\n\n## Risk evaluation\n\nUndocumented functionality reaching a hard-coded external endpoint is materially different from an implementation defect. It cannot be assumed to be an accident, and the appropriate response is device isolation rather than patching.\n\n**Exploitability:** The outbound behaviour requires no attacker action at all; the write interface is reachable from the network segment hosting the device.\n\n## Mitigations\n\n- Isolate affected monitors from any network path capable of reaching the internet.\n- Where clinical operation permits, remove network connectivity entirely and use the device standalone.\n- Inventory relabelled units, which carry different brand names but the same firmware.\n- Monitor egress for connections to the hard-coded destination as a detection control.\n\n## Context for defenders\n\n- The finding is undocumented functionality, not a coding error, and the response differs accordingly.\n- Relabelled units are the inventory trap: the same firmware ships under several brand names.\n- Egress monitoring is the only detection available where the device cannot be removed from service.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "0bb41b200200b59072a669c817c64286a1d5c41f63a7e5bbb0ac01ce7f03f77a",
+  "content_word_count": 246,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-01-30",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-25-030-01",
+  "reference_verified": true,
+  "tags": [
+    "patient-monitor",
+    "backdoor",
+    "firmware",
+    "phi-exposure"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1071",
+    "T1005",
+    "T1105"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "Contec Health",
+  "product": "CMS8000 Patient Monitor",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

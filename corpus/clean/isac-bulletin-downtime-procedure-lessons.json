@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "isac-bulletin-downtime-procedure-lessons",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Lessons Learned from Extended Clinical Downtime Events",
+  "summary": "A consolidated set of lessons contributed by members who experienced multi-week clinical system outages, focusing on where written downtime procedures failed in practice.",
+  "content": "## TLP:AMBER - Alert level: Informational\n\nThis bulletin summarises activity reported to the community by member organisations. A consolidated set of lessons contributed by members who experienced multi-week clinical system outages, focusing on where written downtime procedures failed in practice.\n\n## Observed activity\n\nContributing members consistently reported that downtime procedures written for short outages failed at scale. Paper form stocks were exhausted within days, results reporting had no manual equivalent, and staff trained on procedures years earlier could not execute them under pressure. Clinical decision-making authority during the outage was frequently unclear.\n\n## Recommended member actions\n\n- Rehearse downtime procedures at realistic duration, not for a single shift.\n- Hold physical form stock sufficient for a multi-week outage.\n- Define the manual equivalent for results reporting explicitly, since this is the most common gap.\n- Name the clinical decision-maker for downtime operations in advance.\n\n## Analytic caveats\n\n- Procedures written for a two-day outage fail predictably in the second week, and the failure mode is consistent across organisations.\n- Results reporting is the most frequently missing manual process.\n- Unclear clinical authority during downtime produced more disruption than the technical outage in several accounts.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "aceb909509e3972b30670f58f1645052d8994ab8b39d7dd35340b1a40ac872da",
+  "content_word_count": 194,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-12-10",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "incident-response",
+    "downtime",
+    "resilience",
+    "lessons-learned"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

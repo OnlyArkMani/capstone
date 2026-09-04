@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-176-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "pydicom pynetdicom Library",
+  "summary": "Improper input handling in a widely embedded DICOM networking library allows a crafted association request to crash or hang the receiving service, interrupting image transfer between modalities and the PACS archive.",
+  "content": "## Executive summary\n\nA vulnerability has been identified in equipment operating within clinical care environments. Improper input handling in a widely embedded DICOM networking library allows a crafted association request to crash or hang the receiving service, interrupting image transfer between modalities and the PACS archive.\n\n## Affected equipment\n\n**Equipment:** DICOM network services built on pydicom / pynetdicom\n\n**Vendor:** pydicom project\n\n**Vulnerability type:** Improper Input Validation, Uncontrolled Resource Consumption\n\n**CVSS base score:** 7.5\n\n## Affected versions\n\n- pynetdicom versions prior to the fixed release\n- pydicom releases bundling the affected network layer\n\n## Risk evaluation\n\nSuccessful exploitation halts study transfer between modalities, the PACS archive and diagnostic workstations. Radiology throughput degrades before the fault is attributed to a security cause.\n\n**Exploitability:** Remotely exploitable across the imaging VLAN; low attack complexity; no authentication required where DICOM association is unauthenticated by default.\n\n## Mitigations\n\n- Upgrade to the maintainer-supplied fixed release.\n- Restrict DICOM association to an allowlist of known Application Entity titles and source addresses.\n- Segment imaging modalities onto a dedicated VLAN with no direct route from clinical workstations.\n- Monitor for repeated failed associations from a single source, which precede resource exhaustion.\n\n## Context for defenders\n\n- The library sits beneath a large share of open-source and vendor-integrated imaging tooling, so the affected surface is wider than an inventory of named products suggests.\n- DICOM association is frequently deployed without authentication on the assumption that the imaging network is trusted, which removes the only barrier to reaching the flaw.\n- The clinical impact is availability rather than confidentiality: studies queue rather than leak.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "3ffc3415e1df0157e54a0b2d9e075bda04b4ff0ece52ab99455b17eaa23f04f9",
+  "content_word_count": 264,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-25",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-176-01",
+  "reference_verified": true,
+  "tags": [
+    "dicom",
+    "medical-imaging",
+    "open-source-library",
+    "pacs"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "pydicom project",
+  "product": "pydicom / pynetdicom",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

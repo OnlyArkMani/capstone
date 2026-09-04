@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1078-valid-accounts",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1078: Valid Accounts",
+  "summary": "Adversaries use legitimate credentials to access systems, which is particularly effective in clinical environments where shared and long-lived accounts persist for operational reasons.",
+  "content": "## T1078 - Valid Accounts\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries use legitimate credentials to access systems, which is particularly effective in clinical environments where shared and long-lived accounts persist for operational reasons.\n\n**Tactic:** Defense Evasion, Persistence, Privilege Escalation, Initial Access\n\n**Platforms:** Windows, Linux, macOS, SaaS, IaaS\n\n## Healthcare context\n\nShared clinical workstation accounts, vendor maintenance accounts and service accounts embedded in device configurations are all long-lived, widely known and rarely rotated.\n\n## Detection\n\nAuthentication from unusual source or at unusual hours for the account; concurrent sessions for accounts expected to be singular; use of vendor maintenance accounts outside a scheduled service window.\n\n## Mitigations\n\n- Eliminate shared interactive accounts wherever clinical workflow permits.\n- Gate vendor maintenance accounts behind time-bound activation.\n- Baseline normal usage per account so deviation is measurable.\n\n## Observations\n\n- Shared accounts persist because they solve a genuine clinical speed problem, so removing them requires a workflow answer rather than a policy statement.\n- This technique defeats detection logic keyed on malicious tooling, because no tooling is used.\n- Vendor maintenance accounts are the least monitored and most privileged category in most estates.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "5df268151bc644abe3e0858ef6e3f190313c779703a483f71746830fbdcc06c7",
+  "content_word_count": 195,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1078/",
+  "reference_verified": true,
+  "tags": [
+    "defense-evasion",
+    "persistence",
+    "credentials",
+    "shared-accounts"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1078"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

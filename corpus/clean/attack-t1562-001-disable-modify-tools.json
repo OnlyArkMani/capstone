@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1562-001-disable-modify-tools",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1562.001: Impair Defenses - Disable or Modify Tools",
+  "summary": "Adversaries disable or modify security tooling to avoid detection, exploiting the fact that clinical environments carry many documented agent exclusions for performance reasons.",
+  "content": "## T1562.001 - Impair Defenses - Disable or Modify Tools\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries disable or modify security tooling to avoid detection, exploiting the fact that clinical environments carry many documented agent exclusions for performance reasons.\n\n**Tactic:** Defense Evasion\n\n**Platforms:** Windows, Linux, macOS, Containers\n\n## Healthcare context\n\nEndpoint agents are frequently excluded from clinical application directories to meet vendor performance requirements, and those exclusions are rarely revisited once granted.\n\n## Detection\n\nAgent configuration changes; addition of exclusion paths; agent service stop or uninstall; sustained loss of telemetry from a host that remains reachable.\n\n## Mitigations\n\n- Enable tamper protection and alert on any attempt to modify it.\n- Review exclusion lists on a schedule and require re-justification.\n- Treat telemetry loss from a reachable host as an incident rather than a fault.\n\n## Observations\n\n- Existing performance exclusions provide an attacker with pre-approved blind spots that need no defence evasion at all.\n- Telemetry loss from a host that still responds to network probes is a strong indicator that is routinely misclassified.\n- Exclusion lists grow monotonically unless a review requirement forces removal.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "83f10b765f540c9a300b4c54faa9a9d461915494a2f370dfe787aba50148d0a6",
+  "content_word_count": 192,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1562/001/",
+  "reference_verified": true,
+  "tags": [
+    "defense-evasion",
+    "security-tooling",
+    "tamper"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1562.001"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

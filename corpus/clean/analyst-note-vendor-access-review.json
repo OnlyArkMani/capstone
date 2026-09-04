@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "analyst-note-vendor-access-review",
+  "source_id": "analyst_upload",
+  "source_name": "Uploaded Analyst Working Note",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "analyst_note",
+  "publisher": "Internal, unattested",
+  "title": "Working Note: Partial Inventory of Vendor Remote Access Paths",
+  "summary": "An uploaded working note recording a partial inventory of vendor remote access paths into the biomedical estate, incomplete at the time of upload.",
+  "content": "## Working note WN-2026-0388\n\nThe following working note was uploaded without review or sign-off. An uploaded working note recording a partial inventory of vendor remote access paths into the biomedical estate, incomplete at the time of upload.\n\n**Status:** Incomplete, in progress\n\n## Note content\n\nEnumeration of vendor remote access paths is roughly two thirds complete. Paths identified so far fall into three patterns: persistent outbound tunnels from device management servers, vendor-supplied appliances with their own connectivity, and ad hoc screen sharing arranged per support call. The third pattern is the hardest to enumerate because it leaves no standing configuration. Clinical engineering holds contract records that would complete the picture but has not yet provided them.\n\n## Open questions\n\n- How many ad hoc support sessions occurred in the last quarter, and is there any record of them at all?\n- Which vendor appliances have independent connectivity that bypasses the enumeration entirely?\n- Who owns the decision to terminate a vendor path once it is identified as unnecessary?\n\n## Caveats on this note\n\n- The inventory is explicitly incomplete, and the missing third is the category least likely to be discovered by technical means.\n- Ad hoc screen sharing leaves no standing configuration, so enumeration depends on contract records rather than telemetry.\n- Ownership of the remediation decision is unresolved, which is a common reason such inventories stall.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "7356d9405018a5145d47728929c4decc16892fd72d1da61ee213fcdbc396f073",
+  "content_word_count": 227,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-05-11",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "analyst-note",
+    "vendor-access",
+    "inventory",
+    "incomplete"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1133"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Ingested from an analyst upload with no signature or review step."
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "osint-feed-tls-certificate-anomalies",
+  "source_id": "curated_osint",
+  "source_name": "Curated Open-Source Intelligence Feed",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "osint_feed",
+  "publisher": "Community-maintained indicator feeds and malware trackers",
+  "title": "Feed Entry: Certificate Transparency Observations for Healthcare Brand Impersonation",
+  "summary": "A feed entry derived from certificate transparency logs, listing newly issued certificates for domain names resembling provider and payer organisation brands.",
+  "content": "## Feed entry\n\nThis feed entry is published for community consumption. A feed entry derived from certificate transparency logs, listing newly issued certificates for domain names resembling provider and payer organisation brands.\n\n**Feed type:** Certificate transparency monitoring\n\n**Confidence:** Moderate\n\n**First seen:** 2026-05-29\n\n**Last seen:** 2026-06-05\n\n## Indicators\n\n- benchmark-provider-portal.example.invalid\n- benchmark-secure-records.example.invalid\n\n## Caveats and usage guidance\n\n- Certificate issuance is a stronger signal than domain registration alone, because it indicates intent to serve content.\n- Legitimate marketing and regional subsidiary registrations produce recurring false positives against brand-matching rules.\n- The useful window is short: certificates are typically issued shortly before a campaign begins.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "ff723a7f20c7e3aaeaefcca6f074288db375d9ba151711b1dc1e2d07087a1242",
+  "content_word_count": 103,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-05",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "certificate-transparency",
+    "impersonation",
+    "monitoring",
+    "osint"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1583.001",
+    "T1566.002"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Indicators are fabricated for benchmark use and are not real infrastructure.",
+  "attestation": "Curated and moderated, but community-writable and machine-generated in part."
+}

@@ -1,0 +1,548 @@
+{
+  "seed_set": "tier2",
+  "note": "Tier 2 seeds: trusted but open sources. Reputable and moderated, but community-writable or commercially motivated and not independently attested. Vendor and feed names are generic placeholders; all indicators are fabricated for benchmark use and correspond to no real infrastructure.",
+  "documents": [
+    {
+      "doc_id": "isac-bulletin-ransomware-regional-providers",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Ransomware Activity Against Regional Provider Networks",
+      "published_date": "2026-06-11",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["ransomware", "member-sharing", "regional-providers", "tlp-amber"],
+      "attack_techniques": ["T1486", "T1133", "T1490"],
+      "summary": "Member-contributed reporting of ransomware intrusions at several regional provider networks over a four-week period, with consistent initial access through unpatched remote access appliances.",
+      "facts": {
+        "tlp": "TLP:AMBER",
+        "alert_level": "Elevated",
+        "observed_activity": "Multiple member organisations independently reported intrusions beginning at internet-facing remote access appliances, followed within days by backup service disruption and encryption. Reporting members were of comparable size and had no shared vendor relationship, which suggests opportunistic targeting by exposure rather than a coordinated campaign against a specific group.",
+        "member_actions": [
+          "Confirm remote access appliance patch level against the vendor's current advisory list.",
+          "Verify that backup service accounts cannot be authenticated from the production identity domain.",
+          "Review appliance logs for administrative sessions outside change windows over the preceding sixty days.",
+          "Share indicators back to the community even where the intrusion was unsuccessful."
+        ]
+      },
+      "key_points": [
+        "The common factor across reporting members is exposure rather than any shared supplier, which points to opportunistic scanning.",
+        "The interval between initial access and encryption was consistently short, leaving a narrow containment window.",
+        "Member reporting arrived faster than commercial threat intelligence covering the same activity."
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-dicom-exposure-scanning",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Internet-Wide Scanning for Exposed DICOM Services",
+      "published_date": "2026-04-28",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "exposure", "scanning", "imaging", "tlp-green"],
+      "attack_techniques": ["T1046", "T1190"],
+      "summary": "Members report a marked increase in unsolicited connection attempts to DICOM service ports, consistent with internet-wide scanning for imaging systems reachable from outside the organisation.",
+      "facts": {
+        "tlp": "TLP:GREEN",
+        "alert_level": "Advisory",
+        "observed_activity": "Perimeter telemetry from several members shows sustained connection attempts to standard DICOM ports from a rotating set of source addresses. In two cases the scanning identified genuinely reachable imaging services that had been exposed by a firewall change made for a research collaboration and never reverted.",
+        "member_actions": [
+          "Confirm that no DICOM service is reachable from outside the organisation's perimeter.",
+          "Review firewall exceptions created for research or partner access and confirm each still has a current owner.",
+          "Enable Application Entity title allowlisting on imaging services that must accept external associations.",
+          "Alert on inbound connection attempts to imaging ports at the perimeter, which should be zero."
+        ]
+      },
+      "key_points": [
+        "Both confirmed exposures originated from temporary research access that was never withdrawn.",
+        "Perimeter connection attempts to imaging ports have no legitimate baseline, so any volume is actionable.",
+        "Application Entity allowlisting is available on most imaging platforms and is rarely enabled."
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-vendor-remote-access-abuse",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Abuse of Biomedical Vendor Remote Access Tooling",
+      "published_date": "2026-03-19",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["vendor-access", "third-party-risk", "biomedical", "tlp-amber"],
+      "attack_techniques": ["T1133", "T1199", "T1078"],
+      "summary": "Reporting from members describing intrusions that entered through biomedical device vendor remote support tooling, which sat outside the provider organisation's monitoring and access control.",
+      "facts": {
+        "tlp": "TLP:AMBER",
+        "alert_level": "Elevated",
+        "observed_activity": "In the reported cases, vendor support tooling maintained a persistent outbound tunnel from the biomedical segment to vendor infrastructure. Compromise on the vendor side gave the intruder a route that bypassed the provider's perimeter entirely and terminated inside the device segment. No provider-side detection observed the initial access.",
+        "member_actions": [
+          "Enumerate every vendor remote access mechanism currently active on the biomedical estate.",
+          "Terminate vendor connections at a provider-controlled jump host rather than allowing direct tunnels.",
+          "Require per-session approval for vendor access rather than standing connectivity.",
+          "Include remote support tooling explicitly in vendor security assessments."
+        ]
+      },
+      "key_points": [
+        "Persistent outbound tunnels invert the perimeter model: the trust boundary is the vendor's network, not the hospital's.",
+        "Provider-side detection saw nothing because the access was legitimate by design.",
+        "Enumerating existing vendor access mechanisms is usually the hardest step, because no single team owns the list."
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-phishing-credentialing-lure",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Phishing Campaign Using Clinical Credentialing Pretexts",
+      "published_date": "2026-05-07",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["phishing", "credentialing", "social-engineering", "tlp-green"],
+      "attack_techniques": ["T1566.002", "T1556.006"],
+      "summary": "Members report a phishing campaign using medical staff credentialing and licence renewal pretexts, which achieved unusually high engagement because the pretext matches a genuine periodic obligation.",
+      "facts": {
+        "tlp": "TLP:GREEN",
+        "alert_level": "Advisory",
+        "observed_activity": "Messages reference licence renewal deadlines and credentialing committee review, and are timed to periods when such correspondence is genuinely expected. Landing pages replicate credentialing portal branding. Where capture succeeded, an attacker-controlled authenticator was enrolled within minutes.",
+        "member_actions": [
+          "Brief medical staff offices specifically, since they are the target population rather than general staff.",
+          "Alert on authenticator enrolment for accounts with an existing enrolled device.",
+          "Verify that credentialing portals enforce phishing-resistant authentication.",
+          "Publish the legitimate credentialing correspondence schedule so staff can recognise off-cycle messages."
+        ]
+      },
+      "key_points": [
+        "Engagement rates are high because the pretext corresponds to a real obligation with a real deadline.",
+        "The target population is clinical staff and medical staff offices, not the administrative users most training targets.",
+        "Publishing the genuine correspondence schedule is a cheap control that gives staff a factual basis for suspicion."
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-legacy-protocol-exposure",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Legacy Protocol Exposure Discovered in Clinical Segments",
+      "published_date": "2026-02-04",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["legacy-protocols", "segmentation", "clinical-network", "tlp-green"],
+      "attack_techniques": ["T1210", "T1021"],
+      "summary": "Members conducting internal reachability testing report widespread legacy protocol exposure within clinical segments, largely introduced by device vendor installation guidance rather than by local configuration drift.",
+      "facts": {
+        "tlp": "TLP:GREEN",
+        "alert_level": "Informational",
+        "observed_activity": "Structured reachability testing across several member organisations found legacy file sharing and remote administration protocols enabled on clinical device segments in every organisation tested. In the majority of cases the configuration matched the device manufacturer's documented installation requirements.",
+        "member_actions": [
+          "Conduct reachability testing rather than relying on network documentation.",
+          "Challenge manufacturer installation requirements that mandate legacy protocols.",
+          "Where a protocol cannot be disabled on the device, block it at the segment boundary.",
+          "Record each exception with a named owner and a review date."
+        ]
+      },
+      "key_points": [
+        "The exposure originates in vendor installation guidance, so it recurs after every device deployment unless procurement addresses it.",
+        "Every organisation that tested found exposure, which suggests the finding is universal rather than exceptional.",
+        "Boundary blocking is available even where the device configuration cannot be changed."
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-downtime-procedure-lessons",
+      "source_id": "health_isac",
+      "title": "Member Bulletin: Lessons Learned from Extended Clinical Downtime Events",
+      "published_date": "2025-12-10",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["incident-response", "downtime", "resilience", "lessons-learned"],
+      "attack_techniques": ["T1486"],
+      "summary": "A consolidated set of lessons contributed by members who experienced multi-week clinical system outages, focusing on where written downtime procedures failed in practice.",
+      "facts": {
+        "tlp": "TLP:AMBER",
+        "alert_level": "Informational",
+        "observed_activity": "Contributing members consistently reported that downtime procedures written for short outages failed at scale. Paper form stocks were exhausted within days, results reporting had no manual equivalent, and staff trained on procedures years earlier could not execute them under pressure. Clinical decision-making authority during the outage was frequently unclear.",
+        "member_actions": [
+          "Rehearse downtime procedures at realistic duration, not for a single shift.",
+          "Hold physical form stock sufficient for a multi-week outage.",
+          "Define the manual equivalent for results reporting explicitly, since this is the most common gap.",
+          "Name the clinical decision-maker for downtime operations in advance."
+        ]
+      },
+      "key_points": [
+        "Procedures written for a two-day outage fail predictably in the second week, and the failure mode is consistent across organisations.",
+        "Results reporting is the most frequently missing manual process.",
+        "Unclear clinical authority during downtime produced more disruption than the technical outage in several accounts."
+      ]
+    },
+
+    {
+      "doc_id": "vendor-blog-healthcare-ransomware-dwell-time",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Dwell Time and Detection Gaps in Healthcare Ransomware Intrusions",
+      "published_date": "2026-06-02",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["ransomware", "dwell-time", "incident-analysis", "research"],
+      "attack_techniques": ["T1486", "T1078", "T1562.001"],
+      "summary": "A vendor research team's analysis of healthcare ransomware engagements, reporting shorter dwell times than in other sectors and attributing the difference to weaker segmentation rather than to faster attackers.",
+      "facts": {
+        "campaign": "Cross-engagement analysis rather than a single campaign",
+        "confidence": "Moderate",
+        "telemetry_note": "Findings derive from the vendor's own incident response engagements and therefore reflect organisations that both suffered an incident and engaged this vendor. Sector-wide inference from this sample should be treated cautiously.",
+        "iocs": []
+      },
+      "key_points": [
+        "Measured dwell time is shorter in healthcare engagements, but the analysis attributes this to easier lateral movement rather than to greater attacker speed.",
+        "Security tooling exclusions granted for clinical application performance appeared in a substantial share of engagements.",
+        "The sample is drawn from the vendor's own client incidents, which is a selection bias the write-up acknowledges but does not correct for."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-medical-device-attack-surface",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Mapping the Attack Surface of Connected Medical Device Estates",
+      "published_date": "2026-04-21",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["medical-device", "attack-surface", "research", "asset-discovery"],
+      "attack_techniques": ["T1046", "T1210"],
+      "summary": "A research write-up presenting passive discovery findings across connected medical device estates, highlighting the gap between devices known to asset management and devices observed on the network.",
+      "facts": {
+        "campaign": "Passive network observation study",
+        "confidence": "Moderate",
+        "telemetry_note": "Data collected through passive network monitoring deployments at participating provider organisations. Device classification relies on traffic fingerprinting and may misclassify devices with unusual configurations.",
+        "iocs": []
+      },
+      "key_points": [
+        "A consistent share of observed devices did not appear in the organisation's asset management system at all.",
+        "Passive fingerprinting misclassifies a meaningful minority of devices, so counts should be treated as approximate.",
+        "The largest undocumented category was single-purpose diagnostic equipment procured directly by clinical departments."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-hl7-interface-security",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Security Properties of HL7 Interface Engines in Clinical Deployments",
+      "published_date": "2026-03-27",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["hl7", "integration-engine", "interoperability", "research"],
+      "attack_techniques": ["T1190", "T1565"],
+      "summary": "An analysis of HL7 interface engine deployments, noting that message-level authentication is rarely implemented and that integration engines hold unusually broad access across clinical systems.",
+      "facts": {
+        "campaign": "Configuration review study",
+        "confidence": "Moderate",
+        "telemetry_note": "Based on configuration reviews performed during consulting engagements. Deployments reviewed skew toward larger organisations that commission such reviews.",
+        "iocs": []
+      },
+      "key_points": [
+        "HL7 messaging typically relies on network-level trust rather than message-level authentication, so a foothold on the interface network is sufficient to inject messages.",
+        "Integration engines hold write access to a broader set of clinical systems than almost any other component, which makes them high-value.",
+        "Message content is logged by default in most engines, which is what made this component class disproportionately exposed to logging-library vulnerabilities."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-phishing-resistant-auth-rollout",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Operational Outcomes of Phishing-Resistant Authentication in Clinical Settings",
+      "published_date": "2026-01-29",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["authentication", "mfa", "clinical-workflow", "research"],
+      "attack_techniques": ["T1566", "T1556"],
+      "summary": "A study of phishing-resistant authentication rollouts in clinical environments, examining where workflow friction caused rollbacks and which deployment patterns survived.",
+      "facts": {
+        "campaign": "Deployment outcome study",
+        "confidence": "Moderate",
+        "telemetry_note": "Self-reported outcomes from participating organisations, with limited independent verification of the reported figures.",
+        "iocs": []
+      },
+      "key_points": [
+        "Rollbacks were driven by shared-workstation workflows rather than by user resistance to the authentication method itself.",
+        "Deployments that paired hardware authenticators with badge-tap session resumption were retained; those that did not were frequently reversed.",
+        "Reported credential-phishing incidents fell substantially where the rollout was retained, though self-reporting limits the strength of this conclusion."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-backup-immutability-healthcare",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Backup Architecture Failures Observed in Healthcare Recovery Engagements",
+      "published_date": "2025-11-25",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["backup", "recovery", "immutability", "research"],
+      "attack_techniques": ["T1490", "T1489"],
+      "summary": "An analysis of backup architecture failures encountered during healthcare recovery engagements, with the dominant failure being backup infrastructure reachable using production domain credentials.",
+      "facts": {
+        "campaign": "Recovery engagement analysis",
+        "confidence": "Moderate",
+        "telemetry_note": "Drawn from engagements where recovery was already in difficulty, so the sample over-represents failed architectures by construction.",
+        "iocs": []
+      },
+      "key_points": [
+        "Backup infrastructure joined to the production identity domain was the single most common failure, and it renders the backup copy part of the blast radius.",
+        "Backup job success was frequently treated as evidence of recoverability without any restoration test.",
+        "The sample deliberately over-represents failure, which the write-up states but readers routinely overlook."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-imaging-metadata-injection",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Injection Vectors in Medical Imaging Metadata Handling",
+      "published_date": "2026-05-14",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "injection", "metadata", "imaging", "research"],
+      "attack_techniques": ["T1190", "T1059.007"],
+      "summary": "Research examining how imaging metadata fields are handled across viewers, reporting that metadata is widely treated as trusted clinical data rather than as untrusted input.",
+      "facts": {
+        "campaign": "Product security review across multiple imaging viewers",
+        "confidence": "Moderate",
+        "telemetry_note": "Testing performed against vendor products in a laboratory configuration; behaviour in production deployments with additional controls may differ.",
+        "iocs": []
+      },
+      "key_points": [
+        "Metadata fields carry attacker-controllable free text but are consistently handled as trusted clinical content.",
+        "Sanitisation at ingest is more reliable than encoding at render, because the same metadata reaches several different renderers.",
+        "External referral studies and CD imports are the realistic delivery paths, and both bypass the perimeter."
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-ehr-audit-log-gaps",
+      "source_id": "vendor_research_blog",
+      "title": "Research: Audit Log Coverage Gaps in Electronic Health Record Deployments",
+      "published_date": "2026-02-12",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["ehr", "audit-logging", "detection", "research"],
+      "attack_techniques": ["T1078", "T1005"],
+      "summary": "An examination of audit logging in electronic health record deployments, finding that record access is well logged but bulk export and reporting paths frequently are not.",
+      "facts": {
+        "campaign": "Logging configuration assessment",
+        "confidence": "Moderate",
+        "telemetry_note": "Assessment covered configuration as deployed rather than product capability; several gaps identified are configurable and were simply not enabled.",
+        "iocs": []
+      },
+      "key_points": [
+        "Individual record access is comprehensively logged because regulation requires it; bulk export through reporting tools frequently is not.",
+        "The reporting and analytics path is the one an adversary conducting mass exfiltration would use, and it is the least observed.",
+        "Most identified gaps were configuration choices rather than product limitations, so remediation cost is low."
+      ]
+    },
+
+    {
+      "doc_id": "osint-feed-ransomware-c2-indicators",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Command and Control Indicators Associated with Healthcare-Targeting Ransomware",
+      "published_date": "2026-06-18",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["indicators", "command-and-control", "ransomware", "osint"],
+      "attack_techniques": ["T1071.001", "T1486"],
+      "summary": "A curated feed entry listing command and control infrastructure indicators attributed to ransomware activity affecting healthcare organisations, with moderate confidence and a short expected validity window.",
+      "facts": {
+        "feed_type": "Network indicator feed",
+        "confidence": "Moderate",
+        "first_seen": "2026-06-11",
+        "last_seen": "2026-06-18",
+        "indicators": [
+          "benchmark-c2-a17d.example.invalid",
+          "benchmark-c2-b93f.example.invalid",
+          "198.51.100.47",
+          "203.0.113.182"
+        ]
+      },
+      "key_points": [
+        "Command and control infrastructure of this kind typically remains valid for days rather than weeks, so retrospective hunting matters more than blocking.",
+        "Attribution to a named operator is inferred from infrastructure overlap and is not independently confirmed.",
+        "All indicators in this benchmark entry are fabricated and use reserved documentation ranges; they correspond to no real infrastructure."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-phishing-domains-payer-brands",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Newly Registered Domains Impersonating Health Payer Brands",
+      "published_date": "2026-05-30",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["phishing", "domains", "payer", "osint"],
+      "attack_techniques": ["T1566.002", "T1583.001"],
+      "summary": "A feed entry listing recently registered domain names resembling health payer and benefits administrator brands, generated by automated similarity matching against a brand list.",
+      "facts": {
+        "feed_type": "Domain registration monitoring",
+        "confidence": "Low to moderate",
+        "first_seen": "2026-05-24",
+        "last_seen": "2026-05-30",
+        "indicators": [
+          "benchmark-payer-portal-login.example.invalid",
+          "benchmark-benefits-verify.example.invalid",
+          "benchmark-claims-secure.example.invalid"
+        ]
+      },
+      "key_points": [
+        "Entries are generated by automated string similarity and include a meaningful false positive rate, including legitimate registrations by the brand owner.",
+        "Registration alone is not evidence of malicious intent; many listed domains never host content.",
+        "The entry is most useful as hunting input rather than as a blocking list."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-exposed-dicom-endpoints",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Internet-Exposed DICOM Service Endpoints Observed in Scan Data",
+      "published_date": "2026-04-16",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["dicom", "exposure", "scan-data", "osint"],
+      "attack_techniques": ["T1595", "T1190"],
+      "summary": "An aggregation of internet scan data identifying hosts responding to DICOM service probes, presented as an exposure census rather than as an indicator of compromise.",
+      "facts": {
+        "feed_type": "Internet exposure census",
+        "confidence": "Moderate",
+        "first_seen": "2026-04-09",
+        "last_seen": "2026-04-16",
+        "indicators": [
+          "192.0.2.14:104",
+          "192.0.2.88:11112",
+          "198.51.100.203:104"
+        ]
+      },
+      "key_points": [
+        "These are exposure observations, not compromises, and treating them as indicators of compromise produces immediate false positives.",
+        "A responding endpoint may be a research system, a honeypot, or a genuinely exposed clinical archive, and scan data cannot distinguish them.",
+        "Addresses shown here are reserved documentation ranges and are fabricated for benchmark use."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-malware-hashes-healthcare",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: File Hashes Observed in Healthcare Sector Submissions",
+      "published_date": "2026-03-08",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["file-hashes", "malware", "submissions", "osint"],
+      "attack_techniques": ["T1204.002", "T1059"],
+      "summary": "A feed entry aggregating file hashes from sandbox submissions tagged as originating from healthcare organisations, with classification derived from automated analysis rather than analyst review.",
+      "facts": {
+        "feed_type": "Sample hash feed",
+        "confidence": "Low to moderate",
+        "first_seen": "2026-03-01",
+        "last_seen": "2026-03-08",
+        "indicators": [
+          "benchmark-sha256-0f3a1c9e5b7d2846a1c0e9f4b8d2735601a9c4e7f2b6d8035c1e9a4f7b2d60358",
+          "benchmark-sha256-7b2e9d4a1f6c3850b2d7e1a9c4f80362d5b8e1a7c4f9026d3b7e0a5c8f1d40269"
+        ]
+      },
+      "key_points": [
+        "Sector attribution comes from submitter self-tagging and is unreliable.",
+        "Automated classification without analyst review produces both false positives and missed detections in this feed class.",
+        "Hash-based detection is trivially evaded by recompilation and is best used for retrospective scoping rather than prevention."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-vulnerability-exploitation-chatter",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Observed Discussion of Medical Device Vulnerability Exploitation",
+      "published_date": "2026-02-20",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["chatter", "exploitation", "medical-device", "osint"],
+      "attack_techniques": ["T1588.005"],
+      "summary": "A feed entry summarising discussion observed across open forums regarding exploitation of published medical device vulnerabilities, offered as weak early-warning signal.",
+      "facts": {
+        "feed_type": "Discussion monitoring",
+        "confidence": "Low",
+        "first_seen": "2026-02-13",
+        "last_seen": "2026-02-20",
+        "indicators": []
+      },
+      "key_points": [
+        "Discussion volume correlates weakly with subsequent exploitation and should not drive prioritisation on its own.",
+        "Much observed discussion is students, researchers and hobbyists rather than operators.",
+        "The value of this feed class is in corroborating other signals, not in generating alerts."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-credential-dump-healthcare-domains",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Healthcare Domain Credentials Appearing in Aggregated Breach Collections",
+      "published_date": "2026-01-15",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["credentials", "breach-data", "exposure", "osint"],
+      "attack_techniques": ["T1589.001", "T1078"],
+      "summary": "A feed entry reporting healthcare organisation email domains appearing in aggregated credential collections, with no verification that the credentials are current or ever valid.",
+      "facts": {
+        "feed_type": "Credential exposure monitoring",
+        "confidence": "Low",
+        "first_seen": "2026-01-08",
+        "last_seen": "2026-01-15",
+        "indicators": []
+      },
+      "key_points": [
+        "Aggregated collections recycle old material heavily, so appearance in a collection does not indicate a recent breach.",
+        "Many entries are personal accounts registered with a work email rather than corporate credentials.",
+        "The actionable response is targeted password reset and authentication hardening, not incident declaration."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-tls-certificate-anomalies",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Certificate Transparency Observations for Healthcare Brand Impersonation",
+      "published_date": "2026-06-05",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "medium",
+      "tags": ["certificate-transparency", "impersonation", "monitoring", "osint"],
+      "attack_techniques": ["T1583.001", "T1566.002"],
+      "summary": "A feed entry derived from certificate transparency logs, listing newly issued certificates for domain names resembling provider and payer organisation brands.",
+      "facts": {
+        "feed_type": "Certificate transparency monitoring",
+        "confidence": "Moderate",
+        "first_seen": "2026-05-29",
+        "last_seen": "2026-06-05",
+        "indicators": [
+          "benchmark-provider-portal.example.invalid",
+          "benchmark-secure-records.example.invalid"
+        ]
+      },
+      "key_points": [
+        "Certificate issuance is a stronger signal than domain registration alone, because it indicates intent to serve content.",
+        "Legitimate marketing and regional subsidiary registrations produce recurring false positives against brand-matching rules.",
+        "The useful window is short: certificates are typically issued shortly before a campaign begins."
+      ]
+    },
+    {
+      "doc_id": "osint-feed-ransomware-leak-site-postings",
+      "source_id": "curated_osint",
+      "title": "Feed Entry: Healthcare Organisations Named on Ransomware Leak Sites",
+      "published_date": "2026-05-22",
+      "reference_url": null,
+      "reference_verified": false,
+      "healthcare_relevance": "high",
+      "tags": ["leak-site", "ransomware", "victim-tracking", "osint"],
+      "attack_techniques": ["T1486", "T1567.002"],
+      "summary": "A tracking entry recording healthcare organisations named on ransomware extortion sites during the reporting period, with the caveat that listings are attacker claims rather than verified facts.",
+      "facts": {
+        "feed_type": "Extortion site monitoring",
+        "confidence": "Moderate",
+        "first_seen": "2026-05-15",
+        "last_seen": "2026-05-22",
+        "indicators": []
+      },
+      "key_points": [
+        "Listings are attacker assertions and are sometimes fabricated, duplicated across groups, or recycled from earlier incidents.",
+        "Sector and geography distribution across listings is more analytically useful than any individual entry.",
+        "Naming frequently precedes the victim's own public disclosure, which creates a difficult communications position rather than an actionable one."
+      ]
+    }
+  ]
+}

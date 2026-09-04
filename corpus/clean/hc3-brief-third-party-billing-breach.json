@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "hc3-brief-third-party-billing-breach",
+  "source_id": "hhs_hc3",
+  "source_name": "HHS Health Sector Cybersecurity Coordination Center (HC3)",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "hc3_brief",
+  "publisher": "US Department of Health and Human Services",
+  "title": "HC3 Analyst Note: Downstream Impact of Third-Party Claims Processor Compromise",
+  "summary": "An analyst note examining how compromise of a shared claims processing intermediary propagates breach notification and operational impact across many unconnected provider organisations simultaneously.",
+  "content": "## TLP:CLEAR\n\nThe following is shared with health and public health sector partners to support defensive planning. An analyst note examining how compromise of a shared claims processing intermediary propagates breach notification and operational impact across many unconnected provider organisations simultaneously.\n\n**Topic:** Third-party intermediary compromise in the health payment ecosystem\n\n## Sector impact\n\n- Simultaneous claims processing interruption across large numbers of unrelated providers\n- Cash flow interruption at provider organisations with limited operating reserves\n- Breach notification obligations arising from data a provider never directly controlled\n- Concentration risk that individual provider risk assessments do not surface\n\n## Recommended actions\n\n- Map which intermediaries are shared across supposedly independent vendor relationships.\n- Maintain a manual claims contingency capable of operating for several weeks.\n- Establish in advance which party holds notification responsibility for intermediary-held data.\n- Assess concentration risk at the sector level, not only at the individual contract level.\n\n## Assessment\n\n- Independent-looking vendor relationships frequently converge on the same small number of intermediaries.\n- The dominant harm is cash flow interruption, which most clinical continuity planning does not address.\n- Notification responsibility for intermediary-held data is often unresolved until an incident forces the question.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "dcc540c480dd86dcb9c5a74be98cc515faafa38bc1c292d25ccee54b45cbc6e6",
+  "content_word_count": 197,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-01-08",
+  "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+  "reference_verified": false,
+  "tags": [
+    "third-party-risk",
+    "claims-processing",
+    "breach-notification",
+    "analyst-note"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1199",
+    "T1078"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Sector-specific threat briefs issued by the US health department under TLP marking."
+}

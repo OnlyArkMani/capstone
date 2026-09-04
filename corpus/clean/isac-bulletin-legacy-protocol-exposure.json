@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "isac-bulletin-legacy-protocol-exposure",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Legacy Protocol Exposure Discovered in Clinical Segments",
+  "summary": "Members conducting internal reachability testing report widespread legacy protocol exposure within clinical segments, largely introduced by device vendor installation guidance rather than by local configuration drift.",
+  "content": "## TLP:GREEN - Alert level: Informational\n\nThis bulletin summarises activity reported to the community by member organisations. Members conducting internal reachability testing report widespread legacy protocol exposure within clinical segments, largely introduced by device vendor installation guidance rather than by local configuration drift.\n\n## Observed activity\n\nStructured reachability testing across several member organisations found legacy file sharing and remote administration protocols enabled on clinical device segments in every organisation tested. In the majority of cases the configuration matched the device manufacturer's documented installation requirements.\n\n## Recommended member actions\n\n- Conduct reachability testing rather than relying on network documentation.\n- Challenge manufacturer installation requirements that mandate legacy protocols.\n- Where a protocol cannot be disabled on the device, block it at the segment boundary.\n- Record each exception with a named owner and a review date.\n\n## Analytic caveats\n\n- The exposure originates in vendor installation guidance, so it recurs after every device deployment unless procurement addresses it.\n- Every organisation that tested found exposure, which suggests the finding is universal rather than exceptional.\n- Boundary blocking is available even where the device configuration cannot be changed.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "e069268d6fd8cec5af8e982c6bbf1019122a53d73833880c2df4ca11996beb3a",
+  "content_word_count": 186,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-02-04",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "legacy-protocols",
+    "segmentation",
+    "clinical-network",
+    "tlp-green"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1210",
+    "T1021"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

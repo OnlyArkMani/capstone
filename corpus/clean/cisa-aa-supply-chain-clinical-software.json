@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-aa-supply-chain-clinical-software",
+  "source_id": "cisa_advisory",
+  "source_name": "CISA Cybersecurity Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Software Supply Chain Compromise Affecting Clinical Application Vendors",
+  "summary": "Compromise of a clinical software vendor's build and distribution infrastructure resulted in signed updates carrying attacker-added functionality being installed across downstream provider organisations.",
+  "content": "## Summary\n\nThis joint advisory is released to warn network defenders in the health and public health sector. Compromise of a clinical software vendor's build and distribution infrastructure resulted in signed updates carrying attacker-added functionality being installed across downstream provider organisations.\n\n**Advisory type:** Cybersecurity Advisory\n\n**Authoring agencies:** CISA, FBI, HHS\n\n## Observed tactics, techniques and procedures\n\n- Access to vendor build infrastructure through a compromised developer account\n- Insertion of additional functionality prior to the code-signing step\n- Distribution through the vendor's routine update channel to all customers\n- Dormancy period before activation, exceeding typical log retention windows\n\n## Recommended actions\n\n- Require vendors to attest to build-pipeline controls, not only to secure development practices.\n- Retain update-installation records beyond the typical dormancy period of this attack class.\n- Baseline the outbound network behaviour of clinical applications so deviation is detectable.\n- Include update-channel compromise explicitly in third-party risk assessments.\n\n## Assessment\n\n- A valid code signature attests to origin, not to integrity of intent, and cannot be relied on as a security control here.\n- The dormancy period is chosen to exceed customer log retention, which is the decisive design feature of the attack.\n- Detection realistically depends on behavioural baselining of the application, not on file reputation.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "35e250e25f48d5fd94ec59c7291b80fbdb24510df28dba0c30c1e829979e5c56",
+  "content_word_count": 209,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-11-12",
+  "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+  "reference_verified": false,
+  "tags": [
+    "supply-chain",
+    "third-party-risk",
+    "clinical-software",
+    "update-integrity"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1195.002",
+    "T1554"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS."
+}

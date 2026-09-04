@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "unattrib-report-hospital-intrusion-writeup",
+  "source_id": "unattributed_report",
+  "source_name": "Unattributed Threat Report",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "unattributed_report",
+  "publisher": "Unknown",
+  "title": "Untitled Intrusion Write-up Concerning a Regional Hospital Network",
+  "summary": "An unsigned narrative account of an intrusion at an unnamed regional hospital, describing initial access through an unpatched web application and subsequent movement toward records infrastructure.",
+  "content": "## Document summary\n\nNo provenance information accompanies this document. An unsigned narrative account of an intrusion at an unnamed regional hospital, describing initial access through an unpatched web application and subsequent movement toward records infrastructure.\n\n## Content as received\n\nThe author describes discovering an unpatched public-facing scheduling application at a regional hospital, obtaining a shell, and identifying a path toward records infrastructure before the engagement ended. Neither the organisation nor the author is identified, and no dates are given.\n\n## Provenance\n\nNo author, organisation, date or contact information. Circulated as a plain text file with no signature or distribution marking. Technical content is internally consistent but nothing in the document can be corroborated.\n\n**Circulation:** Forwarded from an unspecified source; original publication location unknown.\n\n## Assessment of this document\n\n- The technical narrative is plausible and internally consistent, which is exactly why unverified material of this kind is difficult to dismiss.\n- Nothing in the document permits verification: no organisation, no dates, no indicators that could be checked against telemetry.\n- The account may be genuine, sanitised, exaggerated or entirely invented, and the document itself offers no way to distinguish these.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "fb91ad4b2d72563f8cee7e2709d21c4fb1a321f63edc9e31d1e368279425ca93",
+  "content_word_count": 190,
+  "ingestion_date": "2026-09-02",
+  "published_date": null,
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "intrusion",
+    "unattributed",
+    "narrative-report"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1190",
+    "T1078"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Provenance cannot be established."
+}

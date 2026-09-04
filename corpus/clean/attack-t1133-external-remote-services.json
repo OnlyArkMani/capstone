@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1133-external-remote-services",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1133: External Remote Services",
+  "summary": "Adversaries use externally facing remote services to access or persist within a network, a path that healthcare organisations widen through routine third-party device maintenance access.",
+  "content": "## T1133 - External Remote Services\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries use externally facing remote services to access or persist within a network, a path that healthcare organisations widen through routine third-party device maintenance access.\n\n**Tactic:** Initial Access, Persistence\n\n**Platforms:** Windows, Linux, Containers, SaaS\n\n## Healthcare context\n\nBiomedical device vendors commonly require standing remote access for maintenance, often through tooling the provider organisation does not control or monitor.\n\n## Detection\n\nRemote access sessions outside contracted maintenance windows; vendor access originating from unexpected geography; sessions that reach systems outside the vendor's contracted scope.\n\n## Mitigations\n\n- Make vendor access time-bound and approved per session rather than standing.\n- Terminate vendor access at a jump host under provider control.\n- Log vendor sessions in full and review a sample rather than none.\n\n## Observations\n\n- Vendor remote access is contractual, which places it outside the authority of most security teams to remove.\n- A provider-controlled jump host converts an unmonitorable path into a monitorable one without breaking the contract.\n- Scope violation, rather than time-of-day anomaly, is the more reliable indicator.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "aa47a18a3bb8682690b61db6a06c71d038539d822f4cdf48ff5305a3bffe2d6c",
+  "content_word_count": 187,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1133/",
+  "reference_verified": true,
+  "tags": [
+    "initial-access",
+    "persistence",
+    "remote-access",
+    "vendor-access"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1133"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

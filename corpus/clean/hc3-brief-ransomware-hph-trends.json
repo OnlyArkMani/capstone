@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "hc3-brief-ransomware-hph-trends",
+  "source_id": "hhs_hc3",
+  "source_name": "HHS Health Sector Cybersecurity Coordination Center (HC3)",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "hc3_brief",
+  "publisher": "US Department of Health and Human Services",
+  "title": "HC3 Threat Brief: Ransomware Trends Affecting the Health Sector",
+  "summary": "A sector threat brief reviewing ransomware activity against health and public health entities, noting continued growth in exfiltration-first operations and a shift toward targeting smaller regional providers.",
+  "content": "## TLP:CLEAR\n\nThe following is shared with health and public health sector partners to support defensive planning. A sector threat brief reviewing ransomware activity against health and public health entities, noting continued growth in exfiltration-first operations and a shift toward targeting smaller regional providers.\n\n**Topic:** Ransomware operations targeting health and public health entities\n\n## Sector impact\n\n- Emergency department diversion during extended outages\n- Delayed diagnostic imaging and laboratory turnaround\n- Regulatory notification obligations arising from exfiltrated records\n- Sustained financial impact from clinical revenue interruption rather than from ransom payment\n\n## Recommended actions\n\n- Test clinical downtime procedures on the assumption of a multi-week outage.\n- Verify that backup infrastructure credentials are separate from production identity infrastructure.\n- Establish mutual aid arrangements with regional providers before they are needed.\n- Ensure the incident response plan names a clinical decision-maker, not only a technical one.\n\n## Assessment\n\n- Smaller regional providers are increasingly targeted because their recovery capability is weaker while their clinical criticality is unchanged.\n- Financial impact is dominated by clinical revenue interruption, not by ransom demands.\n- Downtime procedures written for a two-day outage do not scale to a three-week one, and the difference is discovered in the incident.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "a52b28391429bd644e9c2d3f57da6a91b79f51a0b56ec0afead28afbf2ca0e1c",
+  "content_word_count": 202,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-02",
+  "reference_url": "https://www.hhs.gov/about/agencies/asa/ocio/hc3/",
+  "reference_verified": false,
+  "tags": [
+    "ransomware",
+    "sector-trends",
+    "tlp-clear",
+    "threat-brief"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1490",
+    "T1567.002"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Sector-specific threat briefs issued by the US health department under TLP marking."
+}

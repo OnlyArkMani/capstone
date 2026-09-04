@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1048-exfil-alternative-protocol",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1048: Exfiltration Over Alternative Protocol",
+  "summary": "Adversaries exfiltrate data using a protocol other than the existing command and control channel, frequently selecting protocols that clinical networks must permit for operational reasons.",
+  "content": "## T1048 - Exfiltration Over Alternative Protocol\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries exfiltrate data using a protocol other than the existing command and control channel, frequently selecting protocols that clinical networks must permit for operational reasons.\n\n**Tactic:** Exfiltration\n\n**Platforms:** Windows, Linux, macOS, Network Devices\n\n## Healthcare context\n\nClinical networks permit DNS, and often permit outbound file transfer for health information exchange, which gives an adversary sanctioned protocols to work within.\n\n## Detection\n\nDNS query volume or record-length anomalies per host; outbound transfers to destinations outside the health information exchange partner list; protocol use inconsistent with the host's role.\n\n## Mitigations\n\n- Baseline DNS behaviour per host class rather than organisation-wide.\n- Restrict outbound file transfer to an explicit partner allowlist.\n- Deny protocols that a given host class has no operational reason to use.\n\n## Observations\n\n- The chosen protocol is permitted for legitimate clinical reasons, so blocking it is not available as a control.\n- Per-host-class baselining detects what organisation-wide thresholds cannot.\n- Health information exchange traffic provides convenient cover because it is both outbound and voluminous.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "1f69f774fcb075a567f26f9d0facd8068144cf59309c59dbac17667394e8ca3c",
+  "content_word_count": 186,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1048/",
+  "reference_verified": true,
+  "tags": [
+    "exfiltration",
+    "dns",
+    "protocol-abuse",
+    "phi"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1048"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

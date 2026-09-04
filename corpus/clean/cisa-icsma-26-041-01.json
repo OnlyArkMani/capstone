@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-icsma-26-041-01",
+  "source_id": "cisa_ics_medical",
+  "source_name": "CISA ICS Medical Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "ZOLL ePCR iOS Mobile Application",
+  "summary": "An electronic patient care reporting application for emergency medical services retains credential material and cached patient records on the device in a form recoverable by anyone with local access.",
+  "content": "## Executive summary\n\nThis advisory concerns a vulnerability affecting equipment deployed in clinical environments. An electronic patient care reporting application for emergency medical services retains credential material and cached patient records on the device in a form recoverable by anyone with local access.\n\n## Affected equipment\n\n**Equipment:** Pre-hospital electronic patient care record application on field-issued handsets\n\n**Vendor:** ZOLL\n\n**Vulnerability type:** Insufficiently Protected Credentials, Cleartext Storage\n\n**CVSS base score:** 6.2\n\n## Affected versions\n\n- Application builds prior to the vendor's corrected release\n\n## Risk evaluation\n\nField handsets are lost at a materially higher rate than hospital assets, so local-access exposures carry a realistic occurrence probability rather than a theoretical one.\n\n**Exploitability:** Local access to the device, including a lost or stolen field handset.\n\n## Mitigations\n\n- Deploy the corrected application build through mobile device management.\n- Enforce device-level encryption and short auto-lock intervals on all field handsets.\n- Enable remote wipe and confirm it is exercised in practice, not merely configured.\n- Reduce the volume of cached records retained on the device after a run is uploaded.\n\n## Analyst notes\n\n- Threat modelling for pre-hospital devices must weight physical loss far above network intrusion.\n- Cached records accumulate silently; the retention window is the control that matters most.\n- Remote wipe that has never been tested is not a mitigation.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "3ac43ae2d235f08ff3fb66c7446bc9598f1459e95b1e3bfbde8168a0999b1caf",
+  "content_word_count": 219,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-02-10",
+  "reference_url": "https://www.cisa.gov/news-events/ics-medical-advisories/icsma-26-041-01",
+  "reference_verified": true,
+  "tags": [
+    "ems",
+    "mobile-application",
+    "patient-record",
+    "credential-storage"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1552.001",
+    "T1005"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "ZOLL",
+  "product": "ePCR iOS Mobile Application",
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency under an official advisory identifier."
+}

@@ -1,0 +1,1397 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "corpus": "clean",
+  "built_at": "2026-09-03T05:11:30+00:00",
+  "ingestion_date": "2026-09-02",
+  "document_count": 72,
+  "tier_counts": {
+    "1": 40,
+    "2": 21,
+    "3": 11
+  },
+  "source_counts": {
+    "cisa_ics_medical": 8,
+    "cisa_advisory": 7,
+    "mitre_attack": 12,
+    "nvd_cve": 7,
+    "hhs_hc3": 4,
+    "vendor_psirt": 2,
+    "health_isac": 6,
+    "vendor_research_blog": 7,
+    "curated_osint": 8,
+    "unattributed_report": 4,
+    "community_forum": 4,
+    "analyst_upload": 3
+  },
+  "content_origin_counts": {
+    "synthesized_representative": 72,
+    "fetched_public_source": 0
+  },
+  "reference_verified_count": 27,
+  "provenance_statement": "Document bodies in this corpus are synthesized representative text. Structure, register and field conventions model the named source type; no body is a verbatim reproduction of a published advisory. Where reference_verified is true, the identifier and title were confirmed against the public source -- that attests to the anchor, not to the body text. All indicators are fabricated and use reserved documentation ranges.",
+  "documents": [
+    {
+      "doc_id": "analyst-note-downtime-dependency-mapping",
+      "file": "analyst-note-downtime-dependency-mapping.json",
+      "source_id": "analyst_upload",
+      "source_tier": 3,
+      "source_type": "analyst_note",
+      "title": "Working Note: Dependency Mapping for Clinical Downtime Planning",
+      "summary": "An uploaded working note capturing early dependency mapping between clinical applications and the infrastructure they rely on, produced to inform downtime planning.",
+      "content_sha256": "3dec179198fecb3ad2961b0eb64ddd79de2cf7460ee2c5df2b880f60cb83b3fe",
+      "content_word_count": 217,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "analyst-note",
+        "dependency-mapping",
+        "downtime",
+        "working-document"
+      ]
+    },
+    {
+      "doc_id": "analyst-note-imaging-alert-triage",
+      "file": "analyst-note-imaging-alert-triage.json",
+      "source_id": "analyst_upload",
+      "source_tier": 3,
+      "source_type": "analyst_note",
+      "title": "Working Note: Triage Observations on Imaging Segment Alerts",
+      "summary": "An uploaded analyst working note recording triage observations on alerts from the imaging network segment, with tentative conclusions the author explicitly marks as unconfirmed.",
+      "content_sha256": "8e6e687909ebf020a4939af382cbea1fbec1edaa08416c107a875296e980e920",
+      "content_word_count": 224,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "analyst-note",
+        "triage",
+        "imaging",
+        "working-document"
+      ]
+    },
+    {
+      "doc_id": "analyst-note-vendor-access-review",
+      "file": "analyst-note-vendor-access-review.json",
+      "source_id": "analyst_upload",
+      "source_tier": 3,
+      "source_type": "analyst_note",
+      "title": "Working Note: Partial Inventory of Vendor Remote Access Paths",
+      "summary": "An uploaded working note recording a partial inventory of vendor remote access paths into the biomedical estate, incomplete at the time of upload.",
+      "content_sha256": "7356d9405018a5145d47728929c4decc16892fd72d1da61ee213fcdbc396f073",
+      "content_word_count": 227,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "analyst-note",
+        "vendor-access",
+        "inventory",
+        "incomplete"
+      ]
+    },
+    {
+      "doc_id": "attack-t1021-001-remote-desktop-protocol",
+      "file": "attack-t1021-001-remote-desktop-protocol.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1021.001: Remote Services - Remote Desktop Protocol",
+      "summary": "Adversaries use remote desktop sessions to move between systems, an approach that blends into healthcare estates where clinical support staff use the same mechanism routinely.",
+      "content_sha256": "3172d68b2da9f86151652e570d122fa5aaeaf7ec58667efde01b317337ca8863",
+      "content_word_count": 180,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "lateral-movement",
+        "rdp",
+        "clinical-workstation"
+      ]
+    },
+    {
+      "doc_id": "attack-t1048-exfil-alternative-protocol",
+      "file": "attack-t1048-exfil-alternative-protocol.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1048: Exfiltration Over Alternative Protocol",
+      "summary": "Adversaries exfiltrate data using a protocol other than the existing command and control channel, frequently selecting protocols that clinical networks must permit for operational reasons.",
+      "content_sha256": "1f69f774fcb075a567f26f9d0facd8068144cf59309c59dbac17667394e8ca3c",
+      "content_word_count": 186,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "exfiltration",
+        "dns",
+        "protocol-abuse",
+        "phi"
+      ]
+    },
+    {
+      "doc_id": "attack-t1078-valid-accounts",
+      "file": "attack-t1078-valid-accounts.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1078: Valid Accounts",
+      "summary": "Adversaries use legitimate credentials to access systems, which is particularly effective in clinical environments where shared and long-lived accounts persist for operational reasons.",
+      "content_sha256": "5df268151bc644abe3e0858ef6e3f190313c779703a483f71746830fbdcc06c7",
+      "content_word_count": 195,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "defense-evasion",
+        "persistence",
+        "credentials",
+        "shared-accounts"
+      ]
+    },
+    {
+      "doc_id": "attack-t1133-external-remote-services",
+      "file": "attack-t1133-external-remote-services.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1133: External Remote Services",
+      "summary": "Adversaries use externally facing remote services to access or persist within a network, a path that healthcare organisations widen through routine third-party device maintenance access.",
+      "content_sha256": "aa47a18a3bb8682690b61db6a06c71d038539d822f4cdf48ff5305a3bffe2d6c",
+      "content_word_count": 187,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "initial-access",
+        "persistence",
+        "remote-access",
+        "vendor-access"
+      ]
+    },
+    {
+      "doc_id": "attack-t1190-exploit-public-facing",
+      "file": "attack-t1190-exploit-public-facing.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1190: Exploit Public-Facing Application",
+      "summary": "Adversaries exploit weaknesses in internet-facing applications to gain initial access, with patient portals, referral systems and remote access appliances forming the dominant healthcare exposure.",
+      "content_sha256": "e78d1aa40a34886693e573f313d4c991042f55b1806ee53e73b9517c83da687f",
+      "content_word_count": 187,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "initial-access",
+        "edge-exposure",
+        "patient-portal"
+      ]
+    },
+    {
+      "doc_id": "attack-t1210-exploitation-remote-services",
+      "file": "attack-t1210-exploitation-remote-services.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1210: Exploitation of Remote Services",
+      "summary": "Adversaries exploit vulnerabilities in internal services to move laterally, a path kept unusually open in healthcare by unpatchable biomedical devices running legacy protocol stacks.",
+      "content_sha256": "8dbf1be6b8de6ed4be93eb8d83c031f8113c1a288b105193503720db053572cb",
+      "content_word_count": 192,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "lateral-movement",
+        "legacy-protocols",
+        "biomedical"
+      ]
+    },
+    {
+      "doc_id": "attack-t1486-data-encrypted-impact",
+      "file": "attack-t1486-data-encrypted-impact.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1486: Data Encrypted for Impact",
+      "summary": "Adversaries encrypt data on target systems to interrupt availability, which in a hospital environment translates directly into diverted admissions and reversion to paper-based clinical workflow.",
+      "content_sha256": "c217a6ffdf2d2c55055b39d9235c2c49e315c0e2d2b4675622d9d6d4d1576433",
+      "content_word_count": 195,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "impact",
+        "ransomware",
+        "encryption"
+      ]
+    },
+    {
+      "doc_id": "attack-t1489-service-stop",
+      "file": "attack-t1489-service-stop.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1489: Service Stop",
+      "summary": "Adversaries stop services to render systems unavailable or to remove obstacles to encryption, with backup agents, database services and security tooling stopped immediately before ransomware deployment.",
+      "content_sha256": "31964a4c6a2a31aaffdbabed0e432e6659bd38fdfaa56c7ca5c800a847ba8eee",
+      "content_word_count": 200,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "impact",
+        "backup-disruption",
+        "pre-encryption"
+      ]
+    },
+    {
+      "doc_id": "attack-t1490-inhibit-system-recovery",
+      "file": "attack-t1490-inhibit-system-recovery.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1490: Inhibit System Recovery",
+      "summary": "Adversaries delete or disable recovery features so that encrypted or corrupted systems cannot be restored, converting a recoverable incident into an extended clinical outage.",
+      "content_sha256": "faa3a800289e7d82ddb3c0f5450ac5b9a4f868bb5e8e6e9c0f073a30d0f0f542",
+      "content_word_count": 200,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "impact",
+        "recovery",
+        "shadow-copies",
+        "backup"
+      ]
+    },
+    {
+      "doc_id": "attack-t1562-001-disable-modify-tools",
+      "file": "attack-t1562-001-disable-modify-tools.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1562.001: Impair Defenses - Disable or Modify Tools",
+      "summary": "Adversaries disable or modify security tooling to avoid detection, exploiting the fact that clinical environments carry many documented agent exclusions for performance reasons.",
+      "content_sha256": "83f10b765f540c9a300b4c54faa9a9d461915494a2f370dfe787aba50148d0a6",
+      "content_word_count": 192,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "defense-evasion",
+        "security-tooling",
+        "tamper"
+      ]
+    },
+    {
+      "doc_id": "attack-t1566-phishing",
+      "file": "attack-t1566-phishing.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1566: Phishing",
+      "summary": "Adversaries send messages designed to elicit credential disclosure or code execution, using healthcare-specific pretexts such as referral notifications, payer correspondence and credentialing requests.",
+      "content_sha256": "76d8634c30752e047ef1ef4b8b99d2ca828187a914094f39fa73e75e1867a2ad",
+      "content_word_count": 180,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "initial-access",
+        "phishing",
+        "social-engineering"
+      ]
+    },
+    {
+      "doc_id": "attack-t1567-002-exfil-cloud-storage",
+      "file": "attack-t1567-002-exfil-cloud-storage.json",
+      "source_id": "mitre_attack",
+      "source_tier": 1,
+      "source_type": "attack_technique",
+      "title": "T1567.002: Exfiltration to Cloud Storage",
+      "summary": "Adversaries transfer data to a cloud storage service rather than to dedicated infrastructure, blending with sanctioned business use of the same services.",
+      "content_sha256": "91872c77d1a4e253255f3b3ad8897c9149936f9089d88c44c0e8e1f11ef4b0b7",
+      "content_word_count": 174,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "exfiltration",
+        "cloud-storage",
+        "phi",
+        "double-extortion"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-biomedical-network-segmentation",
+      "file": "cisa-aa-biomedical-network-segmentation.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Lateral Movement into Biomedical Device Segments Following Workstation Compromise",
+      "summary": "Intrusions beginning on ordinary clinical workstations are reaching biomedical device segments because segmentation is frequently documented but not enforced at the network layer.",
+      "content_sha256": "d6688308faf1ee9107704ec77976bb70bfd18718c39563e6ec0662fcc04307b4",
+      "content_word_count": 203,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "lateral-movement",
+        "segmentation",
+        "biomedical",
+        "clinical-network"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-data-exfiltration-cloud-storage",
+      "file": "cisa-aa-data-exfiltration-cloud-storage.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Bulk Patient Record Exfiltration to Commercial Cloud Storage Services",
+      "summary": "Actors are staging and exfiltrating large volumes of patient records to widely used commercial cloud storage services, exploiting the fact that such destinations are routinely permitted by egress policy.",
+      "content_sha256": "03265caaf6d78cfa9cf166b729c6ed889fd4bcd812a7708951c5f0b38f4b824f",
+      "content_word_count": 201,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "exfiltration",
+        "cloud-storage",
+        "phi",
+        "data-loss"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-hph-ransomware-double-extortion",
+      "file": "cisa-aa-hph-ransomware-double-extortion.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Joint Advisory: Ransomware Targeting Healthcare and Public Health Sector Entities",
+      "summary": "A joint federal advisory describes ransomware operators repeatedly targeting hospital systems, exfiltrating patient records before encryption and timing deployment to coincide with reduced staffing.",
+      "content_sha256": "9d877f456934410c5ced1e4a33e24080c405cba41d259991a2e66b3d57be80a5",
+      "content_word_count": 226,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "ransomware",
+        "double-extortion",
+        "hph-sector",
+        "joint-advisory"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-legacy-medical-device-eol",
+      "file": "cisa-aa-legacy-medical-device-eol.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Risk Guidance for End-of-Support Operating Systems in Clinical Environments",
+      "summary": "Guidance addressing clinical devices that remain in service on operating systems no longer receiving security updates, and the compensating controls appropriate where replacement is not clinically or financially viable.",
+      "content_sha256": "6b7a058d7e57698cd1b4b3cdb10ba46945bb6e61d20c7b08de3f52232e87eb98",
+      "content_word_count": 211,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "legacy-systems",
+        "end-of-support",
+        "compensating-controls",
+        "biomedical"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-phishing-credential-harvest-hph",
+      "file": "cisa-aa-phishing-credential-harvest-hph.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Credential Harvesting Campaigns Impersonating Health Payer and Benefits Portals",
+      "summary": "Campaigns impersonating payer portals and benefits administrators are harvesting clinical staff credentials, with harvested access used to reach records systems rather than to commit financial fraud.",
+      "content_sha256": "b35e47119ca6c6ec92574526427009ebbac266a942383797d7d5114bd528eef2",
+      "content_word_count": 202,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "phishing",
+        "credential-harvesting",
+        "payer-portal",
+        "social-engineering"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-remote-access-exploitation-health",
+      "file": "cisa-aa-remote-access-exploitation-health.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Exploitation of Internet-Facing Remote Access Appliances at Healthcare Organisations",
+      "summary": "Threat actors are exploiting known vulnerabilities in internet-facing remote access appliances at provider organisations, establishing persistence before any detection tooling on internal systems has an opportunity to observe them.",
+      "content_sha256": "f07278a22c84bc6699694c0ed6c8cfc20298471242375ad2b6baebe4e7b58276",
+      "content_word_count": 215,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "remote-access",
+        "vpn",
+        "initial-access",
+        "edge-device"
+      ]
+    },
+    {
+      "doc_id": "cisa-aa-supply-chain-clinical-software",
+      "file": "cisa-aa-supply-chain-clinical-software.json",
+      "source_id": "cisa_advisory",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Software Supply Chain Compromise Affecting Clinical Application Vendors",
+      "summary": "Compromise of a clinical software vendor's build and distribution infrastructure resulted in signed updates carrying attacker-added functionality being installed across downstream provider organisations.",
+      "content_sha256": "35e250e25f48d5fd94ec59c7291b80fbdb24510df28dba0c30c1e829979e5c56",
+      "content_word_count": 209,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "supply-chain",
+        "third-party-risk",
+        "clinical-software",
+        "update-integrity"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-25-030-01",
+      "file": "cisa-icsma-25-030-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Contec Health CMS8000 Patient Monitor",
+      "summary": "A patient monitor contains firmware functionality that contacts a hard-coded external address and transmits patient data, alongside an interface permitting remote file writes to the device.",
+      "content_sha256": "0bb41b200200b59072a669c817c64286a1d5c41f63a7e5bbb0ac01ce7f03f77a",
+      "content_word_count": 246,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "patient-monitor",
+        "backdoor",
+        "firmware",
+        "phi-exposure"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-25-364-01",
+      "file": "cisa-icsma-25-364-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "WHILL Model C2 Electric Wheelchairs and Model F Power Chairs",
+      "summary": "Powered mobility devices accept control commands over a wireless interface without adequately authenticating the controlling application, permitting an attacker within range to influence device behaviour.",
+      "content_sha256": "b76fb2335ae724073355712f45f743fe939b5049f23e8a1e561532acab6d5c1b",
+      "content_word_count": 204,
+      "healthcare_relevance": "medium",
+      "reference_verified": true,
+      "tags": [
+        "assistive-device",
+        "bluetooth",
+        "authentication",
+        "patient-safety"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-041-01",
+      "file": "cisa-icsma-26-041-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "ZOLL ePCR iOS Mobile Application",
+      "summary": "An electronic patient care reporting application for emergency medical services retains credential material and cached patient records on the device in a form recoverable by anyone with local access.",
+      "content_sha256": "3ac43ae2d235f08ff3fb66c7446bc9598f1459e95b1e3bfbde8168a0999b1caf",
+      "content_word_count": 219,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "ems",
+        "mobile-application",
+        "patient-record",
+        "credential-storage"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-083-01",
+      "file": "cisa-icsma-26-083-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Grassroots DICOM (GDCM)",
+      "summary": "A DICOM parsing library used by research and clinical imaging pipelines mishandles malformed pixel data, producing a heap overflow when a crafted study is processed.",
+      "content_sha256": "ccb5fd4e6143a73c4ca72dec1bf8572db1898af735913d0434bbbc1361a12edd",
+      "content_word_count": 202,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "dicom",
+        "open-source-library",
+        "memory-safety",
+        "medical-imaging"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-148-01",
+      "file": "cisa-icsma-26-148-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "Fourth Frontier Frontier X Mobile Application, Frontier X2",
+      "summary": "A wearable cardiac monitor and its companion mobile application expose recorded physiological data and pairing material to an attacker within wireless range or in control of the handset.",
+      "content_sha256": "102426adf91e7586950878f40c58c17c22ebf8d998137dbd549a0b13c09198f5",
+      "content_word_count": 229,
+      "healthcare_relevance": "medium",
+      "reference_verified": true,
+      "tags": [
+        "wearable",
+        "mobile-application",
+        "bluetooth",
+        "patient-data"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-176-01",
+      "file": "cisa-icsma-26-176-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "pydicom pynetdicom Library",
+      "summary": "Improper input handling in a widely embedded DICOM networking library allows a crafted association request to crash or hang the receiving service, interrupting image transfer between modalities and the PACS archive.",
+      "content_sha256": "3ffc3415e1df0157e54a0b2d9e075bda04b4ff0ece52ab99455b17eaa23f04f9",
+      "content_word_count": 264,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "dicom",
+        "medical-imaging",
+        "open-source-library",
+        "pacs"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-176-02",
+      "file": "cisa-icsma-26-176-02.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "OHIF Viewers DICOM",
+      "summary": "A web-based DICOM viewer renders attacker-controllable metadata fields without adequate encoding, allowing script execution in the session of a clinician who opens a prepared study.",
+      "content_sha256": "8b434623bbdb94c7747675f3bc19fbcee107eef6791f11eb114df522ca3ca0ef",
+      "content_word_count": 237,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "dicom",
+        "medical-imaging",
+        "web-viewer",
+        "cross-site-scripting"
+      ]
+    },
+    {
+      "doc_id": "cisa-icsma-26-181-01",
+      "file": "cisa-icsma-26-181-01.json",
+      "source_id": "cisa_ics_medical",
+      "source_tier": 1,
+      "source_type": "cisa_advisory",
+      "title": "OFFIS DCMTK Toolkit",
+      "summary": "Memory-safety defects in a DICOM toolkit embedded across commercial imaging products permit out-of-bounds access when parsing a malformed dataset, with potential for code execution on the parsing host.",
+      "content_sha256": "7c740e9ca7179f6d3a8da5e1152ba5240aed5fdfd1c9b3f8665763e9bf077bd4",
+      "content_word_count": 253,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "dicom",
+        "toolkit",
+        "memory-safety",
+        "medical-imaging"
+      ]
+    },
+    {
+      "doc_id": "forum-post-hl7-interface-hardening",
+      "file": "forum-post-hl7-interface-hardening.json",
+      "source_id": "community_forum",
+      "source_tier": 3,
+      "source_type": "forum_post",
+      "title": "Forum Thread: Practical Hardening for HL7 Interface Engines",
+      "summary": "A forum discussion on hardening HL7 integration engines, covering network restriction, message validation and the practical limits imposed by trading partner capability.",
+      "content_sha256": "79d06be4c7ca8d7e1031a22ae654a81a52763dc211d9bc96fb7d29fdd1afd740",
+      "content_word_count": 180,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "hl7",
+        "forum",
+        "hardening",
+        "integration"
+      ]
+    },
+    {
+      "doc_id": "forum-post-legacy-windows-clinical-workstations",
+      "file": "forum-post-legacy-windows-clinical-workstations.json",
+      "source_id": "community_forum",
+      "source_tier": 3,
+      "source_type": "forum_post",
+      "title": "Forum Thread: Handling End-of-Support Workstations Attached to Clinical Equipment",
+      "summary": "A community forum thread in which practitioners discuss managing end-of-support workstations that are tied to clinical equipment and cannot be replaced independently of it.",
+      "content_sha256": "f8ac4fb5aaf10f8e07d353e25816f0ea2f3de09338266117499c51bbe0835a45",
+      "content_word_count": 180,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "legacy-systems",
+        "forum",
+        "community-discussion",
+        "biomedical"
+      ]
+    },
+    {
+      "doc_id": "forum-post-medical-device-inventory-tooling",
+      "file": "forum-post-medical-device-inventory-tooling.json",
+      "source_id": "community_forum",
+      "source_tier": 3,
+      "source_type": "forum_post",
+      "title": "Forum Thread: Tooling Choices for Connected Medical Device Discovery",
+      "summary": "A forum thread comparing approaches to discovering connected medical devices, with contributors reporting mixed results from both passive monitoring and active scanning.",
+      "content_sha256": "67f9173b6417112d6cce8e034f36bbbe63e36b2eb82c59e68db4ff4d06a2fb12",
+      "content_word_count": 179,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "asset-discovery",
+        "forum",
+        "tooling",
+        "medical-device"
+      ]
+    },
+    {
+      "doc_id": "forum-post-ransomware-tabletop-lessons",
+      "file": "forum-post-ransomware-tabletop-lessons.json",
+      "source_id": "community_forum",
+      "source_tier": 3,
+      "source_type": "forum_post",
+      "title": "Forum Thread: What Ransomware Tabletop Exercises Miss in Hospital Settings",
+      "summary": "A forum thread in which practitioners discuss gaps their ransomware tabletop exercises failed to surface, with clinical downtime operations the recurring theme.",
+      "content_sha256": "5be8875ccc9a8464f93690a64f03b5beaf8e30279025de892459e468016ded81",
+      "content_word_count": 195,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "tabletop",
+        "incident-response",
+        "forum",
+        "resilience"
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-credential-harvesting-health",
+      "file": "hc3-brief-credential-harvesting-health.json",
+      "source_id": "hhs_hc3",
+      "source_tier": 1,
+      "source_type": "hc3_brief",
+      "title": "HC3 Analyst Note: Credential Harvesting Targeting Clinical Staff",
+      "summary": "An analyst note describing credential harvesting campaigns aimed at clinical and administrative staff, using pretexts drawn from genuine healthcare administrative workflow.",
+      "content_sha256": "75f05bdd541559f1e905de4e2c2aca2ef70b6a96273dcf8349d5cb93702af29c",
+      "content_word_count": 165,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "credential-harvesting",
+        "phishing",
+        "analyst-note",
+        "tlp-clear"
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-medical-device-inventory",
+      "file": "hc3-brief-medical-device-inventory.json",
+      "source_id": "hhs_hc3",
+      "source_tier": 1,
+      "source_type": "hc3_brief",
+      "title": "HC3 Sector Alert: Managing Vulnerability Risk in Connected Medical Device Estates",
+      "summary": "A sector alert addressing the persistent gap between medical device asset inventories and the software components those devices actually run.",
+      "content_sha256": "104cf20ec7c08ecb904823c89f1564f702232f0173af730463c67065c4f70527",
+      "content_word_count": 172,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "medical-device",
+        "asset-inventory",
+        "sbom",
+        "sector-alert"
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-ransomware-hph-trends",
+      "file": "hc3-brief-ransomware-hph-trends.json",
+      "source_id": "hhs_hc3",
+      "source_tier": 1,
+      "source_type": "hc3_brief",
+      "title": "HC3 Threat Brief: Ransomware Trends Affecting the Health Sector",
+      "summary": "A sector threat brief reviewing ransomware activity against health and public health entities, noting continued growth in exfiltration-first operations and a shift toward targeting smaller regional providers.",
+      "content_sha256": "a52b28391429bd644e9c2d3f57da6a91b79f51a0b56ec0afead28afbf2ca0e1c",
+      "content_word_count": 202,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "ransomware",
+        "sector-trends",
+        "tlp-clear",
+        "threat-brief"
+      ]
+    },
+    {
+      "doc_id": "hc3-brief-third-party-billing-breach",
+      "file": "hc3-brief-third-party-billing-breach.json",
+      "source_id": "hhs_hc3",
+      "source_tier": 1,
+      "source_type": "hc3_brief",
+      "title": "HC3 Analyst Note: Downstream Impact of Third-Party Claims Processor Compromise",
+      "summary": "An analyst note examining how compromise of a shared claims processing intermediary propagates breach notification and operational impact across many unconnected provider organisations simultaneously.",
+      "content_sha256": "dcc540c480dd86dcb9c5a74be98cc515faafa38bc1c292d25ccee54b45cbc6e6",
+      "content_word_count": 197,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "third-party-risk",
+        "claims-processing",
+        "breach-notification",
+        "analyst-note"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-dicom-exposure-scanning",
+      "file": "isac-bulletin-dicom-exposure-scanning.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Internet-Wide Scanning for Exposed DICOM Services",
+      "summary": "Members report a marked increase in unsolicited connection attempts to DICOM service ports, consistent with internet-wide scanning for imaging systems reachable from outside the organisation.",
+      "content_sha256": "2e5e361bfecb70bf4095c6aad2828496dcd06e7cdb405d525aebe03ce852549a",
+      "content_word_count": 205,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "dicom",
+        "exposure",
+        "scanning",
+        "imaging",
+        "tlp-green"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-downtime-procedure-lessons",
+      "file": "isac-bulletin-downtime-procedure-lessons.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Lessons Learned from Extended Clinical Downtime Events",
+      "summary": "A consolidated set of lessons contributed by members who experienced multi-week clinical system outages, focusing on where written downtime procedures failed in practice.",
+      "content_sha256": "aceb909509e3972b30670f58f1645052d8994ab8b39d7dd35340b1a40ac872da",
+      "content_word_count": 194,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "incident-response",
+        "downtime",
+        "resilience",
+        "lessons-learned"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-legacy-protocol-exposure",
+      "file": "isac-bulletin-legacy-protocol-exposure.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Legacy Protocol Exposure Discovered in Clinical Segments",
+      "summary": "Members conducting internal reachability testing report widespread legacy protocol exposure within clinical segments, largely introduced by device vendor installation guidance rather than by local configuration drift.",
+      "content_sha256": "e069268d6fd8cec5af8e982c6bbf1019122a53d73833880c2df4ca11996beb3a",
+      "content_word_count": 186,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "legacy-protocols",
+        "segmentation",
+        "clinical-network",
+        "tlp-green"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-phishing-credentialing-lure",
+      "file": "isac-bulletin-phishing-credentialing-lure.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Phishing Campaign Using Clinical Credentialing Pretexts",
+      "summary": "Members report a phishing campaign using medical staff credentialing and licence renewal pretexts, which achieved unusually high engagement because the pretext matches a genuine periodic obligation.",
+      "content_sha256": "5d72e96373996952f487fd5f7454a0f8cac6be90de9053bc2b8b7aeb4b0c022e",
+      "content_word_count": 191,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "phishing",
+        "credentialing",
+        "social-engineering",
+        "tlp-green"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-ransomware-regional-providers",
+      "file": "isac-bulletin-ransomware-regional-providers.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Ransomware Activity Against Regional Provider Networks",
+      "summary": "Member-contributed reporting of ransomware intrusions at several regional provider networks over a four-week period, with consistent initial access through unpatched remote access appliances.",
+      "content_sha256": "e0ae437e4e82babadca2cc94de754d23c8a34fdcb0cd2d2ee9553f193ed317c0",
+      "content_word_count": 201,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "ransomware",
+        "member-sharing",
+        "regional-providers",
+        "tlp-amber"
+      ]
+    },
+    {
+      "doc_id": "isac-bulletin-vendor-remote-access-abuse",
+      "file": "isac-bulletin-vendor-remote-access-abuse.json",
+      "source_id": "health_isac",
+      "source_tier": 2,
+      "source_type": "isac_bulletin",
+      "title": "Member Bulletin: Abuse of Biomedical Vendor Remote Access Tooling",
+      "summary": "Reporting from members describing intrusions that entered through biomedical device vendor remote support tooling, which sat outside the provider organisation's monitoring and access control.",
+      "content_sha256": "06f73cb82f8f9d119acbfadd7e0564cdc59bb3bacfda5e2e638d428f6e11f05d",
+      "content_word_count": 198,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "vendor-access",
+        "third-party-risk",
+        "biomedical",
+        "tlp-amber"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2019-12255",
+      "file": "nvd-cve-2019-12255.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2019-12255: Wind River VxWorks TCP Urgent Pointer Handling (URGENT/11)",
+      "summary": "A memory corruption flaw in the TCP urgent pointer handling of a widely embedded real-time operating system permits remote code execution against devices that never expose an obvious application surface.",
+      "content_sha256": "f968ca912531f8ca5435425a3aea0d8bc03cadddc1b76f112fa48e6568f4e202",
+      "content_word_count": 176,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "rtos",
+        "tcp-stack",
+        "urgent11",
+        "embedded",
+        "supply-chain"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2019-6538",
+      "file": "nvd-cve-2019-6538.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2019-6538: Medtronic Conexus Telemetry Protocol - Missing Authentication",
+      "summary": "A proprietary radio telemetry protocol used by implantable cardiac devices and their programmers does not authenticate or encrypt its traffic, permitting an adjacent attacker to observe or inject commands.",
+      "content_sha256": "ed7516c7655030af4e2298bea45ee7db067dedc9f168753120d2e2d91df48a65",
+      "content_word_count": 173,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "implantable-device",
+        "telemetry",
+        "authentication",
+        "patient-safety"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2020-27252",
+      "file": "nvd-cve-2020-27252.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2020-27252: Baxter Sigma Spectrum Infusion Pump - Race Condition in Session Handling",
+      "summary": "A race condition in the wireless battery module's session handling allows an attacker to obtain an active session and interact with the pump's network interface.",
+      "content_sha256": "505f757764fdedb7c10af1e8740083ab2906876e26b6bc58b53ec84b5e5032de",
+      "content_word_count": 176,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "infusion-pump",
+        "race-condition",
+        "session-management",
+        "patient-safety"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2020-6961",
+      "file": "nvd-cve-2020-6961.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2020-6961: GE CARESCAPE Patient Monitoring Devices - Exposed SSH Private Key",
+      "summary": "An SSH private key present on the device permits an attacker with network access to obtain interactive access to affected patient monitoring equipment without knowing any user credential.",
+      "content_sha256": "e361deb521449348f97c61fc3f88b62cc200e3bfbced86853508a3555e7c184a",
+      "content_word_count": 176,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "patient-monitor",
+        "hardcoded-key",
+        "ssh",
+        "mdhex"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2021-37160",
+      "file": "nvd-cve-2021-37160.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2021-37160: Swisslog Healthcare Translogic PTS - Insufficient Firmware Verification (PwnedPiper)",
+      "summary": "A hospital pneumatic tube system accepts firmware updates without adequate integrity or authenticity verification, permitting an attacker with network access to install persistent modified firmware.",
+      "content_sha256": "c65c95cd4dcd94a0775edfb9296ed1ab6b6c947333530879cd5a889ff717180e",
+      "content_word_count": 167,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "pneumatic-tube",
+        "firmware",
+        "supply-chain",
+        "hospital-infrastructure"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2021-44228",
+      "file": "nvd-cve-2021-44228.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2021-44228: Apache Log4j2 JNDI Remote Code Execution (Log4Shell)",
+      "summary": "A logging library flaw allows remote code execution when attacker-controlled text is written to a log, which affected a large share of Java-based clinical and administrative healthcare applications.",
+      "content_sha256": "3c7f539dc0c594f91634269c0b86d1f8b27c686f17c4d0b411cfa23d32caa68a",
+      "content_word_count": 179,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "log4shell",
+        "java",
+        "supply-chain",
+        "ehr",
+        "remote-code-execution"
+      ]
+    },
+    {
+      "doc_id": "nvd-cve-2022-25246",
+      "file": "nvd-cve-2022-25246.json",
+      "source_id": "nvd_cve",
+      "source_tier": 1,
+      "source_type": "cve_record",
+      "title": "CVE-2022-25246: PTC Axeda Agent - Hard-coded Credentials (Access:7)",
+      "summary": "A remote management agent embedded in numerous medical devices contains hard-coded credentials permitting full remote access to any device running the affected component.",
+      "content_sha256": "f25d7778830f744416050a59ce7900bb581dbc8cbe5585a002813aa469e87eaa",
+      "content_word_count": 168,
+      "healthcare_relevance": "high",
+      "reference_verified": true,
+      "tags": [
+        "remote-management",
+        "hardcoded-credentials",
+        "access7",
+        "medical-device"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-credential-dump-healthcare-domains",
+      "file": "osint-feed-credential-dump-healthcare-domains.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Healthcare Domain Credentials Appearing in Aggregated Breach Collections",
+      "summary": "A feed entry reporting healthcare organisation email domains appearing in aggregated credential collections, with no verification that the credentials are current or ever valid.",
+      "content_sha256": "6819445632f3daa828e6087d2e639056e780d8d70e6b817960b860dff8b47625",
+      "content_word_count": 103,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "credentials",
+        "breach-data",
+        "exposure",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-exposed-dicom-endpoints",
+      "file": "osint-feed-exposed-dicom-endpoints.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Internet-Exposed DICOM Service Endpoints Observed in Scan Data",
+      "summary": "An aggregation of internet scan data identifying hosts responding to DICOM service probes, presented as an exposure census rather than as an indicator of compromise.",
+      "content_sha256": "018bb552c2ac92a7952aa3f066450f0368e7ae618424cb74f2299816975be63c",
+      "content_word_count": 117,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "dicom",
+        "exposure",
+        "scan-data",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-malware-hashes-healthcare",
+      "file": "osint-feed-malware-hashes-healthcare.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: File Hashes Observed in Healthcare Sector Submissions",
+      "summary": "A feed entry aggregating file hashes from sandbox submissions tagged as originating from healthcare organisations, with classification derived from automated analysis rather than analyst review.",
+      "content_sha256": "67d402c2a8ef2932bd61b68720e8a1b86a6fa74948da53e878e17a55489af1a5",
+      "content_word_count": 110,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "file-hashes",
+        "malware",
+        "submissions",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-phishing-domains-payer-brands",
+      "file": "osint-feed-phishing-domains-payer-brands.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Newly Registered Domains Impersonating Health Payer Brands",
+      "summary": "A feed entry listing recently registered domain names resembling health payer and benefits administrator brands, generated by automated similarity matching against a brand list.",
+      "content_sha256": "2ba5fbb3ad7673d71a4b2ae5c02cf766b09be51afcf3fc8d70a704f94d87f95f",
+      "content_word_count": 118,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "phishing",
+        "domains",
+        "payer",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-ransomware-c2-indicators",
+      "file": "osint-feed-ransomware-c2-indicators.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Command and Control Indicators Associated with Healthcare-Targeting Ransomware",
+      "summary": "A curated feed entry listing command and control infrastructure indicators attributed to ransomware activity affecting healthcare organisations, with moderate confidence and a short expected validity window.",
+      "content_sha256": "8fba8095efd275dd1aa5575bff3fe8dfae5fb348cfb2b2f3d316acef95a931c2",
+      "content_word_count": 124,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "indicators",
+        "command-and-control",
+        "ransomware",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-ransomware-leak-site-postings",
+      "file": "osint-feed-ransomware-leak-site-postings.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Healthcare Organisations Named on Ransomware Leak Sites",
+      "summary": "A tracking entry recording healthcare organisations named on ransomware extortion sites during the reporting period, with the caveat that listings are attacker claims rather than verified facts.",
+      "content_sha256": "4d59607ec897c01a7ebdfd6a2f9ece77921e3c5b045f39718e0948624c89ac8b",
+      "content_word_count": 108,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "leak-site",
+        "ransomware",
+        "victim-tracking",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-tls-certificate-anomalies",
+      "file": "osint-feed-tls-certificate-anomalies.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Certificate Transparency Observations for Healthcare Brand Impersonation",
+      "summary": "A feed entry derived from certificate transparency logs, listing newly issued certificates for domain names resembling provider and payer organisation brands.",
+      "content_sha256": "ff723a7f20c7e3aaeaefcca6f074288db375d9ba151711b1dc1e2d07087a1242",
+      "content_word_count": 103,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "certificate-transparency",
+        "impersonation",
+        "monitoring",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "osint-feed-vulnerability-exploitation-chatter",
+      "file": "osint-feed-vulnerability-exploitation-chatter.json",
+      "source_id": "curated_osint",
+      "source_tier": 2,
+      "source_type": "osint_feed",
+      "title": "Feed Entry: Observed Discussion of Medical Device Vulnerability Exploitation",
+      "summary": "A feed entry summarising discussion observed across open forums regarding exploitation of published medical device vulnerabilities, offered as weak early-warning signal.",
+      "content_sha256": "021991ebb7cb1e6ef2e3f05609c840da2331b7dcbc593ae686001987e3d9feff",
+      "content_word_count": 93,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "chatter",
+        "exploitation",
+        "medical-device",
+        "osint"
+      ]
+    },
+    {
+      "doc_id": "psirt-imaging-gateway-auth-bypass",
+      "file": "psirt-imaging-gateway-auth-bypass.json",
+      "source_id": "vendor_psirt",
+      "source_tier": 1,
+      "source_type": "vendor_psirt",
+      "title": "Product Security Bulletin: Authentication Bypass in Imaging Gateway Management Interface",
+      "summary": "A manufacturer bulletin reporting that the administrative interface of an imaging gateway can be reached without authentication under a specific configuration, and providing a corrected release.",
+      "content_sha256": "269bc8e1dde9fc61f7c83369af0605da017f65bf50229a8a350f9abd260156df",
+      "content_word_count": 175,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "psirt",
+        "imaging",
+        "authentication-bypass",
+        "management-interface"
+      ]
+    },
+    {
+      "doc_id": "psirt-infusion-pump-firmware-integrity",
+      "file": "psirt-infusion-pump-firmware-integrity.json",
+      "source_id": "vendor_psirt",
+      "source_tier": 1,
+      "source_type": "vendor_psirt",
+      "title": "Product Security Bulletin: Firmware Update Integrity Verification on Infusion Platform",
+      "summary": "A manufacturer bulletin disclosing that a firmware distribution path performed incomplete integrity verification, and describing the corrected process and the fleet remediation approach.",
+      "content_sha256": "f47db6370664970db20d430db10144b5dd74a76ff1e54317b719d988780361a9",
+      "content_word_count": 180,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "psirt",
+        "infusion-pump",
+        "firmware",
+        "integrity"
+      ]
+    },
+    {
+      "doc_id": "unattrib-report-device-firmware-analysis",
+      "file": "unattrib-report-device-firmware-analysis.json",
+      "source_id": "unattributed_report",
+      "source_tier": 3,
+      "source_type": "unattributed_report",
+      "title": "Anonymous Firmware Analysis Notes on an Unnamed Infusion Device",
+      "summary": "Anonymous notes describing firmware analysis of an unnamed infusion device, reporting weak update verification and a debug interface left enabled in shipping units.",
+      "content_sha256": "eb085e1212bbe043386e285a6d27eda6e0b4a2cccc896c0f23f8af1a5d244e5b",
+      "content_word_count": 174,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "firmware",
+        "reverse-engineering",
+        "unattributed",
+        "medical-device"
+      ]
+    },
+    {
+      "doc_id": "unattrib-report-hospital-intrusion-writeup",
+      "file": "unattrib-report-hospital-intrusion-writeup.json",
+      "source_id": "unattributed_report",
+      "source_tier": 3,
+      "source_type": "unattributed_report",
+      "title": "Untitled Intrusion Write-up Concerning a Regional Hospital Network",
+      "summary": "An unsigned narrative account of an intrusion at an unnamed regional hospital, describing initial access through an unpatched web application and subsequent movement toward records infrastructure.",
+      "content_sha256": "fb91ad4b2d72563f8cee7e2709d21c4fb1a321f63edc9e31d1e368279425ca93",
+      "content_word_count": 190,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "intrusion",
+        "unattributed",
+        "narrative-report"
+      ]
+    },
+    {
+      "doc_id": "unattrib-report-phishing-campaign-observations",
+      "file": "unattrib-report-phishing-campaign-observations.json",
+      "source_id": "unattributed_report",
+      "source_tier": 3,
+      "source_type": "unattributed_report",
+      "title": "Unsigned Observations on a Phishing Campaign Targeting Clinics",
+      "summary": "Unsigned observations describing a phishing campaign against small clinics, including described lure content but no headers, samples or indicators that would permit corroboration.",
+      "content_sha256": "ecea4febc36ca817e4b5d87fee8829a60027862b8b2cf6ae7d1d15907936d7cd",
+      "content_word_count": 150,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "phishing",
+        "unattributed",
+        "observations"
+      ]
+    },
+    {
+      "doc_id": "unattrib-report-sector-threat-summary",
+      "file": "unattrib-report-sector-threat-summary.json",
+      "source_id": "unattributed_report",
+      "source_tier": 3,
+      "source_type": "unattributed_report",
+      "title": "Circulated Summary of Threat Activity Against Health Systems",
+      "summary": "An unattributed summary of threat activity against health systems, apparently aggregated from published reporting but without citations or a stated methodology.",
+      "content_sha256": "a83556d67d726d95c1eb53c278b6f0332d40ec61691586612a1254c8ce2ac3b1",
+      "content_word_count": 171,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "threat-summary",
+        "unattributed",
+        "aggregated"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-backup-immutability-healthcare",
+      "file": "vendor-blog-backup-immutability-healthcare.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Backup Architecture Failures Observed in Healthcare Recovery Engagements",
+      "summary": "An analysis of backup architecture failures encountered during healthcare recovery engagements, with the dominant failure being backup infrastructure reachable using production domain credentials.",
+      "content_sha256": "4b9bcde8d2fb3bac822bb91411973e76605b6c50e9ec9934aa63b481c7883ba8",
+      "content_word_count": 121,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "backup",
+        "recovery",
+        "immutability",
+        "research"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-ehr-audit-log-gaps",
+      "file": "vendor-blog-ehr-audit-log-gaps.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Audit Log Coverage Gaps in Electronic Health Record Deployments",
+      "summary": "An examination of audit logging in electronic health record deployments, finding that record access is well logged but bulk export and reporting paths frequently are not.",
+      "content_sha256": "30ca3dfb4c0088515a600f47176d2dfe388924ccaced3ed603f09b24b22bd9e0",
+      "content_word_count": 128,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "ehr",
+        "audit-logging",
+        "detection",
+        "research"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-healthcare-ransomware-dwell-time",
+      "file": "vendor-blog-healthcare-ransomware-dwell-time.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Dwell Time and Detection Gaps in Healthcare Ransomware Intrusions",
+      "summary": "A vendor research team's analysis of healthcare ransomware engagements, reporting shorter dwell times than in other sectors and attributing the difference to weaker segmentation rather than to faster attackers.",
+      "content_sha256": "8c029671a2444c47f4ddba4ed302c6080a6fc3692a7908a0e987ef35a6f44fb7",
+      "content_word_count": 153,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "ransomware",
+        "dwell-time",
+        "incident-analysis",
+        "research"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-hl7-interface-security",
+      "file": "vendor-blog-hl7-interface-security.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Security Properties of HL7 Interface Engines in Clinical Deployments",
+      "summary": "An analysis of HL7 interface engine deployments, noting that message-level authentication is rarely implemented and that integration engines hold unusually broad access across clinical systems.",
+      "content_sha256": "2427166a77f3f15d1b8bf305e319334fe10188cd1cd8f3bc03711785744964f6",
+      "content_word_count": 133,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "hl7",
+        "integration-engine",
+        "interoperability",
+        "research"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-imaging-metadata-injection",
+      "file": "vendor-blog-imaging-metadata-injection.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Injection Vectors in Medical Imaging Metadata Handling",
+      "summary": "Research examining how imaging metadata fields are handled across viewers, reporting that metadata is widely treated as trusted clinical data rather than as untrusted input.",
+      "content_sha256": "3a86406f3c54541618e767f14ed95bc74ebfba115c8062efffeb68044eccc487",
+      "content_word_count": 123,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "dicom",
+        "injection",
+        "metadata",
+        "imaging",
+        "research"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-medical-device-attack-surface",
+      "file": "vendor-blog-medical-device-attack-surface.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Mapping the Attack Surface of Connected Medical Device Estates",
+      "summary": "A research write-up presenting passive discovery findings across connected medical device estates, highlighting the gap between devices known to asset management and devices observed on the network.",
+      "content_sha256": "5991a7f8401450a1d8c3a97f333e46673b7004763beb112742616b3f6d2ab672",
+      "content_word_count": 122,
+      "healthcare_relevance": "high",
+      "reference_verified": false,
+      "tags": [
+        "medical-device",
+        "attack-surface",
+        "research",
+        "asset-discovery"
+      ]
+    },
+    {
+      "doc_id": "vendor-blog-phishing-resistant-auth-rollout",
+      "file": "vendor-blog-phishing-resistant-auth-rollout.json",
+      "source_id": "vendor_research_blog",
+      "source_tier": 2,
+      "source_type": "vendor_blog",
+      "title": "Research: Operational Outcomes of Phishing-Resistant Authentication in Clinical Settings",
+      "summary": "A study of phishing-resistant authentication rollouts in clinical environments, examining where workflow friction caused rollbacks and which deployment patterns survived.",
+      "content_sha256": "a339b5d6ab6144f83067c0b94d1751e141c76453cdefa46c92e9878b96fccf66",
+      "content_word_count": 113,
+      "healthcare_relevance": "medium",
+      "reference_verified": false,
+      "tags": [
+        "authentication",
+        "mfa",
+        "clinical-workflow",
+        "research"
+      ]
+    }
+  ]
+}

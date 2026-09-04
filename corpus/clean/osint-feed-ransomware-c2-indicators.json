@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "osint-feed-ransomware-c2-indicators",
+  "source_id": "curated_osint",
+  "source_name": "Curated Open-Source Intelligence Feed",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "osint_feed",
+  "publisher": "Community-maintained indicator feeds and malware trackers",
+  "title": "Feed Entry: Command and Control Indicators Associated with Healthcare-Targeting Ransomware",
+  "summary": "A curated feed entry listing command and control infrastructure indicators attributed to ransomware activity affecting healthcare organisations, with moderate confidence and a short expected validity window.",
+  "content": "## Feed entry\n\nThis feed entry is published for community consumption. A curated feed entry listing command and control infrastructure indicators attributed to ransomware activity affecting healthcare organisations, with moderate confidence and a short expected validity window.\n\n**Feed type:** Network indicator feed\n\n**Confidence:** Moderate\n\n**First seen:** 2026-06-11\n\n**Last seen:** 2026-06-18\n\n## Indicators\n\n- benchmark-c2-a17d.example.invalid\n- benchmark-c2-b93f.example.invalid\n- 198.51.100.47\n- 203.0.113.182\n\n## Caveats and usage guidance\n\n- Command and control infrastructure of this kind typically remains valid for days rather than weeks, so retrospective hunting matters more than blocking.\n- Attribution to a named operator is inferred from infrastructure overlap and is not independently confirmed.\n- All indicators in this benchmark entry are fabricated and use reserved documentation ranges; they correspond to no real infrastructure.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "8fba8095efd275dd1aa5575bff3fe8dfae5fb348cfb2b2f3d316acef95a931c2",
+  "content_word_count": 124,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-18",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "indicators",
+    "command-and-control",
+    "ransomware",
+    "osint"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1071.001",
+    "T1486"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Indicators are fabricated for benchmark use and are not real infrastructure.",
+  "attestation": "Curated and moderated, but community-writable and machine-generated in part."
+}

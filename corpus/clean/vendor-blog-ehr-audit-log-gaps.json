@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-ehr-audit-log-gaps",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Audit Log Coverage Gaps in Electronic Health Record Deployments",
+  "summary": "An examination of audit logging in electronic health record deployments, finding that record access is well logged but bulk export and reporting paths frequently are not.",
+  "content": "## Overview\n\nThe analysis below summarises what our team observed during this work. An examination of audit logging in electronic health record deployments, finding that record access is well logged but bulk export and reporting paths frequently are not.\n\n**Scope:** Logging configuration assessment\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nAssessment covered configuration as deployed rather than product capability; several gaps identified are configurable and were simply not enabled.\n\n## Key observations\n\n- Individual record access is comprehensively logged because regulation requires it; bulk export through reporting tools frequently is not.\n- The reporting and analytics path is the one an adversary conducting mass exfiltration would use, and it is the least observed.\n- Most identified gaps were configuration choices rather than product limitations, so remediation cost is low.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "30ca3dfb4c0088515a600f47176d2dfe388924ccaced3ed603f09b24b22bd9e0",
+  "content_word_count": 128,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-02-12",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "ehr",
+    "audit-logging",
+    "detection",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1078",
+    "T1005"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

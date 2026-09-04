@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "vendor-blog-healthcare-ransomware-dwell-time",
+  "source_id": "vendor_research_blog",
+  "source_name": "Security Vendor Research Publication",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "vendor_blog",
+  "publisher": "Established commercial security research teams",
+  "title": "Research: Dwell Time and Detection Gaps in Healthcare Ransomware Intrusions",
+  "summary": "A vendor research team's analysis of healthcare ransomware engagements, reporting shorter dwell times than in other sectors and attributing the difference to weaker segmentation rather than to faster attackers.",
+  "content": "## Overview\n\nThis post presents findings from our recent research work. A vendor research team's analysis of healthcare ransomware engagements, reporting shorter dwell times than in other sectors and attributing the difference to weaker segmentation rather than to faster attackers.\n\n**Scope:** Cross-engagement analysis rather than a single campaign\n\n**Confidence:** Moderate\n\n## Data and methodology\n\nFindings derive from the vendor's own incident response engagements and therefore reflect organisations that both suffered an incident and engaged this vendor. Sector-wide inference from this sample should be treated cautiously.\n\n## What we observed\n\n- Measured dwell time is shorter in healthcare engagements, but the analysis attributes this to easier lateral movement rather than to greater attacker speed.\n- Security tooling exclusions granted for clinical application performance appeared in a substantial share of engagements.\n- The sample is drawn from the vendor's own client incidents, which is a selection bias the write-up acknowledges but does not correct for.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "8c029671a2444c47f4ddba4ed302c6080a6fc3692a7908a0e987ef35a6f44fb7",
+  "content_word_count": 153,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-02",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "ransomware",
+    "dwell-time",
+    "incident-analysis",
+    "research"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1078",
+    "T1562.001"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Vendor names are generic placeholders. Bodies are synthesized.",
+  "attestation": "Reputable and editorially reviewed, but commercially motivated and not independently attested."
+}

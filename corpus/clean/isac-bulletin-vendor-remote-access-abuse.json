@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "isac-bulletin-vendor-remote-access-abuse",
+  "source_id": "health_isac",
+  "source_name": "Health-ISAC Member Bulletin",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "isac_bulletin",
+  "publisher": "Health Information Sharing and Analysis Center",
+  "title": "Member Bulletin: Abuse of Biomedical Vendor Remote Access Tooling",
+  "summary": "Reporting from members describing intrusions that entered through biomedical device vendor remote support tooling, which sat outside the provider organisation's monitoring and access control.",
+  "content": "## TLP:AMBER - Alert level: Elevated\n\nThe following is shared with members on the basis of member-contributed reporting. Reporting from members describing intrusions that entered through biomedical device vendor remote support tooling, which sat outside the provider organisation's monitoring and access control.\n\n## Observed activity\n\nIn the reported cases, vendor support tooling maintained a persistent outbound tunnel from the biomedical segment to vendor infrastructure. Compromise on the vendor side gave the intruder a route that bypassed the provider's perimeter entirely and terminated inside the device segment. No provider-side detection observed the initial access.\n\n## Recommended member actions\n\n- Enumerate every vendor remote access mechanism currently active on the biomedical estate.\n- Terminate vendor connections at a provider-controlled jump host rather than allowing direct tunnels.\n- Require per-session approval for vendor access rather than standing connectivity.\n- Include remote support tooling explicitly in vendor security assessments.\n\n## Notes on this reporting\n\n- Persistent outbound tunnels invert the perimeter model: the trust boundary is the vendor's network, not the hospital's.\n- Provider-side detection saw nothing because the access was legitimate by design.\n- Enumerating existing vendor access mechanisms is usually the hardest step, because no single team owns the list.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "06f73cb82f8f9d119acbfadd7e0564cdc59bb3bacfda5e2e638d428f6e11f05d",
+  "content_word_count": 198,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-03-19",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "vendor-access",
+    "third-party-risk",
+    "biomedical",
+    "tlp-amber"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1133",
+    "T1199",
+    "T1078"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Membership-restricted in reality; all bodies here are synthesized representative content.",
+  "attestation": "Moderated member-to-member sharing. Reviewed but not independently attested."
+}

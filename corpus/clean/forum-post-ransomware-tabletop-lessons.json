@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "forum-post-ransomware-tabletop-lessons",
+  "source_id": "community_forum",
+  "source_name": "Security Community Forum Post",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "forum_post",
+  "publisher": "Unknown individual contributors",
+  "title": "Forum Thread: What Ransomware Tabletop Exercises Miss in Hospital Settings",
+  "summary": "A forum thread in which practitioners discuss gaps their ransomware tabletop exercises failed to surface, with clinical downtime operations the recurring theme.",
+  "content": "## Thread: Our tabletop went great and the real thing went badly - what did we miss?\n\nThe following is a community discussion thread captured in full summary. A forum thread in which practitioners discuss gaps their ransomware tabletop exercises failed to surface, with clinical downtime operations the recurring theme.\n\n**Board:** Incident response practitioners board\n\n**Original poster:** irlead_midwest\n\n**Replies:** 42\n\n## Discussion summary\n\nThe original poster describes a tabletop exercise that ran smoothly followed by a real incident that did not, attributing the gap to the exercise involving only technical staff. Replies converge on the same point: exercises that exclude clinical leadership do not test the decisions that matter, such as whether to divert admissions. Several contributors describe adding clinical participants and finding that exercise duration was the next limiting factor. One reply disputes the premise, arguing the failure was one of technical preparation rather than exercise design.\n\n## Reliability assessment\n\n- The convergence across replies on clinical participation is consistent with published lessons-learned material.\n- The dissenting reply is not resolved, and there is no way to determine which account is accurate.\n- All content is self-reported experience with no verification of any kind.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "5be8875ccc9a8464f93690a64f03b5beaf8e30279025de892459e468016ded81",
+  "content_word_count": 195,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-12-03",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "tabletop",
+    "incident-response",
+    "forum",
+    "resilience"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Pseudonymous authorship, no editorial review."
+}

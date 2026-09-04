@@ -1,0 +1,38 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-aa-biomedical-network-segmentation",
+  "source_id": "cisa_advisory",
+  "source_name": "CISA Cybersecurity Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Lateral Movement into Biomedical Device Segments Following Workstation Compromise",
+  "summary": "Intrusions beginning on ordinary clinical workstations are reaching biomedical device segments because segmentation is frequently documented but not enforced at the network layer.",
+  "content": "## Summary\n\nThis advisory documents observed threat activity affecting health and public health sector organisations. Intrusions beginning on ordinary clinical workstations are reaching biomedical device segments because segmentation is frequently documented but not enforced at the network layer.\n\n**Advisory type:** Cybersecurity Advisory\n\n**Authoring agencies:** CISA, HHS\n\n## Observed tactics, techniques and procedures\n\n- Discovery scanning from a compromised workstation across adjacent clinical subnets\n- Exploitation of unauthenticated management interfaces exposed by biomedical devices\n- Use of device service accounts that hold broader access than the device requires\n- Persistence on devices that lack any endpoint logging capability\n\n## Recommended actions\n\n- Verify segmentation by testing reachability, not by reviewing network documentation.\n- Reduce device service account privilege to the minimum the device actually exercises.\n- Collect flow records at segment boundaries where endpoint logging is impossible.\n- Treat any successful cross-segment flow that is not on a documented allowlist as an incident.\n\n## Analytic notes\n\n- Documented segmentation and enforced segmentation diverge over time as exceptions accumulate and are never removed.\n- Biomedical devices commonly cannot host logging agents, so boundary flow records are the only available evidence.\n- Reachability testing is cheap and is the single highest-value assurance activity in this area.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "d6688308faf1ee9107704ec77976bb70bfd18718c39563e6ec0662fcc04307b4",
+  "content_word_count": 203,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-06-09",
+  "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+  "reference_verified": false,
+  "tags": [
+    "lateral-movement",
+    "segmentation",
+    "biomedical",
+    "clinical-network"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1021",
+    "T1210",
+    "T1046"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS."
+}

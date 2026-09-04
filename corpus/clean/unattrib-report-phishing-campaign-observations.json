@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "unattrib-report-phishing-campaign-observations",
+  "source_id": "unattributed_report",
+  "source_name": "Unattributed Threat Report",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "unattributed_report",
+  "publisher": "Unknown",
+  "title": "Unsigned Observations on a Phishing Campaign Targeting Clinics",
+  "summary": "Unsigned observations describing a phishing campaign against small clinics, including described lure content but no headers, samples or indicators that would permit corroboration.",
+  "content": "## Document summary\n\nThe origin of this document could not be established. Unsigned observations describing a phishing campaign against small clinics, including described lure content but no headers, samples or indicators that would permit corroboration.\n\n## Content as received\n\nThe author describes messages sent to small clinic administrators referencing insurance verification, and reports that several recipients entered credentials. Message content is paraphrased rather than quoted, and no sender addresses or URLs are given.\n\n## Provenance\n\nNo author or organisation. No message headers, samples, screenshots or indicators are included, so nothing here can be matched against mail telemetry.\n\n**Circulation:** Origin unknown.\n\n## Reliability assessment\n\n- Paraphrased lure content cannot be matched against mail telemetry, so the account generates no detection value.\n- The described campaign resembles several genuine ones, which makes plausibility a poor test of authenticity.\n- Without indicators the document supports awareness at best and cannot inform any control.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "ecea4febc36ca817e4b5d87fee8829a60027862b8b2cf6ae7d1d15907936d7cd",
+  "content_word_count": 150,
+  "ingestion_date": "2026-09-02",
+  "published_date": null,
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "phishing",
+    "unattributed",
+    "observations"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1566.002"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Provenance cannot be established."
+}

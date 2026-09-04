@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1021-001-remote-desktop-protocol",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1021.001: Remote Services - Remote Desktop Protocol",
+  "summary": "Adversaries use remote desktop sessions to move between systems, an approach that blends into healthcare estates where clinical support staff use the same mechanism routinely.",
+  "content": "## T1021.001 - Remote Services - Remote Desktop Protocol\n\nThis entry covers an adversary behaviour observed in intrusions against provider organisations. Adversaries use remote desktop sessions to move between systems, an approach that blends into healthcare estates where clinical support staff use the same mechanism routinely.\n\n**Tactic:** Lateral Movement\n\n**Platforms:** Windows\n\n## Healthcare context\n\nClinical engineering and application support teams use remote desktop constantly, which makes volume-based detection unworkable and forces reliance on relationship-based detection.\n\n## Detection\n\nSessions between host pairs with no prior history; sessions from clinical workstations to server infrastructure; session chains traversing three or more hosts.\n\n## Mitigations\n\n- Restrict remote desktop initiation to designated administrative hosts.\n- Require multi-factor authentication for administrative sessions.\n- Alert on host-pair combinations not seen in an established baseline.\n\n## Notes for defenders\n\n- Legitimate volume is high, so novelty of the host pair is a better signal than the session count.\n- Session chaining across three or more hosts has almost no legitimate equivalent in normal support work.\n- Restricting initiation to administrative hosts is more tractable than restricting destinations.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "3172d68b2da9f86151652e570d122fa5aaeaf7ec58667efde01b317337ca8863",
+  "content_word_count": 180,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1021/001/",
+  "reference_verified": true,
+  "tags": [
+    "lateral-movement",
+    "rdp",
+    "clinical-workstation"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1021.001"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

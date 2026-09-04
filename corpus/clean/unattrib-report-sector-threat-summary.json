@@ -1,0 +1,36 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "unattrib-report-sector-threat-summary",
+  "source_id": "unattributed_report",
+  "source_name": "Unattributed Threat Report",
+  "source_tier": 3,
+  "source_tier_label": "unverified_unknown",
+  "source_type": "unattributed_report",
+  "publisher": "Unknown",
+  "title": "Circulated Summary of Threat Activity Against Health Systems",
+  "summary": "An unattributed summary of threat activity against health systems, apparently aggregated from published reporting but without citations or a stated methodology.",
+  "content": "## Document summary\n\nNo provenance information accompanies this document. An unattributed summary of threat activity against health systems, apparently aggregated from published reporting but without citations or a stated methodology.\n\n## Content as received\n\nThe document summarises ransomware and phishing activity against health systems over an unspecified period, presenting figures for incident counts and average downtime with no source given for any of them.\n\n## Provenance\n\nNo author, no date, no citations. The content appears to be aggregated from public reporting, but because no sources are named the figures cannot be traced or checked. Some figures appear inconsistent with each other.\n\n**Circulation:** Widely forwarded within informal analyst channels, which has given it an unearned appearance of authority.\n\n## Assessment of this document\n\n- Uncited aggregate figures acquire apparent authority purely through repeated forwarding.\n- Two of the internal figures are mutually inconsistent, which is the only concrete evidence available about the document's reliability.\n- Material of this kind is a realistic corpus contaminant precisely because it looks like a briefing document.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "a83556d67d726d95c1eb53c278b6f0332d40ec61691586612a1254c8ce2ac3b1",
+  "content_word_count": 171,
+  "ingestion_date": "2026-09-02",
+  "published_date": null,
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "threat-summary",
+    "unattributed",
+    "aggregated"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486",
+    "T1566"
+  ],
+  "healthcare_relevance": "medium",
+  "vendor": null,
+  "product": null,
+  "license_note": "Fully synthesized.",
+  "attestation": "None. Provenance cannot be established."
+}

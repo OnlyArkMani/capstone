@@ -1,0 +1,35 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "attack-t1486-data-encrypted-impact",
+  "source_id": "mitre_attack",
+  "source_name": "MITRE ATT&CK Enterprise Matrix",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "attack_technique",
+  "publisher": "The MITRE Corporation",
+  "title": "T1486: Data Encrypted for Impact",
+  "summary": "Adversaries encrypt data on target systems to interrupt availability, which in a hospital environment translates directly into diverted admissions and reversion to paper-based clinical workflow.",
+  "content": "## T1486 - Data Encrypted for Impact\n\nThe technique described here is documented across intrusions affecting the health sector. Adversaries encrypt data on target systems to interrupt availability, which in a hospital environment translates directly into diverted admissions and reversion to paper-based clinical workflow.\n\n**Tactic:** Impact\n\n**Platforms:** Windows, Linux, macOS, Network Devices\n\n## Healthcare context\n\nEncryption of records, imaging archives and pharmacy systems produces clinical consequences within hours. Organisations that plan only for data recovery and not for extended clinical downtime discover the gap during the incident.\n\n## Detection\n\nFile modification volume and entropy change across shares; sudden loss of readability in monitored directories; process creation invoking encryption utilities outside a known maintenance window.\n\n## Mitigations\n\n- Maintain offline backups tested by full restoration, not by backup job success codes.\n- Restrict write access to clinical shares to the accounts that genuinely require it.\n- Rehearse extended downtime procedures with clinical staff.\n\n## Observations\n\n- Availability, not confidentiality, is the primary clinical harm from this technique.\n- Backup validity is commonly assumed from job success rather than demonstrated by restoration.\n- Detection based on entropy is effective but fires late, after substantial encryption has occurred.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "c217a6ffdf2d2c55055b39d9235c2c49e315c0e2d2b4675622d9d6d4d1576433",
+  "content_word_count": 195,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2025-04-15",
+  "reference_url": "https://attack.mitre.org/techniques/T1486/",
+  "reference_verified": true,
+  "tags": [
+    "impact",
+    "ransomware",
+    "encryption"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1486"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "ATT&CK is licensed by MITRE for reuse with attribution. Technique IDs and names are cited; descriptive text here is synthesized rather than copied.",
+  "attestation": "Curated, versioned knowledge base with stable technique identifiers."
+}

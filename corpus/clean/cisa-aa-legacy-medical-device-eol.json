@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "cisa-aa-legacy-medical-device-eol",
+  "source_id": "cisa_advisory",
+  "source_name": "CISA Cybersecurity Advisory",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "cisa_advisory",
+  "publisher": "Cybersecurity and Infrastructure Security Agency (CISA)",
+  "title": "Risk Guidance for End-of-Support Operating Systems in Clinical Environments",
+  "summary": "Guidance addressing clinical devices that remain in service on operating systems no longer receiving security updates, and the compensating controls appropriate where replacement is not clinically or financially viable.",
+  "content": "## Summary\n\nThis advisory documents observed threat activity affecting health and public health sector organisations. Guidance addressing clinical devices that remain in service on operating systems no longer receiving security updates, and the compensating controls appropriate where replacement is not clinically or financially viable.\n\n**Advisory type:** Guidance\n\n**Authoring agencies:** CISA, HHS\n\n## Observed tactics, techniques and procedures\n\n- Exploitation of long-published vulnerabilities for which no device patch will ever exist\n- Lateral movement from a compromised clinical workstation into biomedical device segments\n- Use of legacy remote administration protocols left enabled by the device manufacturer\n\n## Recommended actions\n\n- Maintain an inventory keyed on operating system version, not device model.\n- Place unsupported devices behind an enforcing network boundary that permits only the flows the device requires.\n- Disable legacy remote administration protocols where the device tolerates it, and document where it does not.\n- Record a clinical risk acceptance for every unsupported device retained in service, with a named owner.\n\n## Analytic notes\n\n- Replacement is often blocked by regulatory revalidation cost rather than by capital cost.\n- Network boundary enforcement is the only control that scales here, since the endpoint cannot be patched.\n- Documented, owned risk acceptance is what distinguishes a managed legacy estate from an unmanaged one.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "6b7a058d7e57698cd1b4b3cdb10ba46945bb6e61d20c7b08de3f52232e87eb98",
+  "content_word_count": 211,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-01-22",
+  "reference_url": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+  "reference_verified": false,
+  "tags": [
+    "legacy-systems",
+    "end-of-support",
+    "compensating-controls",
+    "biomedical"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1210",
+    "T1021.001"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "US Government work, public domain. Bodies in this corpus are synthesized, not reproduced.",
+  "attestation": "Published by a US federal agency, frequently joint-sealed with FBI/HHS."
+}

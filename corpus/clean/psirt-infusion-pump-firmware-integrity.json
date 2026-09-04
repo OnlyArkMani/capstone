@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "psirt-infusion-pump-firmware-integrity",
+  "source_id": "vendor_psirt",
+  "source_name": "Medical Device Vendor PSIRT Bulletin",
+  "source_tier": 1,
+  "source_tier_label": "verified_authoritative",
+  "source_type": "vendor_psirt",
+  "publisher": "Device manufacturer product security incident response teams",
+  "title": "Product Security Bulletin: Firmware Update Integrity Verification on Infusion Platform",
+  "summary": "A manufacturer bulletin disclosing that a firmware distribution path performed incomplete integrity verification, and describing the corrected process and the fleet remediation approach.",
+  "content": "## Bulletin PSIRT-REP-2026-0087\n\nThis product security bulletin is issued to affected customers. A manufacturer bulletin disclosing that a firmware distribution path performed incomplete integrity verification, and describing the corrected process and the fleet remediation approach.\n\n**Severity:** High\n\n**Vendor:** Representative infusion device vendor\n\n**Product:** Infusion pump platform\n\n## Affected products\n\n- Infusion pump platform firmware distributed through the affected update channel prior to the corrected process\n\n## Interim workaround\n\nDistribute firmware only from the manufacturer's controlled update server on an isolated biomedical network until the corrected process is in place.\n\n## Remediation\n\n- Apply the corrected update client to all fleet management servers.\n- Re-verify the firmware version and checksum on every pump in the fleet.\n- Restrict update server reachability to the biomedical device segment.\n\n## Customer guidance notes\n\n- Fleet-wide re-verification is a substantial logistics exercise for a device class numbering in the thousands per site.\n- The update channel is the concern rather than any individual pump, which reverses the usual remediation order.\n- Checksum verification per device is the only assurance that no unverified firmware was accepted.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "f47db6370664970db20d430db10144b5dd74a76ff1e54317b719d988780361a9",
+  "content_word_count": 180,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-03-11",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "psirt",
+    "infusion-pump",
+    "firmware",
+    "integrity"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1542",
+    "T1195"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": "Representative infusion device vendor",
+  "product": "Infusion pump platform",
+  "license_note": "Vendors named in this corpus are placeholders unless reference_verified is true. Bodies are synthesized.",
+  "attestation": "Signed product security bulletins issued by the manufacturer of the affected device."
+}

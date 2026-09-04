@@ -1,0 +1,37 @@
+{
+  "schema_version": "corpus-clean-v1.0",
+  "design_version": "design-v1.0",
+  "doc_id": "osint-feed-exposed-dicom-endpoints",
+  "source_id": "curated_osint",
+  "source_name": "Curated Open-Source Intelligence Feed",
+  "source_tier": 2,
+  "source_tier_label": "trusted_open",
+  "source_type": "osint_feed",
+  "publisher": "Community-maintained indicator feeds and malware trackers",
+  "title": "Feed Entry: Internet-Exposed DICOM Service Endpoints Observed in Scan Data",
+  "summary": "An aggregation of internet scan data identifying hosts responding to DICOM service probes, presented as an exposure census rather than as an indicator of compromise.",
+  "content": "## Feed entry\n\nThis feed entry is published for community consumption. An aggregation of internet scan data identifying hosts responding to DICOM service probes, presented as an exposure census rather than as an indicator of compromise.\n\n**Feed type:** Internet exposure census\n\n**Confidence:** Moderate\n\n**First seen:** 2026-04-09\n\n**Last seen:** 2026-04-16\n\n## Indicators\n\n- 192.0.2.14:104\n- 192.0.2.88:11112\n- 198.51.100.203:104\n\n## Caveats and usage guidance\n\n- These are exposure observations, not compromises, and treating them as indicators of compromise produces immediate false positives.\n- A responding endpoint may be a research system, a honeypot, or a genuinely exposed clinical archive, and scan data cannot distinguish them.\n- Addresses shown here are reserved documentation ranges and are fabricated for benchmark use.\n",
+  "content_origin": "synthesized_representative",
+  "content_sha256": "018bb552c2ac92a7952aa3f066450f0368e7ae618424cb74f2299816975be63c",
+  "content_word_count": 117,
+  "ingestion_date": "2026-09-02",
+  "published_date": "2026-04-16",
+  "reference_url": null,
+  "reference_verified": false,
+  "tags": [
+    "dicom",
+    "exposure",
+    "scan-data",
+    "osint"
+  ],
+  "cve_ids": [],
+  "attack_techniques": [
+    "T1595",
+    "T1190"
+  ],
+  "healthcare_relevance": "high",
+  "vendor": null,
+  "product": null,
+  "license_note": "Indicators are fabricated for benchmark use and are not real infrastructure.",
+  "attestation": "Curated and moderated, but community-writable and machine-generated in part."
+}
