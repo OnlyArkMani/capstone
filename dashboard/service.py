@@ -53,8 +53,17 @@ def _rag() -> Any:
 
 @lru_cache(maxsize=1)
 def _scorer() -> Any:
+    """The scorer shares the retriever's embedder rather than resolving its own.
+
+    getattr rather than attribute access because _rag() may hold a retriever that
+    has not resolved an embedder yet; embedder=None is a supported argument and
+    the anomaly detector falls back cleanly. The point of passing it is that the
+    console and the retrieval path then demonstrably score against the SAME
+    vector space, which is a correctness property, not only a speed one.
+    """
     from fusion.scorer import FusionScorer  # noqa: PLC0415
-    return FusionScorer.load(verbose=False)
+    embedder = getattr(getattr(_rag(), "retriever", None), "embedder", None)
+    return FusionScorer.load(embedder=embedder, verbose=False)
 
 
 def run_query(query: str, k: int = DEFAULT_K,
