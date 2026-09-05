@@ -306,6 +306,7 @@ class TrustModel:
             "scaler_mean": self._scaler_mean, "scaler_std": self._scaler_std,
             "boot_coefs": self._boot_coefs, "boot_intercepts": self._boot_intercepts,
             "backend": self.backend, "report": self.report,
+            "env": _fitting_environment(),
         }
         try:
             import joblib  # noqa: PLC0415
@@ -339,7 +340,48 @@ class TrustModel:
         obj._boot_intercepts = payload["boot_intercepts"]
         obj.backend = payload["backend"]
         obj.report = payload["report"]
+        _warn_on_environment_drift(payload.get("env"), path)
         return obj
+
+
+# ---------------------------------------------------------------------------
+# Pickle provenance
+# ---------------------------------------------------------------------------
+#
+# A joblib pickle of sklearn estimators is only valid for the sklearn that wrote
+# it. Load it under a different version and sklearn emits InconsistentVersion-
+# Warning -- "may lead to breaking code or invalid results" -- and then proceeds
+# anyway. The run completes, every suite passes, and the trust scores are quietly
+# untrustworthy. That is the worst shape a failure can take, so the model records
+# what fitted it and says so on load, naming the command that fixes it.
+
+def _fitting_environment() -> dict[str, str]:
+    import platform  # noqa: PLC0415
+    env = {"python": platform.python_version()}
+    for mod in ("sklearn", "numpy", "joblib"):
+        try:
+            env[mod] = __import__(mod).__version__
+        except Exception:
+            env[mod] = "absent"
+    return env
+
+
+def _warn_on_environment_drift(saved: dict[str, str] | None, path: Path) -> None:
+    if not saved:
+        # Written before provenance was recorded. Not an error; just unverifiable.
+        return
+    current = _fitting_environment()
+    drifted = [f"{m}: fitted with {saved.get(m, '?')}, loading with {current.get(m, '?')}"
+               for m in ("sklearn", "numpy", "joblib")
+               if saved.get(m) and current.get(m) and saved[m] != current[m]]
+    if not drifted:
+        return
+    print(f"[fusion] WARNING: {path.name} was fitted in a different environment. "
+          f"sklearn does not guarantee pickles load correctly across versions, so "
+          f"the trust scores from this run may be invalid.", flush=True)
+    for line in drifted:
+        print(f"[fusion]          {line}", flush=True)
+    print("[fusion]          Refit with: python -m fusion.train", flush=True)
 
 
 class _NumpyLogit:

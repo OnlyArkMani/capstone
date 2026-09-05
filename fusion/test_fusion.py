@@ -50,6 +50,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from pipeline.records import Provenance, RetrievedRecord  # noqa: E402
 
 from fusion.bands import (  # noqa: E402
+    FIXED_THRESHOLD_SIGNALS,
     CLEAN, SUSPICIOUS, MALICIOUS, BandThresholds, SignalSet, assign_band,
 )
 from fusion.cases import (  # noqa: E402
@@ -197,15 +198,43 @@ def test_bands() -> None:
 
     # Degeneracy guard: a detector returning a constant must not become an
     # always-fire or never-fire threshold.
-    const_zero = [SignalSet(unsupport=0.4, anomaly=0.3, injection=0.0) for _ in range(50)]
+    #
+    # This used to be exercised through `injection`, which no longer works as the
+    # vehicle: design §9A.2 declares that signal's cut points instead of fitting
+    # them, so it is exempt from the guard by construction. The guard itself is
+    # unchanged and still governs every fitted signal, so the test now drives it
+    # with `anomaly` — and a second check below pins the exemption, so neither
+    # behaviour can regress silently into the other.
+    const_zero = [SignalSet(unsupport=0.4, anomaly=0.0, injection=0.0) for _ in range(50)]
     fitted = BandThresholds.fit(const_zero)
     check("constant-zero clean distribution marks the signal unusable",
-          "injection" in fitted.unusable, f"unusable={fitted.unusable}")
-    note(f"unusable reason: {fitted.unusable.get('injection', '')}")
+          "anomaly" in fitted.unusable, f"unusable={fitted.unusable}")
+    note(f"unusable reason: {fitted.unusable.get('anomaly', '')}")
+
+    band, detail = assign_band(sig(anomaly=0.99, unsupport=0.4, injection=0.0), fitted)
+    check("an unusable signal cannot drive a band on its own",
+          band == CLEAN and "anomaly" in detail["unusable_signals"],
+          f"got {band} via {detail['rule']}")
+
+    # The exemption, pinned. `injection` is a noisy-OR over hand-specified
+    # patterns: its clean distribution is a column of zeros because no pattern
+    # fires on a clean document, which is the detector WORKING, not a calibration
+    # sample. Fitting quantiles on it would put Q0.95 at 0.0, the guard would
+    # (correctly, for a fitted signal) mark it unusable, and `assign_band`
+    # excludes unusable signals -- so the `injection_alone` rule of §2.1, the one
+    # rule permitted to act on a single signal, would become unreachable code
+    # while every suite still reported green. That is the failure this check
+    # exists to prevent recurring.
+    check("injection is exempt from the guard: declared, not fitted",
+          "injection" not in fitted.unusable
+          and fitted.suspicious.get("injection") == FIXED_THRESHOLD_SIGNALS["injection"][0]
+          and fitted.malicious.get("injection") == FIXED_THRESHOLD_SIGNALS["injection"][1],
+          f"sus={fitted.suspicious.get('injection')} mal={fitted.malicious.get('injection')} "
+          f"unusable={fitted.unusable}")
 
     band, detail = assign_band(sig(injection=0.99, unsupport=0.4, anomaly=0.3), fitted)
-    check("an unusable signal cannot drive a band on its own",
-          band == CLEAN and "injection" in detail["unusable_signals"],
+    check("and injection alone still reaches MALICIOUS through the declared threshold",
+          band == MALICIOUS and detail["rule"] == "injection_alone",
           f"got {band} via {detail['rule']}")
 
     # Thresholds must be quantiles of the clean distribution, not hand-picked.

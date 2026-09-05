@@ -29,6 +29,35 @@ SIGNAL_NAMES = ("unsupport", "anomaly", "injection", "conflict")
 SUSPICIOUS_Q = 0.95
 MALICIOUS_Q = 0.99
 
+# Signals whose cut points are DECLARED rather than fitted, with the reasoning
+# for each. Everything else is fitted from the clean distribution as above.
+#
+# injection -- the detector is a noisy-OR over hand-specified patterns with
+#   hand-assigned weights, not an empirical score with a distribution. Its clean
+#   distribution is 83 zeros and nothing else, because no pattern fires on a
+#   clean document; that is the detector working, not a calibration sample.
+#   Fitting quantiles on it would put Q0.95 at exactly 0.0, the degeneracy guard
+#   below would correctly refuse that as an always-fire threshold and mark the
+#   signal unusable, and `assign_band` excludes unusable signals -- so the
+#   `injection_alone` rule, the one rule design section 2.1 allows to act on a
+#   single signal, would become unreachable code while every suite still passed.
+#   Quantiles cannot calibrate a rule detector. The cut points come from the
+#   pattern weights instead:
+#
+#     0.60 (suspicious) is the weakest single pattern in the set, so any one
+#          pattern firing is at least worth an analyst's attention.
+#     0.90 (malicious) is reached by one pattern only if that pattern is
+#          `addressed_to_model` (0.90) or `override_instruction` (0.95), the two
+#          with no benign reading, or by any two mid-weight patterns together.
+#          `system_impersonation` (0.85) alone lands SUSPICIOUS, not MALICIOUS,
+#          because a legitimate advisory can carry the words "system note".
+#
+#   These are judgement, openly, and are revisited when the corpus carries more
+#   than one document of family direct_prompt_injection. See detectors/injection.py.
+FIXED_THRESHOLD_SIGNALS: dict[str, tuple[float, float]] = {
+    "injection": (0.60, 0.90),
+}
+
 # A clean distribution flatter than this carries no threshold information.
 DEGENERATE_SPREAD = 1e-6
 FLOOR, CEILING = 1e-6, 1.0 - 1e-6
@@ -87,6 +116,9 @@ class BandThresholds:
         """
         sus, mal, unusable = {}, {}, {}
         for name in SIGNAL_NAMES:
+            if name in FIXED_THRESHOLD_SIGNALS:
+                sus[name], mal[name] = FIXED_THRESHOLD_SIGNALS[name]
+                continue
             values = [v for s in clean_signals if (v := getattr(s, name)) is not None]
             if not values:
                 unusable[name] = "signal absent from every calibration row"
@@ -126,6 +158,8 @@ class BandThresholds:
             suspicious=sus, malicious=mal, unusable=unusable,
             n_clean_calibration=len(clean_signals), fitted=True,
             note=f"Q{SUSPICIOUS_Q:.2f}/Q{MALICIOUS_Q:.2f} of the clean calibration distribution"
+                 + (f"; {', '.join(sorted(FIXED_THRESHOLD_SIGNALS))} declared, not fitted"
+                    if FIXED_THRESHOLD_SIGNALS else "")
                  + (f"; {len(unusable)} signal(s) unusable" if unusable else ""),
         )
 

@@ -1,16 +1,18 @@
 {
   "suspicious": {
-    "anomaly": 0.569541339883907
+    "unsupport": 0.9996093770604461,
+    "anomaly": 0.7761478827654915,
+    "injection": 0.6,
+    "conflict": 0.8616055968701704
   },
   "malicious": {
-    "anomaly": 0.8424705446009013
+    "unsupport": 0.9998330547437594,
+    "anomaly": 0.9993048293816561,
+    "injection": 0.9,
+    "conflict": 0.9677274414591603
   },
-  "n_clean_calibration": 320,
+  "n_clean_calibration": 321,
   "fitted": true,
-  "note": "Q0.95/Q0.99 of the clean calibration distribution; 3 signal(s) unusable",
-  "unusable": {
-    "unsupport": "clean distribution is degenerate (spread 1.0000, Q0.95=1.0000); thresholds would be never-fire",
-    "injection": "clean distribution is degenerate (spread 0.0000, Q0.95=0.0000); thresholds would be always-fire",
-    "conflict": "signal absent from every calibration row"
-  }
+  "note": "Q0.95/Q0.99 of the clean calibration distribution; injection declared, not fitted",
+  "unusable": {}
 }

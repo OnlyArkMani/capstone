@@ -48,7 +48,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from detectors import (  # noqa: E402
     embedding_anomaly_score, injection_probabilities, entailment_scores,
-    pairwise_conflict, d_conflict_max, tier1_conflict_max,
+    pairwise_conflict, per_document_conflict, d_conflict_max, tier1_conflict_max,
 )
 from .bands import SignalSet, BandThresholds  # noqa: E402
 from .cases import (  # noqa: E402
@@ -222,13 +222,23 @@ class FusionScorer:
         anomaly_z_by_doc: dict[str, float] = {}
         doc_scores: list[DocumentScore] = []
 
+        # Intra-evidence conflict, per document. See per_document_conflict: this
+        # is design 0.4's derived quantity standing in for design 2.1's
+        # parametric-knowledge signal, and the substitution is reported rather
+        # than hidden. A document in a singleton retrieval has no pair to be
+        # compared against, so it gets None (absent) rather than 0.0 (measured
+        # and found not to disagree) -- the SignalSet contract treats those
+        # differently on purpose.
+        conflict_by_doc = per_document_conflict(sig["conflicts"])
+        conflict_measurable = len(retrieved_docs) >= 2
+
         for rec in retrieved_docs:
             did = rec.doc_id
             s = SignalSet(
                 unsupport=sig["entail"][did].score,
                 anomaly=sig["anomaly"][did].score,
                 injection=sig["injection"][did].score,
-                conflict=None,
+                conflict=(conflict_by_doc.get(did, 0.0) if conflict_measurable else None),
             )
             signals_by_doc[did] = s
             tiers_by_doc[did] = rec.provenance.source_tier
