@@ -39,7 +39,7 @@ from .injection import (
 )
 from .entailment import (
     EntailmentScore, PairwiseConflict, entailment_score, entailment_scores,
-    unsupport_max, best_entailment, pairwise_conflict, d_conflict_max,
+    unsupport_max, best_entailment, pairwise_conflict, per_document_conflict, d_conflict_max,
     tier1_conflict_max,
 )
 
@@ -49,7 +49,7 @@ __all__ = [
     "InjectionScore",
     "entailment_score", "entailment_scores", "unsupport_max", "best_entailment",
     "EntailmentScore",
-    "pairwise_conflict", "d_conflict_max", "tier1_conflict_max", "PairwiseConflict",
+    "pairwise_conflict", "per_document_conflict", "d_conflict_max", "tier1_conflict_max", "PairwiseConflict",
     "BackendInfo", "DetectorScore", "robust_z", "squash",
 ]
 

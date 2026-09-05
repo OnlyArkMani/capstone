@@ -108,37 +108,87 @@ def test_structure(clean: dict, poisoned: dict) -> None:
     check("all three detectors agree on doc_ids", ids == {d["doc_id"] for d in sample})
 
 
-def test_injection(clean: dict, poisoned: dict, verbose: bool) -> None:
+def test_injection(clean: dict, poisoned: dict, pois_gt: dict, verbose: bool) -> None:
+    """Per-PAYLOAD reporting, deliberately, not one aggregate number.
+
+    Which phrasings the detector catches and which it misses is the finding.
+    An aggregate pass/fail would hide exactly the thing worth showing: the
+    detector is a set of hand-written patterns, so it catches payloads whose
+    wording it anticipates and misses payloads whose wording it does not. Every
+    injection-bearing document is listed with its score, its band and the
+    patterns that fired, so a reader can see the shape of the gap rather than
+    take our word for its size.
+    """
     print("\n== detector 2: prompt injection ==")
     docs = list(clean.values()) + list(poisoned.values())
     scores = {s.doc_id: s for s in injection_probabilities(docs)}
     backend = next(iter(scores.values())).backend
-    if not backend.is_model:
-        WARNINGS.append("injection ran on heuristics, not the pretrained classifier")
+    # Inverted deliberately in September 2026. This used to warn when the
+    # transformer was ABSENT. Probe 4 measured the transformer on this corpus and
+    # it does not separate it at any aggregation tried, so the pattern backend is
+    # now the primary and its use is not a degraded mode. What warrants a warning
+    # is the transformer being primary, since its numbers are not trustworthy here.
+    if backend.is_model:
+        WARNINGS.append("injection ran on the transformer backend, measured as "
+                        "non-separating on this corpus (see detectors/injection.py)")
 
-    # The corpus contains exactly one document with an injection payload.
-    target = "poison-injection-infusion-t3-forum"
-    if target not in scores:
-        check("injection-bearing document present", False)
+    labels = pois_gt.get("labels", {})
+    targets = [d for d, m in labels.items()
+               if m.get("poison_family_id") == "direct_prompt_injection" and d in scores]
+    if not targets:
+        check("at least one injection-bearing document present", False)
         return
-    injected = scores[target].score
-    others = [s.score for k, s in scores.items() if k != target]
-    rank = 1 + sum(1 for v in others if v > injected)
 
-    print(f"  backend: {backend.name} (real model: {backend.is_model})")
-    print(f"  {target}: {injected:.3f}  |{bar(injected)}|")
-    print(f"  highest other:                       {max(others):.3f}")
-    print(f"  mean of all others:                  {statistics.mean(others):.3f}")
-    check("the injection-bearing document ranks first", rank == 1, f"ranked {rank}")
-    check("it scores above every other document", injected > max(others),
-          f"{injected:.3f} vs {max(others):.3f}")
+    # Band cut points come from fusion.bands, not from a number typed here, so
+    # this table cannot drift away from what the system actually does.
+    try:
+        from fusion.bands import FIXED_THRESHOLD_SIGNALS  # noqa: PLC0415
+        sus, mal = FIXED_THRESHOLD_SIGNALS["injection"]
+    except Exception:
+        sus, mal = 0.60, 0.90
 
-    if verbose:
-        for did, s in sorted(scores.items(), key=lambda kv: -kv[1].score)[:6]:
-            print(f"    {s.score:.3f} |{bar(s.score, 14)}| {did}")
+    def band(v: float) -> str:
+        return "MALICIOUS" if v >= mal else "SUSPICIOUS" if v >= sus else "MISSED"
 
-    print("  NOTE: one positive example. Enough to confirm the signal fires; nowhere near")
-    print("        enough to estimate a threshold or a false-positive rate.")
+    others = [t.score for d, t in scores.items() if d not in targets]
+    loudest_other = max(others) if others else 0.0
+
+    print(f"  backend: {backend.name} (transformer: {backend.is_model})")
+    print(f"  bands:   SUSPICIOUS >= {sus:.2f}   MALICIOUS >= {mal:.2f}")
+    print(f"\n  {'injection-bearing document':44s} {'score':>7s}  {'band':11s} patterns fired")
+    print("  " + "-" * 104)
+
+    caught, missed = 0, []
+    for doc_id in sorted(targets, key=lambda d: -scores[d].score):
+        sc = scores[doc_id].score
+        pats = [h["pattern"] for h in scores[doc_id].detail.get("pattern_hits", [])]
+        b = band(sc)
+        if b == "MISSED":
+            missed.append(doc_id)
+        else:
+            caught += 1
+        print(f"  {doc_id:44s} {sc:7.4f}  {b:11s} {pats if pats else '-- nothing fired --'}")
+
+    print(f"\n  reached at least SUSPICIOUS: {caught}/{len(targets)}")
+    print(f"  loudest NON-injection document in the whole corpus: {loudest_other:.4f}")
+
+    check("no clean or non-injection document reaches the suspicious band",
+          loudest_other < sus, f"loudest other scored {loudest_other:.4f}")
+    check("at least one injection payload reaches MALICIOUS",
+          any(scores[d].score >= mal for d in targets))
+
+    if missed:
+        print("\n  MISSED, and this is the point of reporting per payload:")
+        for doc_id in missed:
+            variant = labels[doc_id].get("injection_variant", "unrecorded")
+            print(f"    {doc_id}  (variant: {variant})")
+        print("  These payloads carry no vocabulary the pattern set anticipates. They are")
+        print("  the honest limit of a rule detector and they are in the corpus on purpose:")
+        print("  a benchmark on which we score perfectly is a benchmark that measures nothing.")
+
+    print("\n  NOTE: this team wrote both the payloads and the patterns. The table above")
+    print("        shows which phrasings are anticipated, not how the detector would fare")
+    print("        against an adversary who has not seen the pattern list.")
 
 
 def test_entailment(clean: dict, poisoned: dict, pois_gt: dict, verbose: bool) -> None:
@@ -276,7 +326,7 @@ def main() -> int:
     test_isolation()
     test_structure(clean, poisoned)
     test_anomaly(clean, poisoned, pois_gt, args.verbose)
-    test_injection(clean, poisoned, args.verbose)
+    test_injection(clean, poisoned, pois_gt, args.verbose)
     test_entailment(clean, poisoned, pois_gt, args.verbose)
     test_pairwise_conflict(clean, poisoned)
 

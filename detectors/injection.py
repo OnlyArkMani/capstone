@@ -9,23 +9,73 @@ Why this signal is treated differently from the others
 ------------------------------------------------------
 
 Design section 2.1 lets injection alone push a response to MALICIOUS, while the
-other three signals need corroboration. The reason is that anomalous embeddings,
-unsupported claims and knowledge conflicts all have benign explanations -- a
-genuinely novel threat, a badly written advisory, a model whose training predates
-the CVE. Instruction text aimed at a language model inside a threat-intelligence
-document has no benign explanation. Its presence is evidence of *intent*, not of
-unusual statistics.
+other three signals need corroboration. Anomalous embeddings, unsupported claims
+and knowledge conflicts all have benign explanations -- a genuinely novel threat,
+a badly written advisory, a model whose training predates the CVE. Instruction
+text aimed at a language model inside a threat-intelligence document has no
+benign explanation. Its presence is evidence of *intent*, not of unusual
+statistics.
 
-What this detector cannot tell us yet
--------------------------------------
+Which backend is primary, and why it is not the transformer
+------------------------------------------------------------
 
-The corpus contains exactly **one** document carrying an injection payload
-(`poison-injection-infusion-t3-forum`, family `direct_prompt_injection`). One
-positive is enough to check the signal fires and is nowhere near enough to
-estimate a threshold, a false-positive rate, or anything else. Any per-detector
-performance figure for injection is not reportable until the poisoned corpus
-carries substantially more of this family. Recorded as an open item rather than
-discovered later.
+`protectai/deberta-v3-base-prompt-injection-v2` is retained but is NOT the
+default. It was measured against this corpus and does not separate it. The
+measurement is reproducible: `eval/results/probe_injection.py`, `probe_injection2.py`,
+`probe_injection3.py`, `probe_injection4.py`.
+
+  Whole documents. The one injection-bearing document scores 0.0011 and ranks
+  10th of 84. Seven clean documents score higher.
+
+  Paragraph chunks, max aggregation. The payload chunk scores 1.0000 -- and so
+  does much of the corpus. Clean median 0.9821, clean mean 0.6965, margin over
+  the loudest clean document -0.0000. `**Tactic:** Initial Access`, 26
+  characters of MITRE label, scores 1.0000.
+
+  Not a length effect. The obvious reading -- long input dilutes the payload,
+  short input concentrates it -- was tested and is wrong. Pearson r between
+  chunk length and score, over 1073 chunks, is -0.011. The model fires on
+  roughly 10% of chunks in every length bucket and `max` surfaces that noise.
+
+  No aggregation recovers it. Eight rules on identical inputs: whole-document,
+  max, max with length floors at 100/200/300 chars, max logit margin with and
+  without a floor, mean-of-top-3. The best ranks the target 2nd at margin
+  -0.0000. Logit margins do not rescue it -- the payload ranks 5th of 1073
+  chunks by margin, behind three clean fragments, one of which is that same
+  26-character MITRE label at +14.20 against the payload's +13.63. A 300-char
+  floor drops the target to rank 53, the payload chunk being 270 chars.
+
+The pattern backend, on the identical corpus, ranks the target 1st at margin
++1.0000 and is the only document of 84 on which any pattern fires at all.
+
+What that separation is, and what it is not
+--------------------------------------------
+
+It is one positive example. The corpus holds exactly one document of family
+`direct_prompt_injection`; this team wrote that document, and this team wrote
+the patterns that catch it. Perfect separation under those conditions is what
+the setup guarantees, not evidence that the detector generalises.
+
+So the defensible claim from this corpus is "the pretrained classifier was
+measured and ruled out", which the evidence supports. "The patterns work" is
+NOT supported, and no detection rate, false-positive rate or F1 for this
+detector is reportable yet.
+
+The open item is correspondingly specific: further `direct_prompt_injection`
+documents whose payloads are phrased unlike this one -- placed mid-document
+rather than at the tail, split across paragraphs, and without the `SYSTEM NOTE`
+header that three of the five firing patterns key on. Each is to be measured and
+reported individually rather than as an aggregate: which phrasings the patterns
+catch and which they miss is the finding, and a single pass/fail number would
+hide it.
+
+Chunking and the model backend, retained
+-----------------------------------------
+
+`_chunk_for_scoring` and `_ModelBackend` are kept and reachable through
+`get_backend(force="model")`. They are what the probes above measure, and
+re-running that measurement against the expanded corpus is the next step rather
+than a discarded branch.
 """
 
 from __future__ import annotations
@@ -66,6 +116,48 @@ class InjectionScore(DetectorScore):
 # Backends
 # ---------------------------------------------------------------------------
 
+# A chunk this size keeps a single embedded instruction paragraph from being
+# pooled away by several paragraphs of surrounding report prose (see the
+# module docstring for the measurement that motivated this). Overlap carries
+# a little of the previous sentence into a fresh chunk so an injection
+# straddling a split point is not each half diluted below threshold.
+_CHUNK_MAX_CHARS = 500
+_CHUNK_OVERLAP_CHARS = 80
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_PARAGRAPH_SPLIT = re.compile(r"\n\s*\n")
+
+
+def _chunk_for_scoring(text: str) -> list[str]:
+    """Split into paragraph-sized (or smaller) pieces, never one giant block.
+
+    Paragraph boundaries first, because this corpus's own injection payloads
+    sit in their own paragraph -- matching the document's structure costs
+    nothing and usually isolates the payload outright. Any paragraph still
+    too long to trust a single pooled score is further split on sentence
+    boundaries with a short character overlap between consecutive chunks.
+    """
+    paragraphs = [p.strip() for p in _PARAGRAPH_SPLIT.split(text) if p.strip()]
+    if not paragraphs:
+        return [text.strip()] if text.strip() else []
+
+    chunks: list[str] = []
+    for para in paragraphs:
+        if len(para) <= _CHUNK_MAX_CHARS:
+            chunks.append(para)
+            continue
+        sentences = [s.strip() for s in _SENTENCE_SPLIT.split(para) if s.strip()]
+        current = ""
+        for sentence in sentences:
+            if current and len(current) + len(sentence) + 1 > _CHUNK_MAX_CHARS:
+                chunks.append(current)
+                current = current[-_CHUNK_OVERLAP_CHARS:] + " " + sentence
+            else:
+                current = (current + " " + sentence).strip() if current else sentence
+        if current:
+            chunks.append(current)
+    return chunks or [text.strip()]
+
+
 class _ModelBackend:
     is_model = True
 
@@ -88,27 +180,50 @@ class _ModelBackend:
         if self._pos_index is None:
             self._pos_index = 1
 
-    def score(self, text: str) -> tuple[float, dict[str, Any]]:
+    def _score_chunk(self, text: str) -> tuple[float, list[float]]:
         enc = self._tok(text, truncation=True, max_length=512, return_tensors="pt")
         with self._torch.no_grad():
             logits = self._model(**enc).logits[0].tolist()
         probs = softmax(logits)
-        return float(probs[self._pos_index]), {
-            "logits": [round(x, 4) for x in logits],
+        return float(probs[self._pos_index]), logits
+
+    def score(self, text: str) -> tuple[float, dict[str, Any]]:
+        chunks = _chunk_for_scoring(text)
+        if not chunks:
+            return 0.0, {"n_chunks": 0}
+
+        best_score, best_logits, best_idx = -1.0, None, 0
+        for idx, chunk in enumerate(chunks):
+            chunk_score, chunk_logits = self._score_chunk(chunk)
+            if chunk_score > best_score:
+                best_score, best_logits, best_idx = chunk_score, chunk_logits, idx
+
+        return float(best_score), {
+            "logits": [round(x, 4) for x in best_logits],
             "positive_index": self._pos_index,
+            "n_chunks": len(chunks),
+            "winning_chunk_index": best_idx,
+            "winning_chunk_preview": chunks[best_idx][:160],
         }
 
 
-class _HeuristicBackend:
-    """Pattern matching. Structurally valid, analytically weak.
+class _PatternBackend:
+    """The primary backend: hand-specified patterns over a noisy-OR.
 
     Combined with a noisy-OR rather than a sum: several weak indicators should
     raise suspicion without three of them saturating the score, and one strong
     indicator should dominate. `1 - prod(1 - w_i)` does both.
+
+    This was written as a fallback for when the transformer was unavailable, and
+    was promoted on measurement rather than by preference -- see the module
+    docstring. Its weights remain judgement, not fitted values, and its cut
+    points are declared in `fusion.bands.FIXED_THRESHOLD_SIGNALS` rather than
+    fitted, because a rule aggregate has no clean distribution to fit against.
+    Both facts are limitations to state in the report, not details to bury.
     """
 
     is_model = False
-    name = "heuristic-patterns"
+    name = "zetabyte-injection-patterns-v1"
 
     def score(self, text: str) -> tuple[float, dict[str, Any]]:
         hits, product = [], 1.0
@@ -125,19 +240,25 @@ _BACKEND: Any | None = None
 
 
 def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None) -> Any:
-    """Resolve once and cache: loading a transformer per document would dominate runtime."""
-    global _BACKEND
-    if force == "heuristic":
-        return _HeuristicBackend()
-    if _BACKEND is None:
-        try:
+    """Resolve once and cache.
+
+    The pattern backend is the default. That is a measured decision, not a
+    fallback: the transformer does not separate this corpus at any aggregation
+    tried (module docstring). It stays reachable with force="model", which is
+    how the probes run it and how the comparison is re-made when the corpus
+    grows more injection-bearing documents.
+
+    Caching matters only for the model path -- loading a transformer per
+    document would dominate runtime. The pattern backend is stateless and cheap.
+    """
+    if force == "model":
+        global _BACKEND
+        if _BACKEND is None or not getattr(_BACKEND, "is_model", False):
             _BACKEND = _ModelBackend(model_name)
-        except Exception as exc:
-            print(f"[detectors] WARNING: prompt-injection model unavailable "
-                  f"({type(exc).__name__}); using pattern heuristics. Scores are indicative "
-                  f"only and must not be reported as detector performance.", flush=True)
-            _BACKEND = _HeuristicBackend()
-    return _BACKEND
+        return _BACKEND
+    if force in (None, "patterns", "heuristic"):
+        return _PatternBackend()
+    raise ValueError(f"unknown backend {force!r}; expected 'patterns' or 'model'")
 
 
 # ---------------------------------------------------------------------------
@@ -160,8 +281,11 @@ def injection_probabilities(
     if not docs:
         return []
     b = backend or get_backend()
-    info = BackendInfo(b.name, b.is_model,
-                       "pretrained classifier" if b.is_model else "regex patterns, not fitted")
+    info = BackendInfo(
+        b.name, b.is_model,
+        "pretrained classifier; measured as non-separating on this corpus"
+        if b.is_model else
+        "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted")
     out = []
     for i, d in enumerate(docs):
         text = doc_text(d)
@@ -173,3 +297,8 @@ def injection_probabilities(
 def injection_probability_max(scores: Sequence[InjectionScore]) -> float:
     """Set-level aggregate: max, per design section 0.5."""
     return max((s.score for s in scores), default=0.0)
+
+
+# The pattern backend was named for the role it used to have. Kept as an alias so
+# the probe scripts that measured the swap still run unchanged.
+_HeuristicBackend = _PatternBackend
