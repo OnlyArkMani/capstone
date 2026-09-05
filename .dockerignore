@@ -62,6 +62,7 @@ Thumbs.db
 # --- Docker's own files ---
 Dockerfile
 docker-compose.yml
+docker-compose.dev.yml
 .dockerignore
 
 # --- stray output directories ---

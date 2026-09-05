@@ -1,0 +1,80 @@
+# Development overlay — source from the working tree instead of the image.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm shell ...
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up dashboard
+#
+# WHY THIS FILE EXISTS
+#
+# The Dockerfile COPYs the source into the image at build time. That is correct
+# for a demonstration image -- what the mentor runs is a fixed, self-contained
+# artefact, not whatever happens to be in the working tree -- but it means an
+# edited detector has no effect until the image is rebuilt. That failure is
+# quiet and expensive: the container runs, the suites pass, and the numbers are
+# the ones from before the edit. It cost us a full debugging cycle on the
+# injection detector, where a fixed detector reported its old scores because the
+# probe script was bind-mounted (eval/results is) and the detector it imported
+# was not.
+#
+# This overlay bind-mounts the source directories read-only, so an edit is live
+# in the next container. Development loop: edit, run, read the result.
+#
+# WHY IT IS NOT NAMED docker-compose.override.yml
+#
+# Compose loads an override file automatically, with no flag and no mention in
+# the output. Every run would then silently take its code from the working tree,
+# including the mentor demonstration -- which is precisely the ambiguity this
+# file exists to remove. Opting in with -f keeps "what is running" answerable
+# from the command that started it.
+#
+# The mounts are read-only. Nothing in a dev container should write back into
+# the source tree; the paths that legitimately produce output -- the retrieval
+# index, the audit database, eval/results, fusion/artifacts -- are declared in
+# docker-compose.yml and are deliberately NOT overridden here. Compose resolves
+# nested mounts by depth, so those stay writable underneath these mounts.
+
+x-source-mounts: &source-mounts
+  # Code and data the container reads.
+  - ./corpus:/app/corpus:ro
+  - ./pipeline:/app/pipeline:ro
+  - ./detectors:/app/detectors:ro
+  - ./fusion:/app/fusion:ro
+  - ./reports:/app/reports:ro
+  - ./dashboard:/app/dashboard:ro
+  # eval/ is NOT read-only: fusion.train writes eval/fusion_metrics.json and the
+  # corpus validators write eval/*.json. Mounting it :ro made the whole training
+  # run die at step 7 of 7, AFTER twenty minutes of work and after the artifacts
+  # were already saved -- the worst possible place to fail. Read-only was the
+  # right instinct for source directories and the wrong one for a directory that
+  # is half source, half output.
+  - ./eval:/app/eval
+  - ./docs:/app/docs:ro
+
+  # logs/ holds the audit module AND the audit database, and the database is a
+  # named volume mounted at /app/logs. Bind-mounting the directory would replace
+  # that volume -- same target path -- and the audit trail would stop persisting
+  # between runs. The two source files are mounted individually instead.
+  - ./logs/audit.py:/app/logs/audit.py:ro
+  - ./logs/test_audit.py:/app/logs/test_audit.py:ro
+
+  # Restated from docker-compose.yml. Compose merges volume lists by container
+  # path, so these would survive the overlay anyway; they are repeated because
+  # the read-only mounts above sit directly on top of them and a reader needs to
+  # see, in one place, which paths stay writable. The runtime resolves nested
+  # mounts by depth, not by order, so each of these keeps its own options
+  # regardless of the :ro on its parent.
+  - index:/app/pipeline/index
+  - audit:/app/logs
+  - ./eval/results:/app/eval/results
+  - ./fusion/artifacts:/app/fusion/artifacts
+
+services:
+  shell:
+    volumes: *source-mounts
+  verify:
+    volumes: *source-mounts
+  evaluate:
+    volumes: *source-mounts
+  report:
+    volumes: *source-mounts
+  dashboard:
+    volumes: *source-mounts

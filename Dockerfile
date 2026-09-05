@@ -29,14 +29,26 @@ RUN apt-get update \
 
 WORKDIR /install
 
-# CPU-only torch first, from its own index. Installing it before requirements.txt
-# stops pip resolving the CUDA build as a transitive dependency of
-# sentence-transformers.
-RUN pip install --prefix=/install/deps \
-    torch --index-url https://download.pytorch.org/whl/cpu
-
 COPY requirements.txt .
-RUN pip install --prefix=/install/deps -r requirements.txt
+
+# torch and requirements.txt are installed in ONE pip invocation, deliberately.
+#
+# The obvious arrangement -- install CPU-only torch from the PyTorch index, then
+# install requirements.txt in a second command -- does not work with
+# `--prefix`. A prefix install lands outside the interpreter's sys.path, so the
+# second pip cannot see the torch the first one installed. It reads torch as an
+# unsatisfied dependency of sentence-transformers, resolves it against the
+# default index, and downloads a second, larger torch wheel (~550 MB) on top of
+# the CPU one. Both end up in the image; the CPU-only intent is silently lost,
+# and every cold build pays for two torch downloads.
+#
+# One invocation gives the resolver a single view: torch appears once, and the
+# CPU index is primary so that is the wheel it picks. PyPI stays available as an
+# extra index for everything else, which the PyTorch index does not carry.
+RUN pip install --prefix=/install/deps \
+      --index-url https://download.pytorch.org/whl/cpu \
+      --extra-index-url https://pypi.org/simple \
+      torch -r requirements.txt
 
 # ---------------------------------------------------------------------------
 # Stage 2 — runtime
