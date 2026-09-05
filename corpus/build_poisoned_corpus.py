@@ -210,6 +210,61 @@ def retrieval_precheck(poisoned: list[dict], queries: dict[str, dict], k: int = 
 # Build
 # ---------------------------------------------------------------------------
 
+INJECTION_PLACEMENTS = ("tail", "mid", "split")
+
+
+def _place_injection(content: str, payload: str, placement: str, doc_id: str) -> str:
+    """Put the payload somewhere in the document. Where matters, and here is why.
+
+    Every direct-injection document in the first version of this corpus carried
+    its payload as the final paragraph, because that was the only thing the
+    builder could do. That is a property of the BUILDER, not of the attack, and a
+    corpus with one placement teaches a detector to look in one place. A real
+    attacker has no reason to append; embedding the instruction mid-document,
+    where a human skim-reader is least likely to reach it, is at least as
+    plausible. Detection results measured only against tail placement would
+    overstate what the detector can do.
+
+    Defensive security research, internal benchmark use only: these documents
+    exist to be caught by our own detectors and are never directed at any live
+    system. See the research_framing field in corpus/sources/poison_seeds.json.
+
+      tail   final paragraph. The original behaviour, kept as the default so
+             existing seeds render byte-identically.
+      mid    inserted at a paragraph boundary near the middle of the body, so
+             the payload is surrounded by legitimate prose on both sides.
+      split  broken across two widely separated paragraph boundaries, so no
+             single contiguous span contains the whole instruction. This is the
+             hardest case for any detector that scores contiguous text.
+    """
+    if placement not in INJECTION_PLACEMENTS:
+        raise ValueError(f"{doc_id}: injection_placement '{placement}' is not one of "
+                         f"{INJECTION_PLACEMENTS}")
+
+    paragraphs = [p for p in content.split("\n\n") if p.strip()]
+    if placement == "tail" or len(paragraphs) < 3:
+        return content + f"\n\n{payload}\n"
+
+    if placement == "mid":
+        at = max(1, len(paragraphs) // 2)
+        paragraphs.insert(at, payload)
+        return "\n\n".join(paragraphs) + "\n"
+
+    # split: two halves, separated by as much legitimate prose as the body allows.
+    sentences = [x.strip() for x in re.split(r"(?<=[.!?])\s+", payload) if x.strip()]
+    if len(sentences) < 2:
+        at = max(1, len(paragraphs) // 2)
+        paragraphs.insert(at, payload)
+        return "\n\n".join(paragraphs) + "\n"
+    half = len(sentences) // 2
+    first, second = " ".join(sentences[:half]), " ".join(sentences[half:])
+    lo = max(1, len(paragraphs) // 3)
+    hi = min(len(paragraphs), max(lo + 2, (2 * len(paragraphs)) // 3))
+    paragraphs.insert(lo, first)
+    paragraphs.insert(hi + 1, second)
+    return "\n\n".join(paragraphs) + "\n"
+
+
 def build_document(seed: dict, query: dict, registry: dict, ingestion_date: str) -> dict:
     source_id = seed["source_id"]
     if source_id not in registry:
@@ -230,9 +285,11 @@ def build_document(seed: dict, query: dict, registry: dict, ingestion_date: str)
     seed_for_render["summary"] = f"{s_segment} {seed['summary']}"
     content = renderer(seed_for_render, seed.get("facts", {}))
 
-    # A direct-injection family appends instruction text addressed to the model.
+    # A direct-injection family carries instruction text addressed to the model.
     if seed.get("injection_payload"):
-        content += f"\n\n{seed['injection_payload']}\n"
+        content = _place_injection(content, seed["injection_payload"],
+                                   seed.get("injection_placement", "tail"),
+                                   seed["doc_id"])
 
     content = re.sub(r"\n{3,}", "\n\n", content).strip() + "\n"
 
@@ -277,6 +334,9 @@ def build_document(seed: dict, query: dict, registry: dict, ingestion_date: str)
     doc["_intended_false_claim"] = seed["intended_false_claim"]
     doc["_s_segment"] = s_segment
     doc["_has_injection"] = bool(seed.get("injection_payload"))
+    if seed.get("injection_payload"):
+        doc["_injection_placement"] = seed.get("injection_placement", "tail")
+        doc["_injection_variant"] = seed.get("injection_variant", "unrecorded")
     return doc
 
 
@@ -439,6 +499,11 @@ def main() -> int:
                     "intended_false_claim": d["_intended_false_claim"],
                     "retrieval_segment": d["_s_segment"],
                     "contains_injection_payload": d["_has_injection"],
+                    # Carried into the manifest so the detector suite can report
+                    # PER PAYLOAD which phrasings it catches and which it misses.
+                    # An aggregate number would hide exactly that distinction.
+                    "injection_placement": d.get("_injection_placement"),
+                    "injection_variant": d.get("_injection_variant"),
                     "source_tier": d["source_tier"],
                 }
                 for d in sorted(documents, key=lambda x: x["doc_id"])
