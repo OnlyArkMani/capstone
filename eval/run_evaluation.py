@@ -187,7 +187,14 @@ class Runner:
         self.k = k
         self.verbose = verbose
         self.rag = BaselineRAG.from_disk()
-        self.scorer = FusionScorer.load(verbose=False)
+        # Hand the scorer the retriever's own embedder. Without it the scorer
+        # holds embedder=None, the anomaly detector falls back to get_embedder()
+        # inside every query, and the run reloads the embedding model once per
+        # query while a loaded one sits unused on self.rag. get_embedder() caches
+        # now as well, so this is belt and braces -- but passing it explicitly is
+        # what makes the sharing visible at the call site rather than incidental.
+        self.scorer = FusionScorer.load(embedder=self.rag.retriever.embedder,
+                                        verbose=False)
         self.poisoned_gt, self.clean_gt, self.manifest = load_ground_truth()
         self.generation_available = self._probe_generation()
 
