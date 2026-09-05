@@ -122,6 +122,13 @@ class OllamaGenerator(Generator):
             return False
 
 
+# Sent on every Groq request. See the comment in GroqGenerator._post: without a
+# browser-shaped User-Agent, Cloudflare returns 403 `error code: 1010` and the
+# key never reaches Groq at all.
+GROQ_USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
+
+
 class GroqGenerator(Generator):
     """Groq free tier. Open-weight models, no cost, no local compute.
 
@@ -153,11 +160,22 @@ class GroqGenerator(Generator):
             "model": self.name,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": self._cfg.temperature,
+            "max_tokens": self._cfg.max_output_tokens,
         }).encode("utf-8")
         req = urllib.request.Request(
             "https://api.groq.com/openai/v1/chat/completions",
             data=payload,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self._key}"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self._key}",
+                # Required, not cosmetic. Groq sits behind Cloudflare, and urllib
+                # identifies itself as "Python-urllib/3.11", which Cloudflare
+                # refuses with `error code: 1010` -- an HTTP 403 whose body is not
+                # JSON and names no reason. That reads exactly like a rejected
+                # key, and cost this project an afternoon chasing the key instead
+                # of the client. The same request with this header returns 200.
+                "User-Agent": GROQ_USER_AGENT,
+            },
         )
         with urllib.request.urlopen(req, timeout=self._cfg.generation_timeout_s) as resp:
             body = json.loads(resp.read().decode("utf-8"))

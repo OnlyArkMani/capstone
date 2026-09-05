@@ -59,7 +59,13 @@ class PipelineConfig:
     generation_backend: str = _env("RAG_GENERATION_BACKEND", "groq")  # groq|ollama|extractive|auto
     ollama_model: str = _env("RAG_OLLAMA_MODEL", "llama3.2:3b")
     ollama_host: str = _env("OLLAMA_HOST", "http://localhost:11434")
-    groq_model: str = _env("RAG_GROQ_MODEL", "llama-3.1-8b-instant")
+    # Verified against this account's /v1/models listing on 5 September 2026.
+    # llama-3.1-8b-instant, the previous default, has been decommissioned and is
+    # no longer offered -- a configured model name is a perishable thing on a free
+    # tier, so `python -m pipeline.check_backends` tests it rather than assuming.
+    # gpt-oss-20b is open-weight (Apache 2.0), which the tech-stack constraint
+    # requires. qwen/qwen3.6-27b is the alternative if this one is retired next.
+    groq_model: str = _env("RAG_GROQ_MODEL", "openai/gpt-oss-20b")
     groq_api_key_env: str = "GROQ_API_KEY"
     generation_timeout_s: int = int(_env("RAG_GEN_TIMEOUT", "120"))
 
@@ -72,6 +78,12 @@ class PipelineConfig:
     groq_min_interval_s: float = float(_env("RAG_GROQ_MIN_INTERVAL", "0.0"))
     max_context_chars: int = int(_env("RAG_MAX_CONTEXT_CHARS", "12000"))
     temperature: float = float(_env("RAG_TEMPERATURE", "0.0"))
+    # Cap the answer length. The free tier's binding limit is 6000 tokens/MINUTE,
+    # so an unbounded reply from a reasoning-capable model burns the budget for
+    # the queries behind it and turns a batch run into a queue of 429s. A SOC
+    # answer that cannot be said in this many tokens is too long to be read in a
+    # triage queue anyway.
+    max_output_tokens: int = int(_env("RAG_MAX_OUTPUT_TOKENS", "512"))
 
     # ---- logging ----
     log_dir: Path = PROJECT_ROOT / "logs"

@@ -48,6 +48,12 @@ def _l2_normalise(matrix: np.ndarray) -> np.ndarray:
     return matrix / norms
 
 
+# Upper bound on cached document vectors. The corpus is 84 documents; this is
+# generous enough that a cache clear should never happen in normal use, and small
+# enough that a pathological caller cannot grow it without limit.
+_DOC_CACHE_MAX = 4096
+
+
 class SentenceTransformerEmbedder(Embedder):
     """Real embeddings via sentence-transformers.
 
@@ -68,8 +74,43 @@ class SentenceTransformerEmbedder(Embedder):
         self._model = SentenceTransformer(cfg.embedding_model)
         self.dim = int(self._model.get_sentence_embedding_dimension())
         self._uses_query_prefix = "bge" in cfg.embedding_model.lower()
+        self._doc_cache: dict[str, np.ndarray] = {}
 
     def encode(self, texts: list[str], is_query: bool = False) -> np.ndarray:
+        """Encode texts, reusing cached DOCUMENT vectors where possible.
+
+        The corpus is fixed and small, and the same documents are retrieved over
+        and over: the anomaly detector re-embedded every retrieved document on
+        every query, which during training meant 470 encodes of 84 documents
+        whose vectors were already in the FAISS index. `embedding_anomaly_score`
+        even documents the hazard -- "re-embedding for the detector would double
+        the cost and, worse, risk using a different model than the index" -- but
+        its `vectors` argument was never supplied by any caller.
+
+        Caching here rather than at the call sites fixes it for all of them at
+        once, and removes the divergence risk outright: a cached vector is by
+        construction the one this embedder produced, so detector distances and
+        index distances cannot drift apart.
+
+        QUERIES are deliberately not cached. bge models take an instruction
+        prefix on the query side only, so a query and a document with identical
+        text are different inputs, and queries rarely repeat anyway.
+        """
+        if is_query:
+            return self._encode_raw(texts, is_query=True)
+
+        missing = [t for t in dict.fromkeys(texts) if t not in self._doc_cache]
+        if missing:
+            fresh = self._encode_raw(missing, is_query=False)
+            for text, vec in zip(missing, fresh):
+                if len(self._doc_cache) >= _DOC_CACHE_MAX:
+                    self._doc_cache.clear()   # simple bound; the corpus fits many times over
+                self._doc_cache[text] = vec
+        if not texts:
+            return np.zeros((0, self.dim), dtype="float32")
+        return np.stack([self._doc_cache[t] for t in texts]).astype("float32")
+
+    def _encode_raw(self, texts: list[str], is_query: bool) -> np.ndarray:
         payload = texts
         if is_query and self._uses_query_prefix and self._cfg.query_prefix:
             payload = [self._cfg.query_prefix + t for t in texts]
@@ -117,9 +158,48 @@ class HashingEmbedder(Embedder):
         return _l2_normalise(out)
 
 
-def get_embedder(config: PipelineConfig | None = None) -> Embedder:
-    """Resolve the configured backend, falling back with a visible warning."""
+# Resolved embedders, keyed by the configuration that produced them.
+#
+# Without this cache every caller that omits an explicit embedder loads
+# BAAI/bge-small-en-v1.5 from disk again. That is not hypothetical: the
+# evaluation harness constructed its FusionScorer without one, the anomaly
+# detector fell through to `get_embedder()` on every query, and a 40-query run
+# loaded the model 40 times. `Retriever` carries the comment "construct once and
+# reuse ... loading a transformer model on every query would dominate latency
+# and make timing figures meaningless" -- correct, and defeated one layer down
+# by a factory that rebuilt on each call. `detectors/injection.py` already
+# caches its backend for exactly this reason; embeddings now match it.
+#
+# Keyed on the fields that change what gets built, so two different configs
+# still get two different embedders. A GPU would not have helped here: the cost
+# was loading weights, not computing with them.
+_EMBEDDER_CACHE: dict[tuple[str, str, int], Embedder] = {}
+
+
+def clear_embedder_cache() -> None:
+    """Drop cached embedders. For tests that switch backends within one process."""
+    _EMBEDDER_CACHE.clear()
+
+
+def get_embedder(config: PipelineConfig | None = None, use_cache: bool = True) -> Embedder:
+    """Resolve the configured backend, falling back with a visible warning.
+
+    Cached by configuration. Pass use_cache=False for a genuinely independent
+    instance; the fallback warning is printed only when one is actually built,
+    so a cached hit stays silent rather than repeating a warning 40 times.
+    """
     cfg = config or DEFAULT_CONFIG
+    key = (cfg.embedding_backend, cfg.embedding_model, cfg.embedding_dim_fallback)
+    if use_cache and key in _EMBEDDER_CACHE:
+        return _EMBEDDER_CACHE[key]
+
+    embedder = _build_embedder(cfg)
+    if use_cache:
+        _EMBEDDER_CACHE[key] = embedder
+    return embedder
+
+
+def _build_embedder(cfg: PipelineConfig) -> Embedder:
     choice = cfg.embedding_backend
 
     if choice in ("auto", "sentence_transformers"):
