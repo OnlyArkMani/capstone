@@ -36,7 +36,16 @@ transformers>=4.40
 sentencepiece>=0.2
 
 # --- fusion/ : clustering, logistic regression, calibration, grouped CV ---
-scikit-learn>=1.3
+# PINNED, not a floor. The fitted trust model is a pickle containing sklearn
+# estimator objects, and sklearn does not guarantee those load correctly across
+# versions -- it warns "may lead to invalid results" and keeps going, so the
+# failure is silent and the trust scores are simply wrong. A `>=` floor let a
+# rebuild install a newer sklearn than the one that fitted fusion/artifacts/
+# trust_model.joblib, and that is exactly what happened.
+#
+# Changing this version REQUIRES refitting: run `python -m fusion.train` (or the
+# whole `verify` service) afterwards, or the mismatch returns.
+scikit-learn==1.9.0
 # Model persistence. Without joblib the fitted model in fusion/artifacts/ cannot be
 # read: the composite trust score is absent from every report and only the rule
 # track contributes to a disposition. The system degrades rather than failing, which
