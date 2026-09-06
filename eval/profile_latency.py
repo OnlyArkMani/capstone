@@ -439,7 +439,31 @@ def main() -> int:
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"\nwritten: {args.out}")
+    # A tagged copy as well as the canonical file. The canonical path is what a
+    # reader looks at; the tagged copy is what makes a before/after comparison
+    # possible three runs later, when the canonical file has been overwritten
+    # twice and the earlier numbers exist only in a terminal that has scrolled.
+    tagged = args.out.with_name(f"{args.out.stem}_{args.tag}{args.out.suffix}")
+    tagged.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    # And one compact line per run in a history file, so the sequence of fixes
+    # and what each was worth is a record in the repository rather than a claim
+    # in a commit message.
+    history_path = args.out.with_name("latency_history.json")
+    try:
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+    except Exception:
+        history = []
+    history.append({
+        "tag": args.tag,
+        "generated_at": payload["generated_at"],
+        "k": args.k,
+        "torch": env.get("torch_version"),
+        "device": placement["entailment_nli"]["device"],
+        "medians_ms": payload["medians_ms"],
+    })
+    history_path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
+    print(f"\nwritten: {args.out}\n         {tagged}\n         {history_path}")
 
     recorder.restore()
     return 0

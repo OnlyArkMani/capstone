@@ -33,6 +33,7 @@ class Embedder(ABC):
     name: str
     dim: int
     is_semantic: bool
+    device: str = "cpu"   # which torch device produced these vectors
 
     @abstractmethod
     def encode(self, texts: list[str], is_query: bool = False) -> np.ndarray:
@@ -68,10 +69,19 @@ class SentenceTransformerEmbedder(Embedder):
     def __init__(self, config: PipelineConfig | None = None) -> None:
         from sentence_transformers import SentenceTransformer  # noqa: PLC0415
 
+        from .device import resolve as resolve_device  # noqa: PLC0415
+
         cfg = config or DEFAULT_CONFIG
         self._cfg = cfg
         self.name = cfg.embedding_model
-        self._model = SentenceTransformer(cfg.embedding_model)
+        # Passed explicitly rather than left to the library default. The default
+        # is not wrong, but it is silent, and a silent placement is what allowed
+        # this model to sit on CPU next to an idle GPU. sentence-transformers
+        # moves the tokenised batch onto the model's own device inside encode(),
+        # so no manual tensor move is needed here -- but that is true because
+        # the library does it, which is worth stating rather than assuming.
+        self.device = resolve_device(getattr(cfg, "device", "auto"))
+        self._model = SentenceTransformer(cfg.embedding_model, device=self.device)
         self.dim = int(self._model.get_sentence_embedding_dimension())
         self._uses_query_prefix = "bge" in cfg.embedding_model.lower()
         self._doc_cache: dict[str, np.ndarray] = {}
@@ -137,6 +147,7 @@ class HashingEmbedder(Embedder):
     def __init__(self, dim: int = 384) -> None:
         self.name = f"hashing-fallback-{dim}d"
         self.dim = dim
+        self.device = "cpu"   # numpy only; there is nothing to place
 
     def _features(self, text: str) -> list[str]:
         toks = _TOKEN_RE.findall(text.lower())
@@ -173,7 +184,7 @@ class HashingEmbedder(Embedder):
 # Keyed on the fields that change what gets built, so two different configs
 # still get two different embedders. A GPU would not have helped here: the cost
 # was loading weights, not computing with them.
-_EMBEDDER_CACHE: dict[tuple[str, str, int], Embedder] = {}
+_EMBEDDER_CACHE: dict[tuple[str, str, int, str], Embedder] = {}
 
 
 def clear_embedder_cache() -> None:
@@ -189,7 +200,11 @@ def get_embedder(config: PipelineConfig | None = None, use_cache: bool = True) -
     so a cached hit stays silent rather than repeating a warning 40 times.
     """
     cfg = config or DEFAULT_CONFIG
-    key = (cfg.embedding_backend, cfg.embedding_model, cfg.embedding_dim_fallback)
+    # Device is part of the key: two configurations that differ only by device
+    # are two different embedders, and handing back a CPU-resident model to a
+    # caller that asked for CUDA would silently defeat the placement.
+    key = (cfg.embedding_backend, cfg.embedding_model, cfg.embedding_dim_fallback,
+           getattr(cfg, "device", "auto"))
     if use_cache and key in _EMBEDDER_CACHE:
         return _EMBEDDER_CACHE[key]
 

@@ -1,0 +1,51 @@
+[
+  {
+    "tag": "baseline-cpu",
+    "generated_at": "2026-09-06T21:5x",
+    "k": 5,
+    "torch": "2.8.0+cpu",
+    "device": "cpu",
+    "medians_ms": {
+      "retrieval": 21.54,
+      "detector_anomaly": 219.57,
+      "detector_injection": 1.45,
+      "detector_entailment": 1276.76,
+      "detector_conflict": 6319.27,
+      "fusion_residual": -210.78,
+      "report_build": 4.98,
+      "score_query_total": 7614.39,
+      "end_to_end": 7642.38
+    },
+    "harness_config_c": {
+      "mean_total_ms": 7833.3,
+      "median_total_ms": 7707.4,
+      "p95_total_ms": 8325.88,
+      "mean_security_overhead_ms": 7813.89
+    },
+    "note": "Recorded from the run's console output; the profiler gained history writing after this run."
+  },
+  {
+    "tag": "after-device-placement",
+    "generated_at": "2026-09-06T23:14:31+0530",
+    "k": 5,
+    "torch": "2.8.0+cu126",
+    "device": "cuda:0",
+    "medians_ms": {
+      "retrieval": 9.37,
+      "detector_anomaly": 73.19,
+      "detector_injection": 1.67,
+      "detector_entailment": 185.32,
+      "detector_conflict": 970.42,
+      "fusion_residual": -19.37,
+      "report_build": 4.3,
+      "score_query_total": 1207.32,
+      "end_to_end": 1221.6
+    },
+    "harness_config_c": {
+      "mean_total_ms": 1394.43,
+      "median_total_ms": 1295.03,
+      "p95_total_ms": 1403.79,
+      "mean_security_overhead_ms": 1379.4
+    }
+  }
+]

@@ -10,17 +10,20 @@
       "anomaly": {
         "name": "kmeans_sklearn:BAAI/bge-small-en-v1.5",
         "is_model": true,
-        "detail": "n=5, clusters=2"
+        "detail": "n=5, clusters=2",
+        "is_fallback": false
       },
       "injection": {
         "name": "zetabyte-injection-patterns-v1",
         "is_model": false,
-        "detail": "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted"
+        "detail": "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted",
+        "is_fallback": false
       },
       "entailment": {
         "name": "cross-encoder/nli-deberta-v3-base",
         "is_model": true,
-        "detail": "cross-encoder NLI"
+        "detail": "cross-encoder NLI",
+        "is_fallback": false
       }
     },
     "signals_available": [
@@ -210,7 +213,6 @@
   "caveats": [
     "`conflict` is INTRA-EVIDENCE conflict (retrieved documents against each other, design 0.4), standing in for design 2.1's parametric-knowledge signal, which needs a probe this system does not have. Recorded per row as conflict_source. Do not read it as the designed signal.",
     "98 of 98 queries used a generated answer as the hypothesis, per design 3.1. Answers are cached in generated_answers.json so refits are reproducible and offline.",
-    "Detectors running on FALLBACK backends: injection. Every figure above is structural evidence that the fusion layer works, not a measurement of detection performance. Install the production models and refit.",
     "Signals dropped for being anti-correlated with the label on training data: anomaly. See signal_separation in this file for the figures.",
     "Fitted coefficients have the wrong sign for: unsupport, injection."
   ]

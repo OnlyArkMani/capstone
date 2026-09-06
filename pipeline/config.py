@@ -45,6 +45,15 @@ class PipelineConfig:
         "Represent this sentence for searching relevant passages: ",
     )
 
+    # ---- compute device ----
+    # "auto" resolves to CUDA when torch can actually reach a device, CPU
+    # otherwise; see pipeline/device.py. Before this existed the device was
+    # whatever sentence-transformers happened to choose and nothing recorded the
+    # choice, which is how every model in the system came to run on CPU on a
+    # machine with a GPU. RAG_DEVICE=cpu forces CPU, which is how a
+    # like-for-like CPU/GPU comparison is run.
+    device: str = _env("RAG_DEVICE", "auto")
+
     # ---- index ----
     index_backend: str = _env("RAG_INDEX_BACKEND", "auto")  # auto|faiss|numpy
     index_dir: Path = PROJECT_ROOT / "pipeline" / "index"

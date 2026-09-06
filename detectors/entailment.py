@@ -76,11 +76,18 @@ class EntailmentScore(DetectorScore):
 class _CrossEncoderBackend:
     is_model = True
 
-    def __init__(self, model_name: str = DEFAULT_MODEL) -> None:
+    def __init__(self, model_name: str = DEFAULT_MODEL, device: str | None = None) -> None:
         from sentence_transformers import CrossEncoder  # noqa: PLC0415
 
+        from pipeline.device import env_default, resolve as resolve_device  # noqa: PLC0415
+
         self.name = model_name
-        self._model = CrossEncoder(model_name)
+        # This model is the whole latency story: 25 forward passes per query at
+        # k=5, at up to 512 tokens each. Placed explicitly rather than left to
+        # the library default, because the default is silent and a silent CPU
+        # placement here costs seconds per query rather than milliseconds.
+        self.device = resolve_device(device or env_default())
+        self._model = CrossEncoder(model_name, device=self.device)
         # Resolve label positions by NAME. This model family has shipped with
         # different orderings, and silently swapping entailment for
         # contradiction would invert the single most important signal in the
@@ -125,9 +132,32 @@ class _CrossEncoderBackend:
         """
         if not pairs:
             return []
-        raw = self._model.predict(list(pairs), batch_size=BATCH_SIZE,
-                                  show_progress_bar=False)
+        raw = self._predict(list(pairs), BATCH_SIZE)
         return [self._from_logits(row) for row in raw]
+
+    def _predict(self, pairs: list[tuple[str, str]], batch_size: int) -> Any:
+        """One forward pass, with a halving retry if the card runs out of memory.
+
+        A 4 GB card scoring 512-token pairs is close enough to its limit that OOM
+        is a live case, and the honest response to it is a smaller batch rather
+        than a crash or a silent drop to CPU. Batch size changes how many pairs
+        travel together, not what is computed for any pair, so a retry returns
+        the same scores as the first attempt would have.
+        """
+        from pipeline import device as device_mod  # noqa: PLC0415
+
+        size = max(1, batch_size)
+        while True:
+            try:
+                return self._model.predict(pairs, batch_size=size, show_progress_bar=False)
+            except Exception as exc:
+                if size > 1 and device_mod.is_cuda_oom(exc):
+                    size = max(1, size // 2)
+                    device_mod.empty_cache()
+                    print(f"[detectors] NOTE: CUDA out of memory; retrying the NLI batch at "
+                          f"batch_size={size}. Scores are unaffected.", flush=True)
+                    continue
+                raise
 
 
 class _LexicalBackend:
@@ -143,6 +173,7 @@ class _LexicalBackend:
 
     is_model = False
     name = "lexical-overlap"
+    device = None   # token overlap: no tensors, nothing to place
 
     @staticmethod
     def _tokens(text: str) -> set[str]:
@@ -169,13 +200,14 @@ class _LexicalBackend:
 _BACKEND: Any | None = None
 
 
-def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None) -> Any:
+def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None,
+                device: str | None = None) -> Any:
     global _BACKEND
     if force == "lexical":
         return _LexicalBackend()
     if _BACKEND is None:
         try:
-            _BACKEND = _CrossEncoderBackend(model_name)
+            _BACKEND = _CrossEncoderBackend(model_name, device=device)
         except Exception as exc:
             print(f"[detectors] WARNING: NLI cross-encoder unavailable ({type(exc).__name__}); "
                   f"using lexical overlap. This proxy CANNOT detect contradiction -- a negated "
@@ -217,7 +249,8 @@ def entailment_scores(
                        # The lexical backend IS a degraded stand-in: it cannot
                        # detect contradiction at all, which is the thing the real
                        # model exists for. This one should be flagged loudly.
-                       is_fallback=not b.is_model)
+                       is_fallback=not b.is_model,
+                       device=getattr(b, "device", None))
     # One batched call for every document, rather than one call per document.
     # Empty-evidence documents are held out of the batch and given the neutral
     # result directly, so the model is never asked to score an empty premise.

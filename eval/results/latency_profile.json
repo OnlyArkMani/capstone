@@ -1,0 +1,508 @@
+{
+  "tag": "after-device-placement",
+  "generated_at": "2026-09-06T23:14:31+0530",
+  "k": 5,
+  "environment": {
+    "python": "3.11.8",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "torch_version": "2.8.0+cu126",
+    "torch_cuda_build": "12.6",
+    "cuda_available": true,
+    "device_count": 1,
+    "threads": 14,
+    "gpu_name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "gpu_total_mem_gb": 4.0,
+    "gpu_capability": "8.6",
+    "sentence_transformers_version": "5.1.0",
+    "transformers_version": "4.56.1",
+    "sklearn_version": "1.7.1",
+    "numpy_version": "1.26.2"
+  },
+  "device_placement": {
+    "embedder": {
+      "name": "BAAI/bge-small-en-v1.5",
+      "is_semantic": true,
+      "device": "cuda:0"
+    },
+    "entailment_nli": {
+      "name": "cross-encoder/nli-deberta-v3-base",
+      "is_model": true,
+      "device": "cuda:0"
+    },
+    "injection": {
+      "name": "zetabyte-injection-patterns-v1",
+      "is_model": false,
+      "device": null,
+      "note": "pattern backend is the measured primary (design 9A.1); no tensor work on the query path"
+    }
+  },
+  "startup_ms": 8006.33,
+  "model_constructions": {
+    "SentenceTransformer": {
+      "count": 1,
+      "total_ms": 4622.72
+    },
+    "CrossEncoder": {
+      "count": 1,
+      "total_ms": 3256.41
+    }
+  },
+  "reloads_during_steady_state": {
+    "SentenceTransformer": 0,
+    "CrossEncoder": 0
+  },
+  "warmup_query": {
+    "query": "Is the Contec CMS8000 patient monitor safe to keep connected to our clinical network?",
+    "n_retrieved": 5,
+    "timings_ms": {
+      "retrieval": 268.0,
+      "detector_anomaly": 1972.74,
+      "detector_injection": 1.99,
+      "detector_entailment": 370.54,
+      "detector_conflict": 1231.51,
+      "score_query_total": 1285.46,
+      "report_build": 4.69,
+      "fusion_residual": -2291.32,
+      "end_to_end": 1558.15
+    },
+    "nli": {
+      "entailment": {
+        "pairs": 5,
+        "calls": 1,
+        "expected_pairs": 5
+      },
+      "conflict": {
+        "pairs": 20,
+        "calls": 1,
+        "expected_pairs": 20,
+        "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+      },
+      "per_score_query": {
+        "pairs": 25,
+        "calls": 2,
+        "single_pair_calls": 0
+      },
+      "anomaly_pairs": 0
+    },
+    "outcome": {
+      "action": "ESCALATE",
+      "case_id": "C5",
+      "headline": "RED",
+      "trust_percent": 93.78
+    }
+  },
+  "medians_ms": {
+    "retrieval": 9.37,
+    "detector_anomaly": 73.19,
+    "detector_injection": 1.67,
+    "detector_entailment": 185.32,
+    "detector_conflict": 970.42,
+    "fusion_residual": -19.37,
+    "report_build": 4.3,
+    "score_query_total": 1207.32,
+    "end_to_end": 1221.6
+  },
+  "queries": [
+    {
+      "query": "Is the Contec CMS8000 patient monitor safe to keep connected to our clinical network?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 11.09,
+        "detector_anomaly": 44.54,
+        "detector_injection": 1.41,
+        "detector_entailment": 188.97,
+        "detector_conflict": 967.41,
+        "score_query_total": 1212.84,
+        "report_build": 4.35,
+        "fusion_residual": 10.5,
+        "end_to_end": 1228.28
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "ESCALATE",
+        "case_id": "C5",
+        "headline": "RED",
+        "trust_percent": 93.78
+      }
+    },
+    {
+      "query": "Is 198.51.100.47 associated with ransomware command and control infrastructure?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 8.36,
+        "detector_anomaly": 86.8,
+        "detector_injection": 1.75,
+        "detector_entailment": 184.59,
+        "detector_conflict": 968.15,
+        "score_query_total": 1474.82,
+        "report_build": 5.55,
+        "fusion_residual": 233.54,
+        "end_to_end": 1488.73
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C3",
+        "headline": "ORANGE",
+        "trust_percent": 43.99
+      }
+    },
+    {
+      "query": "Are our Java-based clinical applications still exposed to Log4Shell CVE-2021-44228?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 13.93,
+        "detector_anomaly": 80.56,
+        "detector_injection": 1.0,
+        "detector_entailment": 191.9,
+        "detector_conflict": 972.78,
+        "score_query_total": 1208.38,
+        "report_build": 4.17,
+        "fusion_residual": -37.86,
+        "end_to_end": 1226.48
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REJECT",
+        "case_id": "C7",
+        "headline": "RED",
+        "trust_percent": 52.37
+      }
+    },
+    {
+      "query": "How severe is CVE-2022-25246 in the Axeda agent on our medical devices?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 7.47,
+        "detector_anomaly": 71.95,
+        "detector_injection": 1.67,
+        "detector_entailment": 168.03,
+        "detector_conflict": 967.93,
+        "score_query_total": 1191.74,
+        "report_build": 4.07,
+        "fusion_residual": -17.85,
+        "end_to_end": 1203.28
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C1",
+        "headline": "ORANGE",
+        "trust_percent": 81.27
+      }
+    },
+    {
+      "query": "What should we do about the DCMTK toolkit vulnerability in our imaging systems?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 8.38,
+        "detector_anomaly": 89.21,
+        "detector_injection": 1.82,
+        "detector_entailment": 178.71,
+        "detector_conflict": 970.94,
+        "score_query_total": 1205.67,
+        "report_build": 4.14,
+        "fusion_residual": -35.01,
+        "end_to_end": 1218.19
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C6",
+        "headline": "ORANGE",
+        "trust_percent": 88.19
+      }
+    },
+    {
+      "query": "Which threat actor is behind the recent ransomware activity against regional hospital networks?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 8.38,
+        "detector_anomaly": 73.28,
+        "detector_injection": 1.77,
+        "detector_entailment": 158.42,
+        "detector_conflict": 977.23,
+        "score_query_total": 1182.58,
+        "report_build": 4.25,
+        "fusion_residual": -28.11,
+        "end_to_end": 1195.21
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C6",
+        "headline": "ORANGE",
+        "trust_percent": 42.07
+      }
+    },
+    {
+      "query": "Do we need to isolate infusion pumps affected by CVE-2020-27252?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 9.13,
+        "detector_anomaly": 80.26,
+        "detector_injection": 1.75,
+        "detector_entailment": 186.05,
+        "detector_conflict": 970.75,
+        "score_query_total": 1206.26,
+        "report_build": 4.85,
+        "fusion_residual": -32.55,
+        "end_to_end": 1220.24
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REJECT",
+        "case_id": "C9",
+        "headline": "RED",
+        "trust_percent": 93.87
+      }
+    },
+    {
+      "query": "Is benchmark-c2-a17d.example.invalid a malicious domain?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 9.6,
+        "detector_anomaly": 69.79,
+        "detector_injection": 0.96,
+        "detector_entailment": 186.5,
+        "detector_conflict": 970.1,
+        "score_query_total": 1208.91,
+        "report_build": 4.44,
+        "fusion_residual": -18.43,
+        "end_to_end": 1222.95
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C3",
+        "headline": "ORANGE",
+        "trust_percent": 56.76
+      }
+    },
+    {
+      "query": "Should we apply the vendor firmware update for the Translogic pneumatic tube system?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 9.73,
+        "detector_anomaly": 73.1,
+        "detector_injection": 1.67,
+        "detector_entailment": 141.0,
+        "detector_conflict": 968.86,
+        "score_query_total": 1164.33,
+        "report_build": 4.23,
+        "fusion_residual": -20.3,
+        "end_to_end": 1178.29
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REJECT",
+        "case_id": "C8",
+        "headline": "RED",
+        "trust_percent": 58.22
+      }
+    },
+    {
+      "query": "Is the GE CARESCAPE SSH private key vulnerability CVE-2020-6961 still a risk on our patient monitors?",
+      "n_retrieved": 5,
+      "timings_ms": {
+        "retrieval": 9.67,
+        "detector_anomaly": 55.89,
+        "detector_injection": 1.3,
+        "detector_entailment": 205.65,
+        "detector_conflict": 972.03,
+        "score_query_total": 1232.4,
+        "report_build": 4.51,
+        "fusion_residual": -2.46,
+        "end_to_end": 1246.58
+      },
+      "nli": {
+        "entailment": {
+          "pairs": 5,
+          "calls": 1,
+          "expected_pairs": 5
+        },
+        "conflict": {
+          "pairs": 20,
+          "calls": 1,
+          "expected_pairs": 20,
+          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"
+        },
+        "per_score_query": {
+          "pairs": 25,
+          "calls": 2,
+          "single_pair_calls": 0
+        },
+        "anomaly_pairs": 0
+      },
+      "outcome": {
+        "action": "REVIEW",
+        "case_id": "C1",
+        "headline": "ORANGE",
+        "trust_percent": 73.9
+      }
+    }
+  ]
+}

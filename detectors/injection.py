@@ -161,14 +161,25 @@ def _chunk_for_scoring(text: str) -> list[str]:
 class _ModelBackend:
     is_model = True
 
-    def __init__(self, model_name: str = DEFAULT_MODEL) -> None:
+    def __init__(self, model_name: str = DEFAULT_MODEL, device: str | None = None) -> None:
         from transformers import AutoModelForSequenceClassification, AutoTokenizer  # noqa: PLC0415
         import torch  # noqa: PLC0415
+
+        from pipeline.device import env_default, resolve as resolve_device  # noqa: PLC0415
 
         self.name = model_name
         self._torch = torch
         self._tok = AutoTokenizer.from_pretrained(model_name)
         self._model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        # The model AND its inputs. Moving only the model is the classic half of
+        # this bug: the weights sit on the GPU, the tokenised batch stays on the
+        # CPU, and the forward pass raises "Expected all tensors to be on the
+        # same device". This path is not the measured primary (see the module
+        # docstring), so that error would surface for whoever next runs the
+        # probes rather than during normal use -- which is exactly the kind of
+        # latent break worth closing while the placement is being made explicit.
+        self.device = resolve_device(device or env_default())
+        self._model.to(self.device)
         self._model.eval()
         # Resolve the positive class by NAME rather than assuming index 1.
         # Label order differs between releases of this model, and a silently
@@ -182,6 +193,7 @@ class _ModelBackend:
 
     def _score_chunk(self, text: str) -> tuple[float, list[float]]:
         enc = self._tok(text, truncation=True, max_length=512, return_tensors="pt")
+        enc = {key: value.to(self.device) for key, value in enc.items()}
         with self._torch.no_grad():
             logits = self._model(**enc).logits[0].tolist()
         probs = softmax(logits)
@@ -224,6 +236,7 @@ class _PatternBackend:
 
     is_model = False
     name = "zetabyte-injection-patterns-v1"
+    device = None   # regular expressions: no tensors, nothing to place
 
     def score(self, text: str) -> tuple[float, dict[str, Any]]:
         hits, product = [], 1.0
@@ -239,7 +252,8 @@ class _PatternBackend:
 _BACKEND: Any | None = None
 
 
-def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None) -> Any:
+def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None,
+                device: str | None = None) -> Any:
     """Resolve once and cache.
 
     The pattern backend is the default. That is a measured decision, not a
@@ -254,7 +268,7 @@ def get_backend(model_name: str = DEFAULT_MODEL, force: str | None = None) -> An
     if force == "model":
         global _BACKEND
         if _BACKEND is None or not getattr(_BACKEND, "is_model", False):
-            _BACKEND = _ModelBackend(model_name)
+            _BACKEND = _ModelBackend(model_name, device=device)
         return _BACKEND
     if force in (None, "patterns", "heuristic"):
         return _PatternBackend()
@@ -290,7 +304,8 @@ def injection_probabilities(
         # chosen on measurement (design §9A.1); the transformer is retained for
         # re-measurement. Reporting either as degraded would misdescribe the
         # decision that was actually made.
-        is_fallback=False)
+        is_fallback=False,
+        device=getattr(b, "device", None))
     out = []
     for i, d in enumerate(docs):
         text = doc_text(d)

@@ -60,10 +60,16 @@ class BackendInfo:
     is_model: bool
     detail: str = ""
     is_fallback: bool = False
+    # Which torch device produced the score. None for backends that do no tensor
+    # work at all (the pattern injection detector, the lexical proxy). Recorded
+    # because "the run was slow" and "the run was on the wrong device" are
+    # indistinguishable after the fact unless the device is in the audit trail.
+    device: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "is_model": self.is_model,
-                "detail": self.detail, "is_fallback": self.is_fallback}
+                "detail": self.detail, "is_fallback": self.is_fallback,
+                "device": self.device}
 
 
 # ---------------------------------------------------------------------------

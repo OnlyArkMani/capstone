@@ -154,7 +154,8 @@ def embedding_anomaly_score(
     if n == 1:
         # Design section 3.2: a singleton retrieval carries no anomaly evidence.
         # Returning anything but zero would manufacture a signal from nothing.
-        backend = BackendInfo(f"singleton:{backend_name}", is_model, "n=1, no dispersion")
+        backend = BackendInfo(f"singleton:{backend_name}", is_model, "n=1, no dispersion",
+                              device=getattr(embedder, "device", None))
         return [AnomalyScore(docs[0].get("doc_id", "doc_0"), 0.0, backend,
                              {"distance": 0.0, "robust_z": 0.0, "method": "singleton",
                               "is_singleton": True, "n_clusters": 0})]
@@ -176,7 +177,11 @@ def embedding_anomaly_score(
                           # Anomaly is only as real as its embedder: the hashing
                           # fallback carries no semantics, so distances computed
                           # from it are not anomaly measurements.
-                          is_fallback=not is_model)
+                          is_fallback=not is_model,
+                          # The embedder's device, not this detector's: the
+                          # clustering here is numpy either way, and what costs
+                          # time is the encode that produced the vectors.
+                          device=getattr(embedder, "device", None))
 
     return [
         AnomalyScore(
