@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from logs.audit import DEFAULT_DB, AuditLog, DecisionWriter  # noqa: E402
+from pipeline.hypothesis import GENERATED, resolve as resolve_hypothesis  # noqa: E402
 from reports.schema import OVERRIDE_REASON_CODES  # noqa: E402
 
 DEFAULT_K = 5
@@ -76,6 +77,7 @@ def _scorer() -> Any:
 # reordered, this is the list that has to change, and the console then follows.
 STAGES: dict[str, str] = {
     "retrieval": "Retrieving evidence…",
+    "generation": "Drafting the answer to check…",
     "security": "Running security checks…",
     "report": "Building the analyst report…",
     "audit": "Recording to the audit log…",
@@ -122,9 +124,18 @@ def run_query(query: str, k: int = DEFAULT_K,
         raise ScoringUnavailable("retrieval returned no documents for this query")
     t_retrieval = time.perf_counter() - t0
 
+    # Design 3.1: the entailment detector scores evidence against the ANSWER, not
+    # against the question. Generating it here is design 6's step 2, which the
+    # console had been skipping entirely -- see pipeline/hypothesis.py.
+    stage("generation")
+    hyp = resolve_hypothesis(_rag(), query, records)
+    t_generation = hyp["elapsed_ms"] / 1000.0
+
     stage("security")
     t1 = time.perf_counter()
-    score = _scorer().score_query(query, records)
+    score = _scorer().score_query(
+        query, records,
+        generated_answer=hyp["hypothesis"] if hyp["source"] == GENERATED else None)
     t_scoring = time.perf_counter() - t1
 
     stage("report")
@@ -134,9 +145,17 @@ def run_query(query: str, k: int = DEFAULT_K,
 
     report.provenance["timings_ms"] = {
         "retrieval": round(t_retrieval * 1000, 2),
+        "generation": round(t_generation * 1000, 2),
         "scoring": round(t_scoring * 1000, 2),
         "report": round(t_report * 1000, 2),
         "total": round((time.perf_counter() - t0) * 1000, 2),
+    }
+    # Which hypothesis this verdict was reached against, recorded per query. A run
+    # that fell back to the query proxy for one query and not another is visible
+    # here rather than averaged away.
+    report.provenance["hypothesis"] = {
+        "source": hyp["source"], "generator": hyp["generator"],
+        "cached": hyp["cached"], "reason": hyp["reason"],
     }
 
     stage("audit")

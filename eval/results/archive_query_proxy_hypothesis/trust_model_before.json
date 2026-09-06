@@ -1,0 +1,55 @@
+{
+  "report": {
+    "n_train": 385,
+    "n_pos": 64,
+    "n_neg": 321,
+    "chosen_C": 10.0,
+    "n_features": 6,
+    "feature_names": [
+      "x_unsupport",
+      "x_injection",
+      "x_conflict",
+      "is_tier1",
+      "is_tier3",
+      "is_tier1_x_conflict"
+    ],
+    "coefficients": {
+      "x_unsupport": -0.138041,
+      "x_injection": -0.103384,
+      "x_conflict": 1.218943,
+      "is_tier1": -1.835375,
+      "is_tier3": 0.59404,
+      "is_tier1_x_conflict": -1.427815
+    },
+    "intercept": 0.105099,
+    "calibrated": true,
+    "backend": "sklearn",
+    "underpowered": false,
+    "warnings": []
+  },
+  "feature_spec": {
+    "names": [
+      "x_unsupport",
+      "x_injection",
+      "x_conflict",
+      "is_tier1",
+      "is_tier3",
+      "is_tier1_x_conflict"
+    ],
+    "base_signals": [
+      "unsupport",
+      "injection",
+      "conflict"
+    ],
+    "interactions": [
+      [
+        "is_tier1",
+        "conflict"
+      ]
+    ],
+    "rung": "reduced",
+    "n_pos_at_fit": 64,
+    "underpowered": false,
+    "note": "Reduced interactions: only the two that carry the Tier-1 inversion. Events-per-variable does not support the full set."
+  }
+}

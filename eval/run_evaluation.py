@@ -61,6 +61,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from fusion.cases import ACCEPT, ESCALATE, GREEN, ORANGE, REJECT, RED, REVIEW  # noqa: E402
+from pipeline.hypothesis import GENERATED as HYP_GENERATED, QUERY_PROXY as HYP_PROXY  # noqa: E402
+from pipeline.hypothesis import resolve as resolve_hypothesis  # noqa: E402
 from fusion.scorer import FusionScorer  # noqa: E402
 from pipeline.rag import BaselineRAG  # noqa: E402
 
@@ -131,6 +133,7 @@ class QueryOutcome:
     high_confidence: bool = False
     blocked: bool = False
     latency_ms: dict[str, float] = field(default_factory=dict)
+    hypothesis_source: str | None = None
     docs: list[DocOutcome] = field(default_factory=list)
 
 
@@ -258,8 +261,24 @@ class Runner:
             doc_ids = [r.doc_id for r in records]
             poisoned_hits = [d for d in doc_ids if d in self.poisoned_gt]
 
+            # Design 3.1 and design 6 step 2: the entailment detector scores the
+            # evidence against the generated ANSWER. This harness previously
+            # skipped generation entirely and scored against the query text,
+            # which 9A.4 measured as inverting the signal. Generation is Level 1
+            # work -- the baseline configuration would incur it too -- so it is
+            # timed into its own bucket and deliberately kept OUT of the security
+            # overhead figure, which stays a like-for-like comparison of the
+            # detection layer alone.
+            hyp = {"source": HYP_PROXY, "elapsed_ms": 0.0, "reason": None}
+            if cfg.security:
+                hyp = resolve_hypothesis(self.rag, text, records)
+            t_generation = hyp["elapsed_ms"]
+
             t1 = time.perf_counter()
-            score = self.scorer.score_query(text, records) if cfg.security else None
+            score = self.scorer.score_query(
+                text, records,
+                generated_answer=(hyp["hypothesis"] if hyp["source"] == HYP_GENERATED
+                                  else None)) if cfg.security else None
             t_security = (time.perf_counter() - t1) * 1000 if cfg.security else 0.0
 
             if cfg.security:
@@ -301,8 +320,10 @@ class Runner:
                 trust_percent=None if trust is None or trust != trust else trust,
                 high_confidence=high_conf, blocked=blocked,
                 latency_ms={"retrieval": round(t_retrieval, 3),
+                            "generation": round(t_generation, 3),
                             "security": round(t_security, 3),
-                            "total": round(t_retrieval + t_security, 3)},
+                            "total": round(t_retrieval + t_generation + t_security, 3)},
+                hypothesis_source=(hyp["source"] if cfg.security else None),
                 docs=docs))
             if self.verbose and i % 10 == 0:
                 print(f"      {cfg.key}: {i}/{len(queries)} queries")
@@ -387,7 +408,19 @@ def compute_metrics(cfg: Config, outcomes: list[QueryOutcome],
                        "whether it asserts the attacker's claim. None available in "
                        "this environment.")
     if generation_available:
-        asr_answer_note = "Generation backend available; see asr_answer."
+        # Having a generator is NOT the same as measuring answer-level attack
+        # success. The answer is now produced -- design 6 step 2, used as the
+        # entailment hypothesis -- but nothing reads it and decides whether it
+        # asserts the attacker's claim, which is what the answer-level metric
+        # requires. Pointing the reader at "asr_answer" while that value is
+        # NOT_MEASURED promised a figure that does not exist, and dropping the
+        # caveat below the moment a generator appeared removed the most important
+        # qualification on every attack-success number in this report.
+        asr_answer_note = ("Still NOT MEASURED. A generation backend is now in the loop "
+                           "and its answer is used as the entailment hypothesis, but no "
+                           "judge decides whether that answer asserts the attacker's "
+                           "claim, so the figures above remain the CONTAINMENT proxy and "
+                           "an upper bound on the answer-level rate.")
 
     # --- Disposition mix: what the safety numbers actually cost ---
     #
@@ -462,12 +495,17 @@ def compute_metrics(cfg: Config, outcomes: list[QueryOutcome],
     # --- Latency ---
     totals = [o.latency_ms.get("total", 0.0) for o in outcomes]
     security = [o.latency_ms.get("security", 0.0) for o in outcomes]
+    generation = [o.latency_ms.get("generation", 0.0) for o in outcomes]
     latency = {
         "mean_total_ms": round(statistics.fmean(totals), 2) if totals else None,
         "median_total_ms": round(statistics.median(totals), 2) if totals else None,
         "p95_total_ms": (round(sorted(totals)[int(0.95 * (len(totals) - 1))], 2)
                          if totals else None),
         "mean_security_overhead_ms": round(statistics.fmean(security), 2) if security else None,
+        # Level 1 work, reported separately: the baseline configuration would pay
+        # it too, so folding it into the security overhead would overstate what
+        # the detection layer costs.
+        "mean_generation_ms": round(statistics.fmean(generation), 2) if generation else None,
         "status": "MEASURED" if cfg.retrieval else STRUCTURAL,
         "note": (f"Wall clock in this environment: {_runtime_description()}. "
                  f"This note used to read 'on fallback detector backends, real models would "
@@ -773,14 +811,25 @@ def main() -> int:
     print("WHAT THIS RUN COULD NOT MEASURE")
     print("=" * 92)
     unmeasured = []
+    # Answer-level attack success is unmeasured whether or not a generator is
+    # present, and for different reasons. Without one there is no answer to judge;
+    # with one there is an answer and no judge. This caveat used to disappear the
+    # moment a generator became available, which removed the qualification that
+    # every attack-success figure in this report depends on.
+    unmeasured.append(
+        "Answer-level attack success. " + (
+            "A generation backend IS in the loop and its answer is used as the entailment "
+            "hypothesis, but nothing reads that answer and decides whether it asserts the "
+            "attacker's claim. Measuring it needs that judgement, by a human or by a "
+            "separate model, and neither is wired in."
+            if gen_ok else
+            "Without a language model there is no answer to judge.") +
+        " So the attack-success figures above are the CONTAINMENT proxy: a poisoned "
+        "document reaching a high-confidence response. Because the model must see the "
+        "document but need not adopt its claim, containment is an UPPER BOUND on the true "
+        "rate. That cuts in the full system's favour and against the baseline, and should "
+        "be read with that in mind.")
     if not gen_ok:
-        unmeasured.append(
-            "Answer-level attack success. Without a language model there is no answer "
-            "to judge, so the attack-success figures above are the CONTAINMENT proxy: "
-            "a poisoned document reaching a high-confidence response. Because the model "
-            "must see the document but need not adopt its claim, containment is an "
-            "UPPER BOUND on the true rate. That cuts in the full system's favour and "
-            "against the baseline, and should be read with that in mind.")
         unmeasured.append(
             "Any utility metric. Configuration A cannot be shown to be useless here — "
             "it scores a perfect zero on every risk metric precisely because it does "
@@ -866,6 +915,34 @@ def main() -> int:
     (args.out / "comparison_table.txt").write_text(
         render_table(results) + "\n" + render_weaknesses(breakdown) + "\n", encoding="utf-8")
     chart = render_chart(results, args.out)
+
+    # Which hypothesis the entailment detector actually scored against, counted
+    # per query rather than asserted per run. Design 9A.4 measured the query proxy
+    # at AUC 0.248 -- inverted -- so a run that quietly fell back to it is not a
+    # run whose detection figures mean what they appear to mean, and that has to
+    # be visible at the top of the output rather than inferred from a log line.
+    hyp_counts: dict[str, int] = {}
+    for outcome in all_outcomes.get("full_system", []):
+        if outcome.hypothesis_source:
+            hyp_counts[outcome.hypothesis_source] = hyp_counts.get(outcome.hypothesis_source, 0) + 1
+    if hyp_counts:
+        payload["entailment_hypothesis"] = hyp_counts
+        n_proxy = hyp_counts.get("query_proxy", 0)
+        n_total = sum(hyp_counts.values())
+        print()
+        print("=" * 92)
+        print("ENTAILMENT HYPOTHESIS — what the evidence was scored against")
+        print("=" * 92)
+        for source, count in sorted(hyp_counts.items()):
+            print(f"  {source:20s} {count:4d} of {n_total}")
+        if n_proxy == n_total:
+            print("  ALL queries fell back to the query text. Design 9A.4 measured that proxy at")
+            print("  AUC 0.248 — INVERTED — because poisoned documents restate the query in order")
+            print("  to be retrieved. No detection figure below should be read as the designed")
+            print("  system's performance. Start a generator and re-run.")
+        elif n_proxy:
+            print(f"  {n_proxy} queries fell back to the query text, which design 9A.4 measures as")
+            print("  inverted. This run mixes two hypothesis sources; rows record which.")
 
     # The pair cache's hit rate over a whole run, which is the only place it
     # means anything: the profiler clears the cache per query to measure cold

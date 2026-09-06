@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-09-07T00:45:56+0530",
+  "generated_at": "2026-09-06T23:48:11+0530",
   "k": 5,
   "n_queries": 40,
   "n_target_queries": 10,
-  "generation_backend_available": true,
-  "generation_backend_note": "OllamaGenerator",
+  "generation_backend_available": false,
+  "generation_backend_note": "no generation backend (RuntimeError: GROQ_API_KEY is not set. Get a free key at https://console.groq.com and export it, or run with --generation-backend ollama.)",
   "fallback_detector_backends": [],
   "configurations": [
     {
@@ -22,7 +22,7 @@
         "denominator": 0,
         "answer_level": {
           "value": "NOT MEASURED",
-          "note": "Generation backend available; see asr_answer."
+          "note": "Requires a generation backend to read the answer and judge whether it asserts the attacker's claim. None available in this environment."
         }
       },
       "disposition_mix": {
@@ -51,7 +51,6 @@
         "median_total_ms": 0.0,
         "p95_total_ms": 0.0,
         "mean_security_overhead_ms": 0.0,
-        "mean_generation_ms": 0.0,
         "status": "STRUCTURAL",
         "note": "No security layer, so no overhead to measure."
       }
@@ -71,7 +70,7 @@
         "denominator": 10,
         "answer_level": {
           "value": "NOT MEASURED",
-          "note": "Generation backend available; see asr_answer."
+          "note": "Requires a generation backend to read the answer and judge whether it asserts the attacker's claim. None available in this environment."
         }
       },
       "disposition_mix": {
@@ -96,11 +95,10 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 8.81,
-        "median_total_ms": 8.43,
-        "p95_total_ms": 9.49,
+        "mean_total_ms": 8.75,
+        "median_total_ms": 8.28,
+        "p95_total_ms": 9.65,
         "mean_security_overhead_ms": 0.0,
-        "mean_generation_ms": 0.0,
         "status": "MEASURED",
         "note": "No security layer, so no overhead to measure."
       }
@@ -120,18 +118,18 @@
         "denominator": 10,
         "answer_level": {
           "value": "NOT MEASURED",
-          "note": "Generation backend available; see asr_answer."
+          "note": "Requires a generation backend to read the answer and judge whether it asserts the attacker's claim. None available in this environment."
         }
       },
       "disposition_mix": {
         "auto_accept_rate": 0.0,
-        "human_review_rate": 0.6,
-        "blocked_rate": 0.4,
+        "human_review_rate": 0.5,
+        "blocked_rate": 0.5,
         "status": "MEASURED",
         "note": "The price of the attack-success figures above. A layer that routes everything to a human is perfectly safe and operationally useless."
       },
       "false_positive_rate": {
-        "value": 0.39285714285714285,
+        "value": 0.5,
         "review_rate_on_clean_queries": 1.0,
         "status": "MEASURED",
         "note": "Clean documents inside responses the system blocked.",
@@ -139,17 +137,16 @@
       },
       "false_negative_rate": {
         "value": 0.0,
-        "exposure": 0.5625,
+        "exposure": 0.5,
         "status": "MEASURED",
         "note": "HIGH-CONFIDENCE: poisoned documents the system vouched for. EXPOSURE: poisoned documents that reached the user at all.",
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 13009.35,
-        "median_total_ms": 12814.19,
-        "p95_total_ms": 17927.74,
-        "mean_security_overhead_ms": 3171.31,
-        "mean_generation_ms": 9821.75,
+        "mean_total_ms": 1109.83,
+        "median_total_ms": 1129.62,
+        "p95_total_ms": 1383.15,
+        "mean_security_overhead_ms": 1101.14,
         "status": "MEASURED",
         "note": "Wall clock in this environment: real NLI cross-encoder [cross-encoder/nli-deberta-v3-base] on cuda; pair results memoised within the run. This note used to read 'on fallback detector backends, real models would be substantially slower' unconditionally, which stopped being true once the real models were running and would have understated the system's own measured cost."
       }
@@ -174,8 +171,8 @@
       },
       "ioc_reputation_flip": {
         "total": 6,
-        "caught": 0,
-        "detection_rate": 0.0
+        "caught": 1,
+        "detection_rate": 0.1667
       },
       "remediation_misdirection": {
         "total": 4,
@@ -184,8 +181,8 @@
       },
       "severity_downgrade": {
         "total": 5,
-        "caught": 3,
-        "detection_rate": 0.6
+        "caught": 4,
+        "detection_rate": 0.8
       }
     },
     "by_source_tier": {
@@ -196,35 +193,30 @@
       },
       "2": {
         "total": 14,
-        "caught": 5,
-        "detection_rate": 0.3571
+        "caught": 6,
+        "detection_rate": 0.4286
       },
       "3": {
         "total": 14,
-        "caught": 6,
-        "detection_rate": 0.4286
+        "caught": 7,
+        "detection_rate": 0.5
       }
     },
     "by_case": {
       "C1": {
-        "total": 2,
-        "caught": 1,
-        "detection_rate": 0.5
+        "total": 4,
+        "caught": 3,
+        "detection_rate": 0.75
       },
       "C2": {
         "total": 10,
-        "caught": 2,
-        "detection_rate": 0.2
+        "caught": 3,
+        "detection_rate": 0.3
       },
       "C3": {
         "total": 9,
-        "caught": 1,
-        "detection_rate": 0.1111
-      },
-      "C4": {
-        "total": 2,
         "caught": 2,
-        "detection_rate": 1.0
+        "detection_rate": 0.2222
       },
       "C6": {
         "total": 4,
@@ -247,6 +239,8 @@
     "note": "An ASR computed over zero retrieval opportunities is not a low score, it is an untested defence. This is the denominator behind every attack-success figure above."
   },
   "unmeasured": [
+    "Answer-level attack success. Without a language model there is no answer to judge, so the attack-success figures above are the CONTAINMENT proxy: a poisoned document reaching a high-confidence response. Because the model must see the document but need not adopt its claim, containment is an UPPER BOUND on the true rate. That cuts in the full system's favour and against the baseline, and should be read with that in mind.",
+    "Any utility metric. Configuration A cannot be shown to be useless here \u2014 it scores a perfect zero on every risk metric precisely because it does nothing. Its real cost is that it cannot answer a question about current threat intelligence at all, and demonstrating that needs a generator.",
     "Generalisation of the rule-based detector(s) (injection). These are hand-specified patterns, primary by measurement rather than by preference (design \u00a79A.1), and this team wrote both the patterns and the payloads they catch. The per-payload table in the detector suite shows which phrasings are anticipated and which are missed; no detection or false-positive rate against an unseen adversary is claimable from it.",
     "Latency under a production deployment. The overhead above is real wall clock for the security layer, and it is dominated by the NLI cross-encoder, which already IS a production model: entailment scores k documents and the pairwise conflict measure scores k(k-1) ordered pairs, so cost grows quadratically in retrieval depth. It is a measurement at k=5 with real NLI cross-encoder [cross-encoder/nli-deberta-v3-base] on cuda; pair results memoised within the run, on one laptop-class card, under no concurrent load, against a corpus of 88 documents. What it does not establish is behaviour at production retrieval depth, under concurrency, or on a corpus large enough that the memoised pair results stop fitting the access pattern."
   ],
@@ -256,13 +250,10 @@
     "false_negative_rate": "Poisoned retrieved documents inside responses returned as high-confidence.",
     "high_confidence": "Final action is ACCEPT. REVIEW is deliberately excluded: the answer is returned marked unverified and queued, which is the system declining to vouch for it."
   },
-  "entailment_hypothesis": {
-    "generated_answer": 40
-  },
   "nli_pair_cache": {
-    "hits": 194,
-    "misses": 810,
-    "entries": 810,
-    "hit_rate_pct": 19.3
+    "hits": 196,
+    "misses": 808,
+    "entries": 808,
+    "hit_rate_pct": 19.5
   }
 }

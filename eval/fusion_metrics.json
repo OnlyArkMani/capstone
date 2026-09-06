@@ -11,19 +11,22 @@
         "name": "kmeans_sklearn:BAAI/bge-small-en-v1.5",
         "is_model": true,
         "detail": "n=5, clusters=2",
-        "is_fallback": false
+        "is_fallback": false,
+        "device": "cuda"
       },
       "injection": {
         "name": "zetabyte-injection-patterns-v1",
         "is_model": false,
         "detail": "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted",
-        "is_fallback": false
+        "is_fallback": false,
+        "device": null
       },
       "entailment": {
         "name": "cross-encoder/nli-deberta-v3-base",
         "is_model": true,
         "detail": "cross-encoder NLI",
-        "is_fallback": false
+        "is_fallback": false,
+        "device": "cuda"
       }
     },
     "signals_available": [
@@ -38,7 +41,7 @@
       "generated_answer": 98,
       "query_text_proxy": 0
     },
-    "generation_backend": "groq",
+    "generation_backend": "ollama",
     "conflict_source": "intra_evidence_pairwise_nli",
     "caveats": [
       "`conflict` is INTRA-EVIDENCE conflict (retrieved documents against each other, design 0.4), standing in for design 2.1's parametric-knowledge signal, which needs a probe this system does not have. Recorded per row as conflict_source. Do not read it as the designed signal.",
@@ -54,10 +57,10 @@
   },
   "signal_separation": {
     "unsupport": {
-      "mean_poisoned": 0.9528,
-      "mean_clean": 0.9122,
-      "mean_difference": 0.0406,
-      "auc": 0.4634,
+      "mean_poisoned": 0.9049,
+      "mean_clean": 0.9009,
+      "mean_difference": 0.004,
+      "auc": 0.488,
       "inverted": false,
       "usable": true
     },
@@ -65,7 +68,7 @@
       "mean_poisoned": 0.0735,
       "mean_clean": 0.1616,
       "mean_difference": -0.0881,
-      "auc": 0.4089,
+      "auc": 0.4101,
       "inverted": true,
       "usable": false
     },
@@ -129,14 +132,14 @@
       "is_tier1_x_conflict"
     ],
     "coefficients": {
-      "x_unsupport": -0.138041,
-      "x_injection": -0.103384,
-      "x_conflict": 1.218943,
-      "is_tier1": -1.835375,
-      "is_tier3": 0.59404,
-      "is_tier1_x_conflict": -1.427815
+      "x_unsupport": 0.020989,
+      "x_injection": -0.105521,
+      "x_conflict": 1.214273,
+      "is_tier1": -1.797638,
+      "is_tier3": 0.60384,
+      "is_tier1_x_conflict": -1.406655
     },
-    "intercept": 0.105099,
+    "intercept": 0.107194,
     "calibrated": true,
     "backend": "sklearn",
     "underpowered": false,
@@ -144,22 +147,22 @@
   },
   "band_thresholds": {
     "suspicious": {
-      "unsupport": 0.9996093770604461,
-      "anomaly": 0.7761478827654915,
+      "unsupport": 0.9996059720663362,
+      "anomaly": 0.7761469103368921,
       "injection": 0.6,
-      "conflict": 0.8616055968701704
+      "conflict": 0.8616090367708529
     },
     "malicious": {
-      "unsupport": 0.9998330547437594,
-      "anomaly": 0.9993048293816561,
+      "unsupport": 0.9998678470577524,
+      "anomaly": 0.9993047184600055,
       "injection": 0.9,
-      "conflict": 0.9677274414591603
+      "conflict": 0.9677283088491466
     },
     "n_clean_calibration": 321
   },
   "operating_thresholds": {
     "tau_review": 0.0,
-    "tau_reject": 0.845751,
+    "tau_reject": 0.844867,
     "recall_target": 0.95,
     "precision_target": 0.9,
     "bands_consistent": true,
@@ -180,11 +183,11 @@
     "recall": 1.0,
     "f1": 0.384615,
     "f_beta": 0.757576,
-    "pr_auc": 0.273437,
-    "roc_auc": 0.1815,
-    "recall_at_budget": 0.08,
-    "threshold_at_budget": 0.320655,
-    "brier": 0.231293,
+    "pr_auc": 0.269514,
+    "roc_auc": 0.179,
+    "recall_at_budget": 0.04,
+    "threshold_at_budget": 0.340671,
+    "brier": 0.232706,
     "expected_cost": 80.0,
     "precision_at_prevalence": {
       "0.05": 0.05,
@@ -200,12 +203,12 @@
     "baseline_blocked": 25,
     "fusion_blocked": 17,
     "baseline_false_blocks": 77,
-    "fusion_false_blocks": 11,
+    "fusion_false_blocks": 14,
     "n_clean_retrieved": 80,
     "baseline_description": "any single detector signal >= 0.5",
     "scope_note": "Measured at the RETRIEVAL-CONTAINMENT stage: whether a poisoned document reaches the analyst, not whether it changed the generated answer. Generation is not yet in this loop. Recompute end to end against the attacker's intended answer once it is.",
     "baseline_false_block_rate": 0.9625,
-    "fusion_false_block_rate": 0.1375,
+    "fusion_false_block_rate": 0.175,
     "matched_fpr": 0.9625,
     "asr_fusion_at_matched_fpr": 0.8,
     "matched_comparison_note": "At the baseline's own false-block rate (96.2% of clean documents), the fusion score reaches ASR 0.800 versus the baseline's 0.000. This is the fair comparison; the operating-point figures above are not, because the two block at very different rates."
@@ -214,6 +217,6 @@
     "`conflict` is INTRA-EVIDENCE conflict (retrieved documents against each other, design 0.4), standing in for design 2.1's parametric-knowledge signal, which needs a probe this system does not have. Recorded per row as conflict_source. Do not read it as the designed signal.",
     "98 of 98 queries used a generated answer as the hypothesis, per design 3.1. Answers are cached in generated_answers.json so refits are reproducible and offline.",
     "Signals dropped for being anti-correlated with the label on training data: anomaly. See signal_separation in this file for the figures.",
-    "Fitted coefficients have the wrong sign for: unsupport, injection."
+    "Fitted coefficients have the wrong sign for: injection."
   ]
 }

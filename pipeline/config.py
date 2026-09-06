@@ -65,7 +65,14 @@ class PipelineConfig:
     # Groq is the project default. Rationale in pipeline/README.md: the headline
     # evaluation must use ONE generator across both arms, and Groq gives an 8B
     # model at consistent speed without depending on local hardware.
-    generation_backend: str = _env("RAG_GENERATION_BACKEND", "groq")  # groq|ollama|extractive|auto
+    # "auto" rather than a fixed backend, because the generator is now on the
+    # INFERENCE path (design 6 step 2, and pipeline/hypothesis.py) and not only in
+    # training. auto prefers Groq where a key is present -- which is the Docker
+    # environment the fitted artefacts came from, so that path is unchanged -- and
+    # falls through to a local Ollama otherwise, which is what a developer machine
+    # with a GPU and no exported key actually has. A fixed default meant the
+    # console silently had no generator at all on such a machine.
+    generation_backend: str = _env("RAG_GENERATION_BACKEND", "auto")  # groq|ollama|extractive|auto
     ollama_model: str = _env("RAG_OLLAMA_MODEL", "llama3.2:3b")
     ollama_host: str = _env("OLLAMA_HOST", "http://localhost:11434")
     # Verified against this account's /v1/models listing on 5 September 2026.

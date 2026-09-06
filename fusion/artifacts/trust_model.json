@@ -14,14 +14,14 @@
       "is_tier1_x_conflict"
     ],
     "coefficients": {
-      "x_unsupport": -0.138041,
-      "x_injection": -0.103384,
-      "x_conflict": 1.218943,
-      "is_tier1": -1.835375,
-      "is_tier3": 0.59404,
-      "is_tier1_x_conflict": -1.427815
+      "x_unsupport": 0.020989,
+      "x_injection": -0.105521,
+      "x_conflict": 1.214273,
+      "is_tier1": -1.797638,
+      "is_tier3": 0.60384,
+      "is_tier1_x_conflict": -1.406655
     },
-    "intercept": 0.105099,
+    "intercept": 0.107194,
     "calibrated": true,
     "backend": "sklearn",
     "underpowered": false,

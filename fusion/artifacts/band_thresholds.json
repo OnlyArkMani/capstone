@@ -1,15 +1,15 @@
 {
   "suspicious": {
-    "unsupport": 0.9996093770604461,
-    "anomaly": 0.7761478827654915,
+    "unsupport": 0.9996059720663362,
+    "anomaly": 0.7761469103368921,
     "injection": 0.6,
-    "conflict": 0.8616055968701704
+    "conflict": 0.8616090367708529
   },
   "malicious": {
-    "unsupport": 0.9998330547437594,
-    "anomaly": 0.9993048293816561,
+    "unsupport": 0.9998678470577524,
+    "anomaly": 0.9993047184600055,
     "injection": 0.9,
-    "conflict": 0.9677274414591603
+    "conflict": 0.9677283088491466
   },
   "n_clean_calibration": 321,
   "fitted": true,

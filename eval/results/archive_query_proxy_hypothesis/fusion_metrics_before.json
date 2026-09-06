@@ -1,0 +1,219 @@
+{
+  "dataset": {
+    "n_queries": 98,
+    "n_rows": 490,
+    "n_pos": 89,
+    "n_neg": 401,
+    "k": 5,
+    "n_groups": 78,
+    "detector_backends": {
+      "anomaly": {
+        "name": "kmeans_sklearn:BAAI/bge-small-en-v1.5",
+        "is_model": true,
+        "detail": "n=5, clusters=2",
+        "is_fallback": false
+      },
+      "injection": {
+        "name": "zetabyte-injection-patterns-v1",
+        "is_model": false,
+        "detail": "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted",
+        "is_fallback": false
+      },
+      "entailment": {
+        "name": "cross-encoder/nli-deberta-v3-base",
+        "is_model": true,
+        "detail": "cross-encoder NLI",
+        "is_fallback": false
+      }
+    },
+    "signals_available": [
+      "unsupport",
+      "anomaly",
+      "injection",
+      "conflict"
+    ],
+    "signals_missing": [],
+    "hypothesis_source": "generated_answer",
+    "hypothesis_counts": {
+      "generated_answer": 98,
+      "query_text_proxy": 0
+    },
+    "generation_backend": "groq",
+    "conflict_source": "intra_evidence_pairwise_nli",
+    "caveats": [
+      "`conflict` is INTRA-EVIDENCE conflict (retrieved documents against each other, design 0.4), standing in for design 2.1's parametric-knowledge signal, which needs a probe this system does not have. Recorded per row as conflict_source. Do not read it as the designed signal.",
+      "98 of 98 queries used a generated answer as the hypothesis, per design 3.1. Answers are cached in generated_answers.json so refits are reproducible and offline."
+    ]
+  },
+  "split": {
+    "method": "StratifiedGroupKFold",
+    "n_train": 385,
+    "n_test": 105,
+    "n_pos_train": 64,
+    "n_pos_test": 25
+  },
+  "signal_separation": {
+    "unsupport": {
+      "mean_poisoned": 0.9528,
+      "mean_clean": 0.9122,
+      "mean_difference": 0.0406,
+      "auc": 0.4634,
+      "inverted": false,
+      "usable": true
+    },
+    "anomaly": {
+      "mean_poisoned": 0.0735,
+      "mean_clean": 0.1616,
+      "mean_difference": -0.0881,
+      "auc": 0.4089,
+      "inverted": true,
+      "usable": false
+    },
+    "injection": {
+      "mean_poisoned": 0.0,
+      "mean_clean": 0.0,
+      "mean_difference": 0.0,
+      "auc": 0.5,
+      "inverted": false,
+      "usable": false
+    },
+    "conflict": {
+      "mean_poisoned": 0.1562,
+      "mean_clean": 0.0969,
+      "mean_difference": 0.0593,
+      "auc": 0.6533,
+      "inverted": false,
+      "usable": true
+    }
+  },
+  "dropped_inverted_signals": [
+    "anomaly"
+  ],
+  "feature_spec": {
+    "names": [
+      "x_unsupport",
+      "x_injection",
+      "x_conflict",
+      "is_tier1",
+      "is_tier3",
+      "is_tier1_x_conflict"
+    ],
+    "base_signals": [
+      "unsupport",
+      "injection",
+      "conflict"
+    ],
+    "interactions": [
+      [
+        "is_tier1",
+        "conflict"
+      ]
+    ],
+    "rung": "reduced",
+    "n_pos_at_fit": 64,
+    "underpowered": false,
+    "note": "Reduced interactions: only the two that carry the Tier-1 inversion. Events-per-variable does not support the full set."
+  },
+  "fit_report": {
+    "n_train": 385,
+    "n_pos": 64,
+    "n_neg": 321,
+    "chosen_C": 10.0,
+    "n_features": 6,
+    "feature_names": [
+      "x_unsupport",
+      "x_injection",
+      "x_conflict",
+      "is_tier1",
+      "is_tier3",
+      "is_tier1_x_conflict"
+    ],
+    "coefficients": {
+      "x_unsupport": -0.138041,
+      "x_injection": -0.103384,
+      "x_conflict": 1.218943,
+      "is_tier1": -1.835375,
+      "is_tier3": 0.59404,
+      "is_tier1_x_conflict": -1.427815
+    },
+    "intercept": 0.105099,
+    "calibrated": true,
+    "backend": "sklearn",
+    "underpowered": false,
+    "warnings": []
+  },
+  "band_thresholds": {
+    "suspicious": {
+      "unsupport": 0.9996093770604461,
+      "anomaly": 0.7761478827654915,
+      "injection": 0.6,
+      "conflict": 0.8616055968701704
+    },
+    "malicious": {
+      "unsupport": 0.9998330547437594,
+      "anomaly": 0.9993048293816561,
+      "injection": 0.9,
+      "conflict": 0.9677274414591603
+    },
+    "n_clean_calibration": 321
+  },
+  "operating_thresholds": {
+    "tau_review": 0.0,
+    "tau_reject": 0.845751,
+    "recall_target": 0.95,
+    "precision_target": 0.9,
+    "bands_consistent": true,
+    "reject_reachable": true,
+    "regime": "three_band",
+    "note": "Bands consistent: Accept / Review / Reject."
+  },
+  "metrics": {
+    "n": 105,
+    "n_pos": 25,
+    "n_neg": 80,
+    "threshold": 0.0,
+    "tp": 25,
+    "fp": 80,
+    "tn": 0,
+    "fn": 0,
+    "precision": 0.238095,
+    "recall": 1.0,
+    "f1": 0.384615,
+    "f_beta": 0.757576,
+    "pr_auc": 0.273437,
+    "roc_auc": 0.1815,
+    "recall_at_budget": 0.08,
+    "threshold_at_budget": 0.320655,
+    "brier": 0.231293,
+    "expected_cost": 80.0,
+    "precision_at_prevalence": {
+      "0.05": 0.05,
+      "0.01": 0.01
+    }
+  },
+  "attack_success_rate": {
+    "asr_baseline": 0.0,
+    "asr_fusion": 0.32,
+    "absolute_reduction": -0.32,
+    "relative_reduction": 0.0,
+    "n_poisoned_retrieved": 25,
+    "baseline_blocked": 25,
+    "fusion_blocked": 17,
+    "baseline_false_blocks": 77,
+    "fusion_false_blocks": 11,
+    "n_clean_retrieved": 80,
+    "baseline_description": "any single detector signal >= 0.5",
+    "scope_note": "Measured at the RETRIEVAL-CONTAINMENT stage: whether a poisoned document reaches the analyst, not whether it changed the generated answer. Generation is not yet in this loop. Recompute end to end against the attacker's intended answer once it is.",
+    "baseline_false_block_rate": 0.9625,
+    "fusion_false_block_rate": 0.1375,
+    "matched_fpr": 0.9625,
+    "asr_fusion_at_matched_fpr": 0.8,
+    "matched_comparison_note": "At the baseline's own false-block rate (96.2% of clean documents), the fusion score reaches ASR 0.800 versus the baseline's 0.000. This is the fair comparison; the operating-point figures above are not, because the two block at very different rates."
+  },
+  "caveats": [
+    "`conflict` is INTRA-EVIDENCE conflict (retrieved documents against each other, design 0.4), standing in for design 2.1's parametric-knowledge signal, which needs a probe this system does not have. Recorded per row as conflict_source. Do not read it as the designed signal.",
+    "98 of 98 queries used a generated answer as the hypothesis, per design 3.1. Answers are cached in generated_answers.json so refits are reproducible and offline.",
+    "Signals dropped for being anti-correlated with the label on training data: anomaly. See signal_separation in this file for the figures.",
+    "Fitted coefficients have the wrong sign for: unsupport, injection."
+  ]
+}
