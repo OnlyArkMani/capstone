@@ -1778,7 +1778,14 @@ weaken the signal; it reversed it.
 
 With generation available the hypothesis is the generated answer, per §3.1. Fallback to
 the query proxy is per-QUERY rather than per-run, and every row records
-`hypothesis_source` so a mixed dataset is visible rather than averaged over. The
+`hypothesis_source` so a mixed dataset is visible rather than averaged over.
+
+> **Correction, `design-v1.5`.** As written this described the TRAINING path only, and
+> was read for three weeks as though it described the system. It did not. Neither the
+> analyst console nor the evaluation harness called a generator at all, so both scored
+> against the query proxy while the fitted model had been estimated on generated answers
+> — the inversion this section documents was live at inference the entire time. See
+> §9A.7. The
 extractive stub is explicitly **refused** as a hypothesis: it returns leading sentences of
 the retrieved documents, so using it would score evidence on whether it entails a
 quotation of itself — circular, and worse than the proxy it replaces.
@@ -1895,12 +1902,97 @@ d_conflict_max` consumes it. Scoring one direction per pair, or comparing each d
 only against a single reference answer, would halve the cost and change the signal. That
 is a scope reduction wearing an optimisation's clothes, and it is not what was asked for.
 
+### 9A.7 The inference paths did not generate an answer, and scored against the query
+
+**Resolves the §9A.4 gap on the inference side. No change to §3.1, which was already
+correct — this is the implementation catching up to it.**
+
+§3.1 specifies the generated answer as the entailment hypothesis and §6 orders generation
+at step 2, before the detectors at step 3. The training set complied: all 98 queries
+recorded `hypothesis_source=generated_answer`. Neither inference path did. The analyst
+console ran retrieve → score → report; the evaluation harness ran retrieve → score.
+Neither called a generator, so both fell back to the query text on every query.
+
+The consequence was not cosmetic. §9A.4 measured the query proxy at AUC 0.248 against the
+same labels — inverted, because a PoisonedRAG document restates the target query in order
+to be retrieved and therefore appears *better* supported than a genuine one when scored
+against that query. The coefficient on `x_unsupport` was fitted on one quantity and
+applied at inference to another that behaves oppositely.
+
+`pipeline/hypothesis.py` now resolves the hypothesis once for both paths. It refuses the
+extractive stub for §9A.4's stated reason, degrades per query rather than per run, records
+`hypothesis_source` and the reason on every row, and caches answers by query and retrieved
+document identities — a language model is not a pure function, and a re-run scoring the
+same query against a different answer would disagree with itself for reasons unrelated to
+detection.
+
+**Measured, 40-query evaluation and a refit on the corrected signal.**
+
+| | Before | After |
+|---|---|---|
+| `x_unsupport` coefficient | −0.138041 | **+0.020989** (sign corrected) |
+| `unsupport` AUC, training rows | 0.4634 | 0.4880 |
+| False positive rate | 50.0% | **39.3%** |
+| Blocked outright | 50.0% | 40.0% |
+| **Attack success, vouched for** | **0.0%** | **0.0%** |
+| Attack success, exposure | 60.0% | 60.0% |
+| False negative, exposure | 50.0% | 56.3% |
+| `ioc_reputation_flip` detection | 16.7% | 0.0% |
+| `severity_downgrade` detection | 80.0% | 60.0% |
+| Held-out ROC-AUC | 0.1815 | 0.1790 |
+| Held-out PR-AUC | 0.2734 | 0.2695 |
+
+The safety guarantee held. Everything else is one movement along the operating curve
+rather than a gain in discriminative power: documents moved from Reject to Review, buying
+eleven points of false-positive rate at the cost of six points of exposure, while both
+held-out ranking metrics stayed where they were. **This amendment records a correctness
+fix, not an accuracy improvement, and it should not be quoted as one.**
+
+Two things it did not fix, both predicted before the run. `x_injection` remains negative
+(−0.1034 → −0.1055) because `s_inj` has zero variance across all 490 training rows —
+mean 0.0000 for both classes, AUC 0.500 — so its coefficient can only be noise. That is a
+corpus-coverage consequence of §9A.1 and §9A.5, not a hypothesis problem, and no change to
+the hypothesis can address it. And `unsupport` at AUC 0.488 is still no better than chance:
+the sign is now right and the signal is still absent.
+
+Cost: generation is Level 1 work a deployed system performs anyway to answer the analyst,
+so it is timed separately and excluded from the security-overhead figure. The detection
+layer's own cost rose from 1,101 ms to 3,171 ms per query, because the hypothesis is now a
+full answer rather than a one-line query and every entailment pair is correspondingly
+longer.
+
+### 9A.8 The statistical track is anti-predictive on held-out data; the guarantee rests on the rule track
+
+**Recorded, not resolved. Affects how §3.9's reconciliation should be described.**
+
+Held-out ROC-AUC for the fitted composite score is **0.179**, and PR-AUC 0.270 against a
+positive rate of 0.238. A ranking metric below 0.5 does not mean "weak": it means the
+score orders poisoned documents as *less* risky than clean ones on data it was not fitted
+to. This is not new and was not caused by §9A.7 — it measured 0.1815 before that change —
+but it had not been stated, and it changes what the headline result means.
+
+The system's 0%-vouched-for figure is therefore carried by the **rule track**, the case
+taxonomy of §2.3, and preserved by escalation dominance (§3.9), which guarantees that
+adding the statistical track cannot make a disposition less conservative. That guarantee
+is doing real work here: it is what prevents an anti-predictive score from degrading the
+system's safety behaviour. §3.9 justified escalation dominance as defence in depth against
+a model that is "opaque during an incident and silent on unseen attacks"; on this corpus it
+is also defending against a model that is wrong.
+
+Three of the four signals explain it. `s_ano` is anti-correlated and is dropped at fit time.
+`s_inj` has zero variance. `s_uns` sits at chance. Only `d_conflict` (AUC 0.653) separates
+the classes at all, and one usable signal across 89 positives in 78 groups is not enough to
+fit six features that generalise. The honest reading is that the composite score is not yet
+evidence of anything, and no figure derived from it should be presented as a detection
+result.
+
 ---
 
 ## 10. Version History
 
 | Version | Date | Change |
 |---|---|---|
+| `design-v1.5` | 2026-09-06 | Added §9A.7: the inference paths never generated an answer and scored entailment against the query text, so the inversion §9A.4 documents was live at inference while the model had been fitted on generated answers. Corrected in `pipeline/hypothesis.py` for both the console and the harness; `x_unsupport` sign corrected (−0.138 → +0.021), false positive rate 50.0% → 39.3%, exposure 50.0% → 56.3%, and the 0%-vouched-for guarantee held. Recorded as a correctness fix, not an accuracy gain: both held-out ranking metrics were unchanged. Added §9A.8, recording that the fitted composite scores at ROC-AUC 0.179 on held-out data — anti-predictive — and that the safety result is carried by the rule track under escalation dominance. Amends §9A.4, which described the training path but was read as describing the system. No case definition, priority, action semantic or headline rule altered. |
 | `design-v1.4` | 2026-09-06 | Added §9A.6, resolving Open Question 2: the O(k²) pairwise conflict measure is affordable at k=5 — 962 ms of a 1,234 ms cold query — and §8's fallback of restricting to cited documents was **not** taken. Records the measured stage costs, the three changes that made the cost affordable (explicit device placement, memoisation of pair results, startup computation of corpus vectors), and the boundaries of the measurement. No case definition, priority, action semantic, headline rule, threshold, feature encoding or signal definition altered: every figure in `eval/results/evaluation.json` that bears on detection is identical before and after. |
 | `design-v1.3` | 2026-09-05 | Added §9A (implementation amendments): the prompt-injection detector is a rule detector after the pretrained classifier was measured and ruled out (§9A.1); `s_inj` band thresholds are declared rather than fitted, because a rule aggregate has no clean distribution and the degeneracy guard was silently disabling the `injection_alone` rule (§9A.2); `s_cnf` now carries §0.4's intra-evidence quantity, which is NOT the parametric-knowledge signal §2.1 defines (§9A.3); the entailment hypothesis is the generated answer per §3.1, the query-text proxy having been measured as INVERTING `s_uns` to AUC 0.248 (§9A.4); corpus extended to five graded `direct_prompt_injection` documents across three payload placements, one of which the detector misses by design (§9A.5). No case definition, priority, action semantic or headline rule altered. |
 | `design-v1.0` | 2026-09-02 | Initial design: case taxonomy (C1–C11), logistic-regression scoring methodology, five-component confidence measure, `analyst_decision` audit schema. |

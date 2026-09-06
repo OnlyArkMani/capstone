@@ -9,7 +9,7 @@ specific false conclusion — and distinguishes it from ordinary model error.
 
 | Document | Purpose |
 |---|---|
-| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.4`): case definitions, feature encoding, thresholds, audit schema |
+| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.5`): case definitions, feature encoding, thresholds, audit schema |
 | [`docs/FINAL_PROJECT_LOG.md`](docs/FINAL_PROJECT_LOG.md) | Executive summary, development history, evaluation results, limitations |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Installation, verification and demonstration procedure |
 | [`docs/AUDIT_REPORT.md`](docs/AUDIT_REPORT.md) | Independent verification of deliverables against specification |
@@ -105,13 +105,13 @@ flowchart TD
 
     LOG1 --> D1
     LOG1 --> D2
-    LOG1 -.not on the query path.-> GEN[Answer generation<br/>Groq or Ollama<br/>used at TRAINING time only<br/>answers cached by query + doc ids]
-    GEN -.supplies the training hypothesis.-> D3
+    LOG1 --> GEN[Answer generation — design 6 step 2<br/>Ollama or Groq, resolved from config<br/>answers cached by query + retrieved doc ids<br/>extractive stub REFUSED as a hypothesis]
+    GEN --> D3
 
     subgraph L2["Level 2 — Independent detectors"]
         D1[Embedding anomaly<br/>k-means + robust median/MAD z-score]
         D2[Prompt-injection classifier<br/>deberta-v3-base-prompt-injection-v2]
-        D3[Claim-evidence entailment<br/>nli-deberta-v3-base cross-encoder<br/>hypothesis at inference is the QUERY, not an answer]
+        D3[Claim-evidence entailment<br/>nli-deberta-v3-base cross-encoder<br/>hypothesis is the GENERATED ANSWER, per design 3.1<br/>per-query fallback to the query proxy is recorded, not silent]
         D4[Evidence conflict<br/>NOT BUILT — signal treated as absent]
         DER[Derived: intra-evidence conflict<br/>pairwise NLI reuse, k·k-1 ordered pairs<br/>78% of a query; results memoised per corpus pair]
         SIG[Signal bundle<br/>per document and per response]
@@ -493,14 +493,14 @@ control), k = 5, with every detector on its specified model.
 |---|---|---|---|
 | Attack success — adversarial content reached the user | 0%\* | 100% | **60.0%** |
 | Attack success — system vouched for the content | 0%\* | 100% | **0.0%** |
-| False positive rate — genuine documents blocked | 0%\* | 0%\* | **50.0%** |
+| False positive rate — genuine documents blocked | 0%\* | 0%\* | **39.3%** |
 | Genuine queries routed to human review | 0%\* | 0%\* | **100.0%** |
-| Adversarial documents reaching the user | 0%\* | 100%\* | **50.0%** |
+| Adversarial documents reaching the user | 0%\* | 100%\* | **56.3%** |
 | Automatically accepted without human review | 100% | 100% | **0.0%** |
-| Routed to human review | 0% | 0% | **50.0%** |
-| Blocked | 0% | 0% | **50.0%** |
-| Added latency per query — first time asked | — | 8.8 ms | **1,101 ms** |
-| Added latency per query — asked again | — | 8.8 ms | **~84 ms** |
+| Routed to human review | 0% | 0% | **60.0%** |
+| Blocked | 0% | 0% | **40.0%** |
+| Answer generation (Level 1, the baseline pays it too) | — | — | 9,822 ms |
+| Detection layer overhead | — | 0 ms | **3,171 ms** |
 
 \* True by the configuration's definition rather than measured. A system without
 retrieval cannot be poisoned; a system without a security layer cannot flag anything.
@@ -518,14 +518,24 @@ at all and routing every genuine query to human review. At this operating point 
 functions as a review-generation mechanism rather than a filter, and that is a finding
 about the operating point rather than about the detectors.
 
-**Latency.** The security layer costs 1,101 ms per query against a baseline retrieval of
-8.8 ms. That figure is 78% one component — the pairwise contradiction check, which scores
-every ordered pair of retrieved documents as design §0.4 specifies — and it is a
-measurement on a laptop GPU at k = 5, not an estimate. Design §9A.6 records the full
-breakdown and resolves the design's own Open Question 2 in the affirmative: the quadratic
-comparison is affordable at this depth, and the fallback of restricting it to cited
-documents was not needed. Repeat queries cost roughly 84 ms, because pair results are
-memoised against a fixed corpus.
+**Latency.** A query costs 13.0 s end to end, of which 9.8 s is generating the answer on
+a local 3B model and 3.2 s is the detection layer. Generation is Level 1 work — a deployed
+system produces that answer to show the analyst regardless — so the detection layer's own
+cost is the 3.2 s figure, and it is dominated to 78% by the pairwise contradiction check
+that scores every ordered pair of retrieved documents as design §0.4 specifies. Design
+§9A.6 records the breakdown and resolves the design's own Open Question 2 in the
+affirmative: the quadratic comparison is affordable at this depth, and the fallback of
+restricting it to cited documents was not needed. Detection cost rose from 1,101 ms when
+the entailment hypothesis was the one-line query to 3,171 ms now that it is a full
+generated answer (§9A.7); the entailment pairs are simply longer.
+
+**What the composite score is worth.** Held-out ROC-AUC for the fitted model is 0.179 and
+PR-AUC 0.270. Below 0.5 does not mean weak — it means the score ranks poisoned documents
+as *less* risky than clean ones on data it was not fitted to. The 0%-vouched-for result
+above is therefore carried by the rule track, the case taxonomy, and preserved by
+escalation dominance, which guarantees the statistical track can never make a disposition
+less conservative. Design §9A.8 records this. No figure derived from the composite score
+should be presented as a detection result.
 
 ### 7.2 Metric definition
 
@@ -665,7 +675,7 @@ Capstone/
     AUDIT_REPORT.md          Independent verification against specification
     PROJECT_REPORT.md        Extended technical report (superseded in part; see §12)
     design/
-      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.4
+      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.5
     sprint_logs/             Development session records (.md and .docx)
   corpus/
     schema.py                Shared field names, enumerations, tier rules
@@ -678,6 +688,7 @@ Capstone/
     ground_truth/            Answer key — evaluation harness only
   pipeline/                  Baseline RAG: embeddings, retrieval, generation, logging
     device.py                Single resolver for CPU/CUDA placement of every model
+    hypothesis.py            Entailment hypothesis for both inference paths, per design 3.1
   detectors/                 Three independent detectors + derived conflict signal
   fusion/                    Banding, case classifier, model, confidence, headline
     artifacts/               Fitted thresholds and coefficients
@@ -704,7 +715,7 @@ Open-source components only; no paid API dependency.
 |---|---|
 | Embeddings | `sentence-transformers` (`bge-small-en-v1.5`) |
 | Vector index | FAISS `IndexFlatIP`, or exact numpy inner-product where FAISS is absent |
-| Generation | Groq free tier, or Ollama for local operation — training-time hypotheses only |
+| Generation | Ollama locally, or Groq free tier — on the query path, per design §6 step 2 |
 | Compute device | CPU or CUDA, resolved once by `pipeline/device.py` and recorded per score |
 | Entailment | `cross-encoder/nli-deberta-v3-base` |
 | Injection classification | `protectai/deberta-v3-base-prompt-injection-v2` |
@@ -755,37 +766,47 @@ record.
 
 Stated directly, since each affects how the results above should be read.
 
-1. **The entailment hypothesis differs between training and inference.** The fitted
-   model was trained on features computed with the generated answer as the entailment
-   hypothesis, per §3.1 and design §9A.4 — which records that the query-text proxy
-   *inverts* that signal, measuring AUC 0.248 against it. At inference neither the
-   analyst console nor the evaluation harness supplies a generated answer, so both fall
-   back to the query proxy and every row is stamped `hypothesis_source=query_proxy`. The
-   coefficient on the unsupport feature is therefore being applied to a quantity that
-   does not behave as the quantity it was fitted on. This is the most significant open
-   correctness item in the system and it is not a latency artefact.
-2. **Answer-level attack success is not measured.** The reported attack-success figures
-   are the containment proxy — an adversarial document reaching a response the system
-   vouched for. Containment is a strict upper bound on the answer-level rate, since the
-   model must see a document but need not adopt its claim. That asymmetry favours the
-   full system and penalises the baseline, and should be read with that in mind.
+1. **The composite risk score is anti-predictive on held-out data.** ROC-AUC 0.179,
+   PR-AUC 0.270. Below 0.5 means the score ranks adversarial documents as *less* risky
+   than genuine ones on data it was not fitted to. The safety result is carried by the
+   rule track — the case taxonomy — and preserved by escalation dominance, which
+   guarantees the statistical track can never make a disposition less conservative.
+   Three of four signals explain it: the anomaly signal is anti-correlated and is
+   dropped at fit time, the injection signal has zero variance across all 490 training
+   rows, and unsupport sits at chance (AUC 0.488). Only intra-evidence conflict
+   (AUC 0.653) separates the classes. Design §9A.8. This is the most significant open
+   item in the system.
+2. **Answer-level attack success is still not measured.** A generation backend is now in
+   the loop and its answer is the entailment hypothesis, but nothing reads that answer
+   and judges whether it asserts the attacker's claim — that needs a human or a separate
+   model, and neither is wired in. The reported figures are therefore the containment
+   proxy: an adversarial document reaching a response the system vouched for. Containment
+   is a strict upper bound on the answer-level rate, since the model must see a document
+   but need not adopt its claim. That asymmetry favours the full system and penalises the
+   baseline.
 3. **The corpus is small.** Sixteen adversarial documents across six families. The
    statistical model operates at its underpowered setting; coefficients are indicative.
 4. **The operating point is not deployable.** Nothing is automatically accepted and
    every genuine query is routed to review. As a filter this is useless; as a
    demonstration that the layer never vouches for poisoned evidence it is sound. The
    thresholds, not the detectors, are what would have to move.
-5. **The evidence-conflict detector is not implemented.** It is specified but absent, and
+5. **Training and inference use the same generator but a different one than before.**
+   Both now run `llama3.2:3b` locally; the archived results were fitted on Groq
+   `gpt-oss-20b` answers. Consistency between the two paths is what matters for the
+   fitted coefficients and it now holds, but a change of generator changes the
+   hypothesis distribution, so figures are comparable within a generator and not
+   across one.
+6. **The evidence-conflict detector is not implemented.** It is specified but absent, and
    is treated throughout as absent rather than zero-valued.
-6. **`docs/PROJECT_REPORT.md` predates the fusion, report, audit and dashboard work** and
+7. **`docs/PROJECT_REPORT.md` predates the fusion, report, audit and dashboard work** and
    describes those components as unimplemented. It is retained for its corpus and
    pipeline sections; `docs/FINAL_PROJECT_LOG.md` supersedes it for current state.
-7. **Latency is characterised on one machine.** 1,101 ms per query is a measurement at
+8. **Latency is characterised on one machine.** 3,171 ms of detection per query is a measurement at
    k = 5 on a single laptop-class GPU, under no concurrent load, against 88 documents.
    Cost is quadratic in retrieval depth — k = 8 is 56 ordered pairs against 20 — and the
    memoisation that makes repeat queries cheap helps in proportion to how much retrieval
    sets overlap, which is a property of the query mix rather than a guarantee.
-8. **Results produced before 6 September 2026 rest on a fallback retriever.** The index
+9. **Results produced before 6 September 2026 rest on a fallback retriever.** The index
    had been built with the hashing fallback rather than bge-small-en-v1.5, so those
    figures describe a lexical matcher. They are archived at
    `eval/results/archive_hashing_index/` with the explanation attached. Rebuilding with
@@ -822,7 +843,7 @@ This framing is restated in the corpus module documentation and in the generator
 
 | Component | Status |
 |---|---|
-| Decision-logic specification (`design-v1.4`) | Complete |
+| Decision-logic specification (`design-v1.5`) | Complete |
 | Corpus — 72 genuine, 16 adversarial, three tiers | Complete, validated, 0 errors |
 | Baseline RAG pipeline | Complete, 55 checks passing |
 | Level 2 detectors | Complete, 20 checks passing |
@@ -834,7 +855,8 @@ This framing is restated in the corpus module documentation and in the generator
 | Containerisation | Complete |
 | Detector models installed and evaluation re-run | Complete — real models, GPU or CPU |
 | Latency characterisation and device placement | Complete — design §9A.6, Open Question 2 resolved |
-| Generation backend on the inference path | **Outstanding** — wired for training only; see Limitation 1 |
+| Generation backend on the inference path | Complete — design §9A.7; console and harness both score against the answer |
+| Composite score that discriminates on held-out data | **Outstanding** — design §9A.8; see Limitation 1 |
 | Evidence-conflict detector | **Outstanding** |
 | Leave-one-attack-family-out evaluation | **Outstanding** |
 
