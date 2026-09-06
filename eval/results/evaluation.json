@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-06T23:36:04+0530",
+  "generated_at": "2026-09-06T23:48:11+0530",
   "k": 5,
   "n_queries": 40,
   "n_target_queries": 10,
@@ -95,9 +95,9 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 8.92,
-        "median_total_ms": 8.71,
-        "p95_total_ms": 9.63,
+        "mean_total_ms": 8.75,
+        "median_total_ms": 8.28,
+        "p95_total_ms": 9.65,
         "mean_security_overhead_ms": 0.0,
         "status": "MEASURED",
         "note": "No security layer, so no overhead to measure."
@@ -143,12 +143,12 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 1159.21,
-        "median_total_ms": 1118.26,
-        "p95_total_ms": 1369.77,
-        "mean_security_overhead_ms": 1150.28,
+        "mean_total_ms": 1109.83,
+        "median_total_ms": 1129.62,
+        "p95_total_ms": 1383.15,
+        "mean_security_overhead_ms": 1101.14,
         "status": "MEASURED",
-        "note": "Wall clock in this environment, on fallback detector backends. Real models would be substantially slower; treat the overhead as a lower bound."
+        "note": "Wall clock in this environment: real NLI cross-encoder [cross-encoder/nli-deberta-v3-base] on cuda; pair results memoised within the run. This note used to read 'on fallback detector backends, real models would be substantially slower' unconditionally, which stopped being true once the real models were running and would have understated the system's own measured cost."
       }
     }
   ],
@@ -242,7 +242,7 @@
     "Answer-level attack success. Without a language model there is no answer to judge, so the attack-success figures above are the CONTAINMENT proxy: a poisoned document reaching a high-confidence response. Because the model must see the document but need not adopt its claim, containment is an UPPER BOUND on the true rate. That cuts in the full system's favour and against the baseline, and should be read with that in mind.",
     "Any utility metric. Configuration A cannot be shown to be useless here \u2014 it scores a perfect zero on every risk metric precisely because it does nothing. Its real cost is that it cannot answer a question about current threat intelligence at all, and demonstrating that needs a generator.",
     "Generalisation of the rule-based detector(s) (injection). These are hand-specified patterns, primary by measurement rather than by preference (design \u00a79A.1), and this team wrote both the patterns and the payloads they catch. The per-payload table in the detector suite shows which phrasings are anticipated and which are missed; no detection or false-positive rate against an unseen adversary is claimable from it.",
-    "Latency under a production deployment. The overhead above is real wall clock for the security layer, and it is dominated by the NLI cross-encoder, which already IS a production model: entailment scores k documents and the pairwise conflict measure scores k(k-1) ordered pairs, so cost grows quadratically in retrieval depth. It is a measurement at k=5 on this CPU, not a lower bound to be scaled up, and it would fall on a GPU or with a smaller cross-encoder."
+    "Latency under a production deployment. The overhead above is real wall clock for the security layer, and it is dominated by the NLI cross-encoder, which already IS a production model: entailment scores k documents and the pairwise conflict measure scores k(k-1) ordered pairs, so cost grows quadratically in retrieval depth. It is a measurement at k=5 with real NLI cross-encoder [cross-encoder/nli-deberta-v3-base] on cuda; pair results memoised within the run, on one laptop-class card, under no concurrent load, against a corpus of 88 documents. What it does not establish is behaviour at production retrieval depth, under concurrency, or on a corpus large enough that the memoised pair results stop fitting the access pattern."
   ],
   "metric_definitions": {
     "attack_success_rate": "Fraction of attack opportunities (target queries where the poisoned document was actually retrieved) in which that document reached a response the system presented as high-confidence. Upper bound on the answer-level rate.",

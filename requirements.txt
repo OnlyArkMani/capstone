@@ -19,7 +19,19 @@
 # measurements.
 
 # --- core ---
-numpy>=1.24
+# PINNED for the same reason scikit-learn is, below. The fitted trust model
+# records the sklearn, numpy and joblib versions that produced it and warns on
+# load if any of them has moved, because a joblib pickle of sklearn estimators
+# carries no cross-version guarantee. All three drifted on one machine
+# (sklearn 1.9.0 -> 1.7.1, numpy 2.4.6 -> 1.26.2, joblib 1.6.0 -> 1.5.2) and
+# every run printed "the trust scores from this run may be invalid" while
+# producing plausible-looking numbers. Re-aligning the environment to these
+# versions cleared the warning and left every detection-bearing figure
+# unchanged, which is the evidence that the drift had been harmless -- but it
+# was not knowable without checking, which is the point of the pins.
+#
+# Changing any of these three REQUIRES refitting: python -m fusion.train
+numpy==2.4.6
 
 # --- embeddings and retrieval (pipeline/) ---
 # For a CPU-only install, install torch first from the CPU index:
@@ -50,7 +62,7 @@ scikit-learn==1.9.0
 # read: the composite trust score is absent from every report and only the rule
 # track contributes to a disposition. The system degrades rather than failing, which
 # is exactly why this omission is easy to miss.
-joblib>=1.3
+joblib==1.6.0
 
 # --- dashboard/ : the analyst console ---
 streamlit>=1.35

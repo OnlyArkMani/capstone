@@ -20,8 +20,8 @@ Auto-accepted (no human needed)               100.0%            100.0%          
 Sent to human review                            0.0%              0.0%             50.0%
 Blocked outright                                0.0%              0.0%             50.0%
 
-Mean latency per query (ms)                      0.0               8.9            1159.2
-Security overhead (ms)                           0.0               0.0            1150.3
+Mean latency per query (ms)                      0.0               8.8            1109.8
+Security overhead (ms)                           0.0               0.0            1101.1
 ============================================================================================
 
 ============================================================================================
