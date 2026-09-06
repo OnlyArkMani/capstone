@@ -15,6 +15,7 @@ than a sentinel that some later aggregate forgets to exclude.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sqlite3
 import sys
@@ -29,10 +30,36 @@ from pipeline.records import Provenance, RetrievedRecord  # noqa: E402
 from fusion.bands import BandThresholds  # noqa: E402
 from fusion.scorer import FusionScorer  # noqa: E402
 from reports import build_report  # noqa: E402
-
 from logs.audit import (  # noqa: E402
     AuditLog, DecisionInput, DecisionWriter, SCHEMA_VERSION, SOURCE_ANALYST_UI,
 )
+
+def _inspect(db_path: Any) -> Any:
+    """Open a connection for direct inspection that commits AND closes.
+
+    `with sqlite3.connect(path) as conn` is a TRANSACTION context manager, not a
+    connection one: it commits or rolls back on exit and leaves the connection
+    OPEN. On Linux that is invisible, because an open file can still be unlinked.
+    On Windows it is fatal: TemporaryDirectory cleanup cannot remove a directory
+    holding an open file, so the test raised PermissionError [WinError 32] after
+    every assertion inside it had already passed -- a green suite reported as
+    three failures.
+
+    Closing alone is not the fix either. A connection closed without committing
+    discards its transaction, which silently disarmed the tamper this suite
+    performs to prove the hash chain notices an edited row: the edit was rolled
+    back, the chain verified, and the test failed for the opposite reason. Both
+    behaviours are needed, so both are here -- the inner `with conn` commits or
+    rolls back, the outer closing() releases the file handle.
+    """
+    @contextlib.contextmanager
+    def _cm() -> Any:
+        with contextlib.closing(sqlite3.connect(db_path)) as conn:
+            with conn:                  # commit on success, roll back on error
+                yield conn
+
+    return _cm()
+
 
 FAILURES: list[str] = []
 VERBOSE = False
@@ -98,7 +125,7 @@ def test_schema() -> None:
     with tempfile.TemporaryDirectory() as td:
         db = Path(td) / "a.db"
         log = AuditLog(db)
-        with sqlite3.connect(db) as conn:
+        with _inspect(db) as conn:
             conn.row_factory = sqlite3.Row
             tables = {r[0] for r in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'")}
@@ -127,7 +154,7 @@ def test_schema() -> None:
         # A raw insert with no verdict must be refused by the database itself.
         refused = False
         try:
-            with sqlite3.connect(db) as conn:
+            with _inspect(db) as conn:
                 conn.execute("INSERT INTO analyst_decisions (decision_id, event_id, "
                              "analyst_id, system_recommended_action, system_case_id, "
                              "system_confidence, system_headline, decided_at, logged_at, "
@@ -214,7 +241,7 @@ def test_red_subtype_stored() -> None:
         # The schema itself must enforce the pairing.
         bad = False
         try:
-            with sqlite3.connect(log.db_path) as conn:
+            with _inspect(log.db_path) as conn:
                 conn.execute("UPDATE query_events SET headline_subtype = NULL "
                              "WHERE event_id = ?", (e1["event_id"],))
         except sqlite3.IntegrityError:
@@ -340,7 +367,7 @@ def test_supersede_and_chain() -> None:
               current["decision_id"] == second
               and current["supersedes_decision_id"] == first)
 
-        with sqlite3.connect(db) as conn:
+        with _inspect(db) as conn:
             n = conn.execute("SELECT COUNT(*) FROM analyst_decisions "
                              "WHERE event_id = ?", (e1,)).fetchone()[0]
         check("the original row is kept, not edited or deleted", n == 2)
@@ -351,7 +378,7 @@ def test_supersede_and_chain() -> None:
         note(f"chain head: {chain['head'][:16]}...")
 
         # Tamper, and prove the chain notices.
-        with sqlite3.connect(db) as conn:
+        with _inspect(db) as conn:
             conn.execute("UPDATE analyst_decisions SET analyst_decision = 'ACCEPT' "
                          "WHERE decision_id = ?", (second,))
         broken = log.verify_chain()
