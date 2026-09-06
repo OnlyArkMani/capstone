@@ -294,11 +294,13 @@ def main() -> int:
         fh.write("\n")
 
     caveats = list(ds_meta["caveats"])
+    # is_fallback, not `not is_model` -- see detectors/base.BackendInfo. A
+    # rule-based primary is not a degraded run and must not be reported as one.
     non_model = [k for k, v in (ds_meta["detector_backends"] or {}).items()
-                 if v and not v.get("is_model")]
+                 if v and v.get("is_fallback")]
     if non_model:
         caveats.append(
-            f"Detectors running on FALLBACK backends: {', '.join(non_model)}. Every figure "
+            f"Detectors running on DEGRADED stand-in backends: {', '.join(non_model)}. Every figure "
             f"above is structural evidence that the fusion layer works, not a measurement "
             f"of detection performance. Install the production models and refit.")
     if inverted:
