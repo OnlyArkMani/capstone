@@ -652,9 +652,10 @@ def render_chart(results: list[dict[str, Any]], out_dir: Path) -> Path | None:
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", alpha=0.25)
     fig.text(0.5, 0.012,
-             "Detectors ran on fallback backends: these are structural results, "
-             "not detection-performance measurements.",
-             ha="center", fontsize=8, style="italic", color="#B3261E")
+             "Injection detection is rule-based (design §9A.1); anomaly and entailment "
+             "run production models.\nOne poisoned corpus, 16 documents across 6 attack "
+             "families \u2014 read alongside the per-family breakdown.",
+             ha="center", fontsize=8, style="italic", color="#444444")
     fig.tight_layout(rect=(0, 0.13, 1, 1))
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -762,19 +763,39 @@ def main() -> int:
         backends = sample.detail.get("detector_backends") or {}
     except Exception:
         pass
+    # is_fallback, not `not is_model`. The pattern injection detector is not a
+    # model and is not a fallback either -- it is the primary, chosen on
+    # measurement (design §9A.1). Keying this off is_model reported a deliberate
+    # decision as a degradation, and blamed it on network access that was fine.
     fallback = [n for n, i in backends.items()
-                if isinstance(i, dict) and i.get("is_model") is False]
+                if isinstance(i, dict) and i.get("is_fallback") is True]
     if fallback:
         unmeasured.append(
-            f"Detection performance. {len(fallback)} of the detectors ran on fallback "
-            f"backends ({', '.join(sorted(fallback))}) because this environment cannot "
-            f"reach Hugging Face. Every rate above is evidence that the LAYER works, "
-            f"not a measurement of how well it DETECTS. Install the real models and "
-            f"re-run before quoting any of these numbers as detection performance.")
+            f"Detection performance. {len(fallback)} detector(s) ran on DEGRADED stand-in "
+            f"backends ({', '.join(sorted(fallback))}) because the real model was "
+            f"unavailable. Every rate above is evidence that the LAYER works, not a "
+            f"measurement of how well it DETECTS. Install the real models and re-run "
+            f"before quoting any of these numbers as detection performance.")
+
+    rule_based = [n for n, i in backends.items()
+                  if isinstance(i, dict) and i.get("is_model") is False
+                  and i.get("is_fallback") is not True]
+    if rule_based:
+        unmeasured.append(
+            f"Generalisation of the rule-based detector(s) ({', '.join(sorted(rule_based))}). "
+            f"These are hand-specified patterns, primary by measurement rather than by "
+            f"preference (design §9A.1), and this team wrote both the patterns and the "
+            f"payloads they catch. The per-payload table in the detector suite shows which "
+            f"phrasings are anticipated and which are missed; no detection or "
+            f"false-positive rate against an unseen adversary is claimable from it.")
+
     unmeasured.append(
-        "Latency with production models. The overhead figures are wall clock on "
-        "pattern-matching stand-ins; three transformer forward passes per document "
-        "will be substantially slower. Treat the overhead as a lower bound.")
+        "Latency under a production deployment. The overhead above is real wall clock "
+        "for the security layer, and it is dominated by the NLI cross-encoder, which "
+        "already IS a production model: entailment scores k documents and the pairwise "
+        "conflict measure scores k(k-1) ordered pairs, so cost grows quadratically in "
+        "retrieval depth. It is a measurement at k=5 on this CPU, not a lower bound to "
+        "be scaled up, and it would fall on a GPU or with a smaller cross-encoder.")
     for i, item in enumerate(unmeasured, start=1):
         print(f"  {i}. {item}")
 
