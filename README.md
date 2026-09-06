@@ -157,7 +157,7 @@ flowchart TD
 
     subgraph L3B["Level 3 — Record and operate"]
         AUDIT[(Audit log — SQLite<br/>query_events: signals, features, case,<br/>both proposals, versions, reference ID)]
-        DASH[Analyst console — Streamlit<br/>headline banner, evidence, decision capture]
+        DASH[Analyst console — Streamlit<br/>verdict banner first, thresholded evidence bars,<br/>interval-drawn score, decision capture]
         AD[(analyst_decisions<br/>written only by the console<br/>append-only, hash-chained)]
     end
 
@@ -189,6 +189,7 @@ flowchart TD
 | L3 | Analyst report | `reports/` — template-grounded reasoning, regex indicator extraction | Design §2.9, §5.3 |
 | L3 | Audit trail | `logs/audit.py` — hash-chained, append-only | P3, P6 |
 | L3 | Analyst console | `dashboard/` — headline-first presentation, decision capture | P3, P6 |
+| L3 | Console presentation | `dashboard/style.py` — design tokens and markup builders; computes nothing | Design §2.9 |
 
 ---
 
@@ -438,6 +439,39 @@ investigation toward something that was never present. Defanged indicators are
 re-fanged before matching; version strings, filenames and citation domains are
 suppressed; each indicator records the documents in which it appeared.
 
+### 6.4 Console presentation
+
+The analyst console renders the report; it does not recompute any part of it. Design
+tokens, the stylesheet and the markup builders are isolated in
+[`dashboard/style.py`](dashboard/style.py), whose functions accept plain values and
+return strings — a dashboard that derives its own figures is a second implementation
+of the scoring logic, and the two drift.
+
+Three presentation rules are load-bearing rather than aesthetic.
+
+**The verdict banner is rendered first.** Nothing precedes it: no heading, no metric,
+no spinner. This is design §2.9, and it is enforced as a property of call order by
+`test_dashboard.py`, which records every rendering call and asserts the banner is the
+first. The stylesheet is therefore injected from the page file rather than from the
+banner function; injected from the banner it would itself become the first call and
+the requirement would cease to be tested.
+
+**State is never carried by colour alone.** Every band, fired detector and trust tier
+presents an icon and a word beside its colour. The four state colours are validated
+against the console surface — all clear the 3:1 contrast floor, with worst-pair
+separation of ΔE 11.3 under simulated colour-vision deficiency against a ΔE 8 target —
+but a projector, a colourblind reviewer and a greyscale printout each remove the
+colour channel outright, and the verdict must still arrive. Source trust tiers are
+drawn as neutral badges of differing weight for the same reason state colour is
+reserved: a tier is an ordinal fact about provenance, not an alarm.
+
+**Absence is distinguished from zero.** Each detector reading is drawn as a bar
+against its two thresholds, so proximity to firing is legible without arithmetic. A
+reading whose status is `unusable` or `missing` is drawn as text instead of as an
+empty bar — an empty bar reads as a clean measurement, which is the opposite of what
+an uncalibrated detector means. The exact values remain in a numeric table beneath
+each set of bars.
+
 ---
 
 ## 7. Evaluation
@@ -582,6 +616,7 @@ event_id = AuditLog().record_query(report)
 Capstone/
   README.md                  This document
   requirements.txt           Consolidated dependencies
+  .streamlit/config.toml     Console theme applied to Streamlit's own widgets
   Dockerfile                 Container image definition
   docker-compose.yml         Service definitions: verify, dashboard, evaluate, shell
   docs/
@@ -608,6 +643,7 @@ Capstone/
   reports/                   Analyst report: narrative engine, indicators, renderers
   logs/                      Audit log (SQLite) and retrieval log
   dashboard/                 Streamlit analyst console
+    style.py                 Design tokens, stylesheet, markup builders
     pages/                   Audit log viewer
   eval/
     run_evaluation.py        Three-configuration comparison harness
@@ -630,6 +666,7 @@ Open-source components only; no paid API dependency.
 | Fusion and calibration | scikit-learn |
 | Audit store | SQLite |
 | Analyst console | Streamlit |
+| Console presentation | CSS and generated markup — no additional dependency |
 | Containerisation | Docker, Docker Compose |
 
 Every layer implements a fallback backend that activates when its model is unavailable,
