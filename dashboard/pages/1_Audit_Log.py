@@ -8,6 +8,10 @@ the three questions someone actually asks of this table: *what did we flag*,
 "Not reviewed" is a filter option here but not a stored value. Design §5.8 keeps
 undecided as the absence of a decision row rather than a `PENDING` sentinel, so
 this page asks for a null join result instead of a status string.
+
+Presentation follows `dashboard/style.py`, the same layer the console page uses.
+The two pages are one product and a reviewer moving between them should not have
+to re-learn where anything is.
 """
 
 from __future__ import annotations
@@ -20,28 +24,46 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st  # noqa: E402
 
-from dashboard.components import BAND_STYLE, SUBTYPE_LABEL, event_rows_for_table  # noqa: E402
+from dashboard import style  # noqa: E402
+from dashboard.components import SUBTYPE_LABEL, event_rows_for_table  # noqa: E402
 from dashboard.service import distinct_cases, get_audit_log, list_events  # noqa: E402
 
 st.set_page_config(page_title="Audit Log — Trust & Risk Layer", page_icon="📋",
                    layout="wide")
+style.inject(st)
 
-st.markdown("### Audit log")
-st.caption("Every scored query, with its class, case, scores and analyst decision.")
+st.markdown(style.masthead(
+    "Audit log",
+    "Every scored query, with its class, case, scores and analyst decision"),
+    unsafe_allow_html=True)
 
 log = get_audit_log()
 stats = log.stats()
 
-# --- summary strip ---
-cols = st.columns(5)
-cols[0].metric("Queries logged", stats["total_events"])
-for i, band in enumerate(("GREEN", "ORANGE", "RED"), start=1):
-    cols[i].metric(band, stats["by_headline"].get(band, 0))
-cols[4].metric("Awaiting review", stats["unreviewed"])
+# --- summary strip ---------------------------------------------------------
+# Total and unreviewed are neutral counts. The three band counts wear their own
+# state colour, and each keeps its band name as the label, so the row is still
+# readable with the colour channel removed.
+_STRIP = [
+    ("Queries logged", stats["total_events"], style.ACCENT),
+    ("Green", stats["by_headline"].get("GREEN", 0), style.GOOD),
+    ("Orange", stats["by_headline"].get("ORANGE", 0), style.WARN),
+    ("Red", stats["by_headline"].get("RED", 0), style.CRIT),
+    ("Awaiting review", stats["unreviewed"], style.INK_3),
+]
+st.markdown(
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;">'
+    + "".join(
+        f'<div class="tz-panel tz-panel-accent" style="border-left-color:{c};">'
+        f'<div class="tz-eyebrow">{label}</div>'
+        f'<div style="font-size:1.7rem;font-weight:350;line-height:1.2;'
+        f'margin-top:0.2rem;">{value}</div></div>'
+        for label, value, c in _STRIP)
+    + "</div>", unsafe_allow_html=True)
 
-st.markdown("---")
-
-# --- filters ---
+# --- filters ---------------------------------------------------------------
+st.markdown('<div class="tz-eyebrow" style="margin:1.6rem 0 0.5rem 0;">Filters</div>',
+            unsafe_allow_html=True)
 f1, f2, f3, f4 = st.columns(4)
 with f1:
     headline = st.selectbox("Class", ["All", "GREEN", "ORANGE", "RED"])
@@ -75,43 +97,66 @@ else:
     st.dataframe(event_rows_for_table(events), use_container_width=True,
                  hide_index=True)
 
-    st.markdown("---")
+    st.subheader("Open a query")
     chosen = st.selectbox(
-        "Open a query", [e["event_id"] for e in events],
+        "Query", [e["event_id"] for e in events], label_visibility="collapsed",
         format_func=lambda eid: next(
             (f"{e['headline']} · {e['case_id']} · {e['query_text'][:50]}"
              for e in events if e["event_id"] == eid), eid))
     if chosen:
         event = log.get_event(chosen)
         band = event["headline"]
-        style = BAND_STYLE.get(band, BAND_STYLE["ORANGE"])
+        spec = style.BAND.get(band, style.BAND["ORANGE"])
         sub = event.get("headline_subtype")
+        sub_html = (f'<span style="font-size:0.95rem;margin-left:0.9rem;'
+                    f'opacity:0.92;">{SUBTYPE_LABEL.get(sub, sub)}</span>'
+                    if sub else "")
         st.markdown(
-            f"""<div style="background:{style['bg']};color:{style['fg']};
-                    padding:0.9rem 1.2rem;border-radius:10px;margin-bottom:0.8rem;">
-                <span style="font-size:1.5rem;font-weight:700;">{band}</span>
-                {'<span style="font-size:1.05rem;margin-left:0.8rem;">'
-                 + SUBTYPE_LABEL.get(sub, sub) + '</span>' if sub else ''}
-            </div>""", unsafe_allow_html=True)
+            f'<div style="background:{spec["bg"]};color:#FFFFFF;border-radius:5px;'
+            f'padding:0.7rem 1.1rem;margin:0.3rem 0 0.8rem 0;">'
+            f'<span style="font-size:1.35rem;font-weight:700;letter-spacing:0.02em;">'
+            f'{spec["icon"]}&nbsp;{band}</span>{sub_html}</div>',
+            unsafe_allow_html=True)
 
+        trust = event.get("trust_percent")
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown(
-                f"**Query:** {event['query_text']}  \n"
-                f"**Reference:** `{event['event_id']}`  \n"
-                f"**When:** {event['created_at']}  \n"
-                f"**Case:** {event['case_id']} {event.get('case_name') or ''}  \n"
-                f"**Action:** {event['final_action']} ({event['risk_priority']})")
+            st.markdown(style.kv([
+                ("Query", event["query_text"]),
+                ("Reference", event["event_id"]),
+                ("When", str(event["created_at"])),
+                ("Case", f"{event['case_id']} {event.get('case_name') or ''}"),
+                ("Action", f"{event['final_action']} ({event['risk_priority']})"),
+            ]), unsafe_allow_html=True)
         with c2:
-            trust = event.get("trust_percent")
-            st.markdown(
-                f"**Trust score:** "
-                f"{'not computed' if trust is None else f'{trust:.1f}%'}  \n"
-                f"**Confidence:** {event['confidence']:.3f}  \n"
-                f"**Rule track proposed:** {event['taxonomy_action']}  \n"
-                f"**Score track proposed:** {event['score_action']}  \n"
-                f"**Detectors were real models:** "
-                f"{'yes' if event['backends_are_models'] else 'NO — fallback backends'}")
+            backends_ok = bool(event["backends_are_models"])
+            st.markdown(style.kv([
+                ("Trust score",
+                 "not computed" if trust is None else f"{trust:.1f}%"),
+                ("Confidence", f"{event['confidence']:.3f}"),
+                ("Rule track", event["taxonomy_action"]),
+                ("Score track", event["score_action"]),
+                ("Detectors",
+                 "real models" if backends_ok else "NO — fallback backends"),
+            ]), unsafe_allow_html=True)
+
+        # The two tracks are the architecture's central claim — a rule-based
+        # classification and a calibrated score, reconciled conservatively. When
+        # they disagree, that is the most decision-relevant fact on this page, so
+        # it is stated rather than left for the reader to spot in two adjacent
+        # rows of a key-value block.
+        if event["taxonomy_action"] != event["score_action"]:
+            st.warning(
+                f"The two assessments disagreed: the case taxonomy proposed "
+                f"**{event['taxonomy_action']}** and the composite score proposed "
+                f"**{event['score_action']}**. The final action "
+                f"**{event['final_action']}** is the more conservative of the two.",
+                icon="⚖️")
+
+        if not backends_ok:
+            st.warning("One or more detectors ran on a fallback backend for this "
+                       "query. The scores above are not model measurements.",
+                       icon="⚠️")
 
         decision_row = log.current_decision(chosen)
         if decision_row:
@@ -128,14 +173,19 @@ else:
             st.info("Not yet reviewed — there is no decision record for this query. "
                     "Undecided is the absence of a row, never a stored value.")
 
-st.markdown("---")
-with st.expander("Integrity"):
-    chain = log.verify_chain()
-    if chain["ok"]:
-        st.success(f"Decision hash chain verifies across {chain['n_rows']} row(s).")
-        st.caption(f"Chain head: `{chain['head'][:32]}…`  \n"
-                   "Each decision hashes its own content plus its predecessor's hash, so "
-                   "editing any historical row breaks every hash after it.")
-    else:
-        st.error(f"Hash chain broken at row {chain['broken_at']} "
-                 f"(`{chain['decision_id']}`): {chain['reason']}")
+st.subheader("Integrity")
+chain = log.verify_chain()
+if chain["ok"]:
+    st.markdown(
+        f'<div class="tz-panel tz-panel-accent" style="border-left-color:{style.GOOD};">'
+        f'{style.chip("chain verified", style.GOOD, "✓")}'
+        f'<div style="margin-top:0.55rem;font-size:0.86rem;color:{style.INK_2};">'
+        f'Verifies across {chain["n_rows"]} row(s). Head '
+        f'<code>{chain["head"][:32]}…</code></div>'
+        f'<div style="margin-top:0.4rem;font-size:0.78rem;color:{style.INK_3};">'
+        f'Each decision hashes its own content plus its predecessor\'s hash, so '
+        f'editing any historical row breaks every hash after it.</div></div>',
+        unsafe_allow_html=True)
+else:
+    st.error(f"Hash chain broken at row {chain['broken_at']} "
+             f"(`{chain['decision_id']}`): {chain['reason']}")

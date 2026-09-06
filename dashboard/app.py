@@ -15,6 +15,11 @@ Writing a decision goes through `DecisionWriter`, which is the only class in the
 project that may insert into `analyst_decisions`. This module never touches that
 table directly, and `AuditLog` — which the scoring path holds — has no method
 that could.
+
+Presentation is in `dashboard/style.py`. The stylesheet is injected here, once,
+immediately after `set_page_config` and before anything else renders — never
+from a render function, because the first recorded call on the results view has
+to be the banner and the tests check exactly that.
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st  # noqa: E402
 
+from dashboard import style  # noqa: E402
 from dashboard.components import (  # noqa: E402
     render_banner, render_caveats, render_case_and_action, render_documents,
     render_entities, render_headline_metrics, render_reasoning,
@@ -51,24 +57,29 @@ def _init_state() -> None:
 
 def main() -> None:
     st.set_page_config(page_title=PAGE_TITLE, page_icon="🛡️", layout="wide")
+    style.inject(st)
     _init_state()
 
     with st.sidebar:
         st.title("Trust & Risk Layer")
         st.caption("Healthcare threat-intelligence RAG — Team Zetabyte")
-        st.markdown("---")
-        st.markdown("**Analyst**")
         analyst_id = st.text_input("Analyst ID", value="analyst-01",
                                    help="Pseudonymous and stable. Never a real name.")
         analyst_role = st.selectbox(
             "Role", ["tier1_soc", "tier2_soc", "threat_intel", "other"], index=1)
-        st.markdown("---")
-        st.page_link("pages/1_Audit_Log.py", label="Audit log viewer", icon="📋")
-        stats = get_audit_log().stats()
-        st.caption(f"{stats['total_events']} queries logged · "
-                   f"{stats['unreviewed']} awaiting review")
 
-    st.markdown(f"### {PAGE_TITLE}")
+        st.markdown('<div class="tz-eyebrow" style="margin:1.2rem 0 0.4rem 0;">'
+                    'Queue</div>', unsafe_allow_html=True)
+        stats = get_audit_log().stats()
+        st.markdown(
+            style.side_stat("Queries logged", stats["total_events"])
+            + style.side_stat("Awaiting review", stats["unreviewed"]),
+            unsafe_allow_html=True)
+        st.page_link("pages/1_Audit_Log.py", label="Audit log viewer", icon="📋")
+
+    st.markdown(style.masthead(PAGE_TITLE, "Corpus poisoning detection for "
+                                           "retrieval-augmented threat intelligence"),
+                unsafe_allow_html=True)
 
     query = st.text_input(
         "Security query",
@@ -100,7 +111,8 @@ def main() -> None:
 
     report = st.session_state.report
     if report is None:
-        st.info("Enter a security query above to score it against the corpus.")
+        st.info("No query scored yet — enter a security query above to score it "
+                "against the corpus.", icon="🛡️")
         return
 
     # ---- THE BANNER IS FIRST. Nothing renders above it. ----
@@ -108,16 +120,12 @@ def main() -> None:
     render_headline_metrics(st, report)
     render_case_and_action(st, report)
 
-    st.markdown("---")
     render_reasoning(st, report)
-    st.markdown("---")
     render_documents(st, report)
-    st.markdown("---")
     render_entities(st, report)
 
     render_caveats(st, report)
 
-    st.markdown("---")
     _render_decision_panel(st, report, analyst_id, analyst_role)
 
     with st.expander("Reference and provenance"):
@@ -136,6 +144,13 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
     Nothing is written until one of these is pressed. Until then the event has no
     row in `analyst_decisions` at all — not a blank one and not a `PENDING` one —
     which is what makes the table usable as training data later.
+
+    The judgement inputs are rendered **above** the buttons. Streamlit reruns the
+    script top to bottom on every interaction, so a button placed above the
+    widgets it consumes reads their values from the previous run. It happened to
+    work here because the widgets carry session-state keys, but the layout taught
+    the wrong order: an analyst saw the actions before the fields those actions
+    submit. Inputs first, then the commit.
     """
     st_mod.subheader("Analyst decision")
 
@@ -152,7 +167,10 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
         "This is never filled in by the system. Until you choose, this query has no "
         "decision record at all.")
 
-    c1, c2, c3 = st_mod.columns(3)
+    verdicts = _per_document_verdicts(st_mod, report)
+    confidence = st_mod.slider("Your confidence (optional)", 1, 5, 3)
+
+    c1, c2, c3, _ = st_mod.columns([1, 1, 1, 2])
     with c1:
         accept = st_mod.button("Accept", use_container_width=True,
                                help="The system's recommendation is correct.")
@@ -167,16 +185,15 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
     if override:
         st_mod.session_state.show_override = True
 
-    verdicts = _per_document_verdicts(st_mod, report)
-    confidence = st_mod.slider("Your confidence (optional)", 1, 5, 3)
-
     if accept or reject:
         _save(st_mod, "ACCEPT" if accept else "REJECT", analyst_id, analyst_role,
               verdicts, confidence)
         return
 
     if st_mod.session_state.get("show_override"):
-        st_mod.markdown("**Override details** — both fields are required.")
+        st_mod.markdown('<div class="tz-eyebrow" style="margin-top:1rem;">'
+                        'Override details — both fields are required</div>',
+                        unsafe_allow_html=True)
         action = st_mod.selectbox("What should the action have been?",
                                   ["ACCEPT", "REVIEW", "REJECT", "ESCALATE"])
         code = st_mod.selectbox(
