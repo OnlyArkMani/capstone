@@ -292,8 +292,8 @@ class TrustModel:
         eps = 1e-9
         p = min(1.0 - eps, max(eps, point))
         point_logit = math.log(p / (1.0 - p))
-        lo = 1.0 / (1.0 + math.exp(-(point_logit + d_lo)))
-        hi = 1.0 / (1.0 + math.exp(-(point_logit + d_hi)))
+        lo = _sigmoid(point_logit + d_lo)
+        hi = _sigmoid(point_logit + d_hi)
         # d_lo <= 0 <= d_hi by construction, so this only guards float drift.
         return min(lo, point), point, max(hi, point)
 
@@ -354,6 +354,31 @@ class TrustModel:
 # anyway. The run completes, every suite passes, and the trust scores are quietly
 # untrustworthy. That is the worst shape a failure can take, so the model records
 # what fitted it and says so on load, naming the command that fixes it.
+
+
+def _sigmoid(z: float) -> float:
+    """Logistic function that cannot overflow, for the pure-Python path.
+
+    The naive form `1 / (1 + exp(-z))` raises OverflowError once -z exceeds
+    about 709, and this is reachable in practice rather than theoretically: the
+    bootstrap spread `d_lo` is unbounded below, `point_logit` is bounded to
+    roughly +/-20.7 by the epsilon clamp above it, and a wide coefficient
+    distribution on a small corpus puts their sum past the limit. It surfaced as
+    a crash in the report generator the first time the model fitted with
+    informative features -- the previous tier-only fit simply never produced
+    logits large enough to reach it.
+
+    The two branches are algebraically identical and each keeps its exponent
+    negative, so neither can overflow; the worst case underflows to 0.0 or
+    saturates at 1.0, which is the mathematically correct limit rather than an
+    exception. The numpy paths in this module already guard the same hazard by
+    clipping the exponent to +/-30; this is the scalar equivalent, done exactly
+    rather than by clipping.
+    """
+    if z >= 0.0:
+        return 1.0 / (1.0 + math.exp(-z))
+    e = math.exp(z)
+    return e / (1.0 + e)
 
 def _fitting_environment() -> dict[str, str]:
     import platform  # noqa: PLC0415
