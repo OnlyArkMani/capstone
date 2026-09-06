@@ -9,7 +9,7 @@ specific false conclusion — and distinguishes it from ordinary model error.
 
 | Document | Purpose |
 |---|---|
-| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.2`): case definitions, feature encoding, thresholds, audit schema |
+| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.4`): case definitions, feature encoding, thresholds, audit schema |
 | [`docs/FINAL_PROJECT_LOG.md`](docs/FINAL_PROJECT_LOG.md) | Executive summary, development history, evaluation results, limitations |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Installation, verification and demonstration procedure |
 | [`docs/AUDIT_REPORT.md`](docs/AUDIT_REPORT.md) | Independent verification of deliverables against specification |
@@ -85,10 +85,15 @@ The system is organised into four levels. Levels 0–3 are implemented.
 flowchart TD
     Q[Security query] --> RET
 
+    DEV["Device resolver — pipeline/device.py<br/>RAG_DEVICE: auto, cuda or cpu<br/>resolved device recorded in every BackendInfo"]
+    DEV -.places.-> RET
+    DEV -.places.-> D2
+    DEV -.places.-> D3
+
     subgraph L0["Level 0 — Foundation"]
-        CORPUS[(Threat-intelligence corpus<br/>72 genuine + 12 adversarial documents<br/>three source trust tiers, identical schema)]
+        CORPUS[(Threat-intelligence corpus<br/>72 genuine + 16 adversarial documents<br/>three source trust tiers, identical schema)]
         GT[(Ground-truth manifests<br/>evaluation harness only)]
-        RET[Retrieval engine<br/>bge-small-en-v1.5 + FAISS IndexFlatIP<br/>84 documents, partition-blind]
+        RET[Retrieval engine<br/>bge-small-en-v1.5 on the resolved device<br/>exact inner-product search, FAISS or numpy<br/>88 documents, partition-blind]
     end
 
     CORPUS --> RET
@@ -100,15 +105,15 @@ flowchart TD
 
     LOG1 --> D1
     LOG1 --> D2
-    LOG1 --> GEN[Answer generation<br/>Groq or Ollama<br/>NOT WIRED IN — extractive stub in use]
-    GEN -.entailment currently scores<br/>the query, not the answer.-> D3
+    LOG1 -.not on the query path.-> GEN[Answer generation<br/>Groq or Ollama<br/>used at TRAINING time only<br/>answers cached by query + doc ids]
+    GEN -.supplies the training hypothesis.-> D3
 
     subgraph L2["Level 2 — Independent detectors"]
         D1[Embedding anomaly<br/>k-means + robust median/MAD z-score]
         D2[Prompt-injection classifier<br/>deberta-v3-base-prompt-injection-v2]
-        D3[Claim-evidence entailment<br/>nli-deberta-v3-base cross-encoder]
+        D3[Claim-evidence entailment<br/>nli-deberta-v3-base cross-encoder<br/>hypothesis at inference is the QUERY, not an answer]
         D4[Evidence conflict<br/>NOT BUILT — signal treated as absent]
-        DER[Derived: intra-evidence conflict<br/>pairwise NLI reuse]
+        DER[Derived: intra-evidence conflict<br/>pairwise NLI reuse, k·k-1 ordered pairs<br/>78% of a query; results memoised per corpus pair]
         SIG[Signal bundle<br/>per document and per response]
     end
 
@@ -173,7 +178,8 @@ flowchart TD
 
 | Level | Component | Implementation | Basis |
 |---|---|---|---|
-| L0 | Retrieval corpus | `corpus/` — 72 genuine, 12 adversarial, three tiers, ground truth held externally | §4 |
+| L0 | Compute device | `pipeline/device.py` — one resolver for every model; `RAG_DEVICE` selects, resolved device reaches the audit trail | §9A.6 |
+| L0 | Retrieval corpus | `corpus/` — 72 genuine, 16 adversarial, three tiers, ground truth held externally | §4 |
 | L0 | Baseline RAG | `pipeline/` — the control condition, no security layer | Baseline across all sources |
 | L1 | Provenance tagging | Source trust tier assigned at ingestion, never modified by detector output | P2, P4, P6 |
 | L1 | Retrieval logging | Structured records with similarity and full provenance to `logs/retrieval_log.jsonl` | P1, P5, P6 |
@@ -480,20 +486,21 @@ Harness: [`eval/run_evaluation.py`](eval/run_evaluation.py). Results:
 [`eval/results/`](eval/results/). Narrative treatment:
 [`docs/sprint_logs/SESSION_10_evaluation.md`](docs/sprint_logs/SESSION_10_evaluation.md).
 
-Three configurations over the same 84-document corpus, 40 queries (10 target, 30
-control), k = 5.
+Three configurations over the same 88-document corpus, 40 queries (10 target, 30
+control), k = 5, with every detector on its specified model.
 
 | Metric | A · No retrieval | B · Baseline RAG | C · Full system |
 |---|---|---|---|
-| Attack success — adversarial content reached the user | 0%\* | 100% | **90.0%** |
+| Attack success — adversarial content reached the user | 0%\* | 100% | **60.0%** |
 | Attack success — system vouched for the content | 0%\* | 100% | **0.0%** |
-| False positive rate — genuine documents blocked | 0%\* | 0%\* | **18.1%** |
-| Genuine queries routed to human review | 0%\* | 0%\* | **93.3%** |
-| Adversarial documents reaching the user | 0%\* | 100%\* | **86.2%** |
-| Automatically accepted without human review | 100% | 100% | **5.0%** |
-| Routed to human review | 0% | 0% | **77.5%** |
-| Blocked | 0% | 0% | **17.5%** |
-| Added latency per query | — | 0.1 ms | **~24 ms** |
+| False positive rate — genuine documents blocked | 0%\* | 0%\* | **50.0%** |
+| Genuine queries routed to human review | 0%\* | 0%\* | **100.0%** |
+| Adversarial documents reaching the user | 0%\* | 100%\* | **50.0%** |
+| Automatically accepted without human review | 100% | 100% | **0.0%** |
+| Routed to human review | 0% | 0% | **50.0%** |
+| Blocked | 0% | 0% | **50.0%** |
+| Added latency per query — first time asked | — | 8.8 ms | **1,101 ms** |
+| Added latency per query — asked again | — | 8.8 ms | **~84 ms** |
 
 \* True by the configuration's definition rather than measured. A system without
 retrieval cannot be poisoned; a system without a security layer cannot flag anything.
@@ -505,10 +512,20 @@ The system did not, in any case, return adversarial content within a response it
 vouched for, where the baseline did so in every case. On that measure the reduction is
 100% → 0%.
 
-Adversarial content nevertheless reached the user in 9 of 10 attack cases, flagged as
-unverified. The system achieves its safety result by automatically accepting 5% of
-queries and routing 93% of genuine traffic to human review. At this operating point the
-layer functions as a review-generation mechanism rather than a filter.
+Adversarial content nevertheless reached the user in 6 of 10 attack cases, flagged as
+unverified. The system achieves its safety result by automatically accepting no queries
+at all and routing every genuine query to human review. At this operating point the layer
+functions as a review-generation mechanism rather than a filter, and that is a finding
+about the operating point rather than about the detectors.
+
+**Latency.** The security layer costs 1,101 ms per query against a baseline retrieval of
+8.8 ms. That figure is 78% one component — the pairwise contradiction check, which scores
+every ordered pair of retrieved documents as design §0.4 specifies — and it is a
+measurement on a laptop GPU at k = 5, not an estimate. Design §9A.6 records the full
+breakdown and resolves the design's own Open Question 2 in the affirmative: the quadratic
+comparison is affordable at this depth, and the fallback of restricting it to cited
+documents was not needed. Repeat queries cost roughly 84 ms, because pair results are
+memoised against a fixed corpus.
 
 ### 7.2 Metric definition
 
@@ -571,7 +588,15 @@ docker compose run --rm evaluate      # three-configuration comparison
 
 ```bash
 python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# TORCH FIRST, and the build matters. The CPU-only wheel below is correct for a
+# machine without an NVIDIA GPU. On a machine WITH one, install the CUDA build
+# instead -- the CPU wheel contains no GPU support at all, so no configuration
+# can reach a card from it, and the only symptom is that every query takes about
+# six times longer. Match the CUDA version to the driver (`nvidia-smi`).
+pip install torch --index-url https://download.pytorch.org/whl/cpu     # no GPU
+# pip install torch --index-url https://download.pytorch.org/whl/cu126  # NVIDIA GPU
+
 pip install -r requirements.txt
 
 python -m pipeline.check_backends     # verify model availability before anything else
@@ -579,6 +604,15 @@ python -m pipeline.build_index
 python -m fusion.train
 
 streamlit run dashboard/app.py
+```
+
+`RAG_DEVICE` overrides device selection (`auto`, `cuda`, `cpu`); `auto` uses a GPU only
+when torch can actually reach one, and reports which of "no device present" and "this
+build of torch cannot address a device" applies. Confirm placement and per-stage cost
+before trusting any latency figure:
+
+```bash
+python -m eval.profile_latency       # device, model loads, pair counts, per-stage timings
 ```
 
 ### 8.3 Verification
@@ -591,6 +625,12 @@ python -m reports.test_reports        # 100 checks
 python -m logs.test_audit             #  62 checks
 python -m dashboard.test_dashboard    #  55 checks
 ```
+
+Run them as modules, as above. Under `pytest` the pipeline and detector suites report
+collection errors — their test functions take arguments that pytest reads as fixtures —
+and the audit suite fails on Windows during temporary-directory cleanup, because it does
+not close its SQLite connections and Windows will not unlink an open file. Every
+assertion inside those suites passes; the failures are in collection and teardown.
 
 ### 8.4 Programmatic use
 
@@ -625,7 +665,7 @@ Capstone/
     AUDIT_REPORT.md          Independent verification against specification
     PROJECT_REPORT.md        Extended technical report (superseded in part; see §12)
     design/
-      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.2
+      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.4
     sprint_logs/             Development session records (.md and .docx)
   corpus/
     schema.py                Shared field names, enumerations, tier rules
@@ -634,9 +674,10 @@ Capstone/
     validate_corpus.py       Pre-use validator
     sources/                 Source registry and document seeds
     clean/                   72 documents + index
-    poisoned/                12 documents + index
+    poisoned/                16 documents + index
     ground_truth/            Answer key — evaluation harness only
   pipeline/                  Baseline RAG: embeddings, retrieval, generation, logging
+    device.py                Single resolver for CPU/CUDA placement of every model
   detectors/                 Three independent detectors + derived conflict signal
   fusion/                    Banding, case classifier, model, confidence, headline
     artifacts/               Fitted thresholds and coefficients
@@ -647,7 +688,10 @@ Capstone/
     pages/                   Audit log viewer
   eval/
     run_evaluation.py        Three-configuration comparison harness
+    profile_latency.py       Device, model loading, pair counts, per-stage timings
     results/                 Comparison table, chart, full JSON output
+      latency_history.json   One row per profiling run, oldest first
+      archive_hashing_index/ Superseded results, with the reason attached
 ```
 
 ---
@@ -659,8 +703,9 @@ Open-source components only; no paid API dependency.
 | Layer | Selection |
 |---|---|
 | Embeddings | `sentence-transformers` (`bge-small-en-v1.5`) |
-| Vector index | FAISS `IndexFlatIP` |
-| Generation | Groq free tier, or Ollama for local operation |
+| Vector index | FAISS `IndexFlatIP`, or exact numpy inner-product where FAISS is absent |
+| Generation | Groq free tier, or Ollama for local operation — training-time hypotheses only |
+| Compute device | CPU or CUDA, resolved once by `pipeline/device.py` and recorded per score |
 | Entailment | `cross-encoder/nli-deberta-v3-base` |
 | Injection classification | `protectai/deberta-v3-base-prompt-injection-v2` |
 | Fusion and calibration | scikit-learn |
@@ -710,22 +755,42 @@ record.
 
 Stated directly, since each affects how the results above should be read.
 
-1. **The detector models have not been executed.** No development environment could
-   reach the model repository, so all three detectors ran on fallback backends
-   throughout. Every accuracy figure is structural evidence that the layer functions,
-   not a measurement of detection performance.
-2. **No language model has been in the loop.** Generation falls back to an extractive
-   stub. Answer-level attack success could not be measured, and the entailment signal
-   currently scores against the query rather than the generated answer.
-3. **The corpus is small.** Twelve adversarial documents across six families. The
+1. **The entailment hypothesis differs between training and inference.** The fitted
+   model was trained on features computed with the generated answer as the entailment
+   hypothesis, per §3.1 and design §9A.4 — which records that the query-text proxy
+   *inverts* that signal, measuring AUC 0.248 against it. At inference neither the
+   analyst console nor the evaluation harness supplies a generated answer, so both fall
+   back to the query proxy and every row is stamped `hypothesis_source=query_proxy`. The
+   coefficient on the unsupport feature is therefore being applied to a quantity that
+   does not behave as the quantity it was fitted on. This is the most significant open
+   correctness item in the system and it is not a latency artefact.
+2. **Answer-level attack success is not measured.** The reported attack-success figures
+   are the containment proxy — an adversarial document reaching a response the system
+   vouched for. Containment is a strict upper bound on the answer-level rate, since the
+   model must see a document but need not adopt its claim. That asymmetry favours the
+   full system and penalises the baseline, and should be read with that in mind.
+3. **The corpus is small.** Sixteen adversarial documents across six families. The
    statistical model operates at its underpowered setting; coefficients are indicative.
-4. **The operating point is not deployable.** A 5% automatic acceptance rate with 93% of
-   genuine queries routed to review is not a viable configuration.
+4. **The operating point is not deployable.** Nothing is automatically accepted and
+   every genuine query is routed to review. As a filter this is useless; as a
+   demonstration that the layer never vouches for poisoned evidence it is sound. The
+   thresholds, not the detectors, are what would have to move.
 5. **The evidence-conflict detector is not implemented.** It is specified but absent, and
    is treated throughout as absent rather than zero-valued.
 6. **`docs/PROJECT_REPORT.md` predates the fusion, report, audit and dashboard work** and
    describes those components as unimplemented. It is retained for its corpus and
    pipeline sections; `docs/FINAL_PROJECT_LOG.md` supersedes it for current state.
+7. **Latency is characterised on one machine.** 1,101 ms per query is a measurement at
+   k = 5 on a single laptop-class GPU, under no concurrent load, against 88 documents.
+   Cost is quadratic in retrieval depth — k = 8 is 56 ordered pairs against 20 — and the
+   memoisation that makes repeat queries cheap helps in proportion to how much retrieval
+   sets overlap, which is a property of the query mix rather than a guarantee.
+8. **Results produced before 6 September 2026 rest on a fallback retriever.** The index
+   had been built with the hashing fallback rather than bge-small-en-v1.5, so those
+   figures describe a lexical matcher. They are archived at
+   `eval/results/archive_hashing_index/` with the explanation attached. Rebuilding with
+   the specified model left every detection figure identical, which is the evidence that
+   the correction changed nothing but the provenance of the numbers.
 
 ### Future work
 
@@ -757,8 +822,8 @@ This framing is restated in the corpus module documentation and in the generator
 
 | Component | Status |
 |---|---|
-| Decision-logic specification (`design-v1.2`) | Complete |
-| Corpus — 72 genuine, 12 adversarial, three tiers | Complete, validated, 0 errors |
+| Decision-logic specification (`design-v1.4`) | Complete |
+| Corpus — 72 genuine, 16 adversarial, three tiers | Complete, validated, 0 errors |
 | Baseline RAG pipeline | Complete, 55 checks passing |
 | Level 2 detectors | Complete, 20 checks passing |
 | Level 3 fusion, scoring, confidence | Complete, 115 checks passing |
@@ -767,8 +832,9 @@ This framing is restated in the corpus module documentation and in the generator
 | Analyst console | Complete, 55 checks passing |
 | Evaluation harness | Complete; results in `eval/results/` |
 | Containerisation | Complete |
-| Detector models installed and evaluation re-run | **Outstanding** |
-| Generation backend in the loop | **Outstanding** |
+| Detector models installed and evaluation re-run | Complete — real models, GPU or CPU |
+| Latency characterisation and device placement | Complete — design §9A.6, Open Question 2 resolved |
+| Generation backend on the inference path | **Outstanding** — wired for training only; see Limitation 1 |
 | Evidence-conflict detector | **Outstanding** |
 | Leave-one-attack-family-out evaluation | **Outstanding** |
 

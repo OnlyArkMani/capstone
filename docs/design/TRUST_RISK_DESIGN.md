@@ -1611,7 +1611,7 @@ confidence* — which is the honest characterisation and the one an analyst can 
 | # | Question | Blocks | Resolution path |
 |---|---|---|---|
 | 1 | Does the generation step expose usable per-document attribution, or must we fall back to top-3 by similarity? | `tier_governing`, `n_eff` | Test during baseline RAG build; fallback is specified in §2.2 |
-| 2 | Is O(k²) pairwise NLI acceptable at k=5–8 on our hardware? | `d_conflict_max`, C10, `C_agr` | Benchmark during detector build; restrict to cited docs if not |
+| 2 | ~~Is O(k²) pairwise NLI acceptable at k=5–8 on our hardware?~~ **RESOLVED — yes at k=5, see §9A.6** | `d_conflict_max`, C10, `C_agr` | Benchmarked. 962 ms of a 1,234 ms query on a laptop GPU. The stated fallback — restricting to cited documents — was **not** needed and was not taken |
 | 3 | Can we construct enough Tier-1 poisoned instances to identify the `is_tier1 × ·` interactions? | §3.3 feature ladder, C4/C5 validation | Corpus construction; feature ladder is the fallback |
 | 4 | Is the assumed `C_FN/C_FP = 10` defensible? | β = 3, `class_weight` | Revisit with `time_to_decision_ms` data; documented as an assumption in §9 |
 | 5 | Do the §4.4 confidence weights survive the §4.6 validation? | Confidence measure | Run §4.6; refit weights by grid search against criterion 1 if not |
@@ -1835,10 +1835,73 @@ detector against an adversary who has not seen the pattern list.
 
 ---
 
+### 9A.6 The O(k²) pairwise conflict measure is affordable, and the §8 fallback was not taken
+
+**Resolves Open Question 2. No change to §0.4, to what is computed, or to any case
+definition.**
+
+§0.4 accepted a quadratic cost knowingly and §8 asked whether it was affordable, with
+"restrict to cited docs if not" as the escape. The question was answered by measurement
+rather than by taking the escape, and the answer is that the full ordered-pair set is
+affordable at k=5.
+
+**What the signal costs.** At k=5 the NLI cross-encoder is asked 5 entailment pairs and
+20 ordered conflict pairs — exactly k and k(k−1) — submitted as two batched forward
+passes with none scored singly. Measured as the median of the ten target queries, with
+memoisation bypassed so each figure is computation rather than a lookup:
+
+| Stage | ms | Share of a cold query |
+|---|---|---|
+| Pairwise conflict (20 ordered pairs) | 962.1 | 77.9% |
+| Claim–evidence entailment (5 pairs) | 181.3 | 14.7% |
+| Embedding anomaly | 56.6 | 4.6% |
+| Retrieval | 19.1 | 1.5% |
+| Fusion, confidence, reconciliation | 8.9 | 0.7% |
+| Analyst report | 6.7 | 0.5% |
+| Prompt injection (rule detector, §9A.1) | 1.8 | 0.1% |
+| **Cold query, end to end** | **1,234.3** | |
+| **Repeat query, pairs memoised** | **93.2** | |
+
+**What made it affordable.** Not a reduction in the pair set. Three things, in order of
+what each was worth:
+
+1. *Device placement.* The same measurement on a CPU-only build of torch is 7,642 ms per
+   query, of which 6,319 ms is the conflict measure. The models now run on GPU where one
+   is present and on CPU where it is not; `RAG_DEVICE` selects, and the resolved device
+   is recorded in `BackendInfo` and reaches the audit trail, because a latency figure
+   without its device is not a measurement of anything.
+2. *Memoisation of pair results.* The cross-encoder is a pure function of its two input
+   strings and the corpus is fixed, so the ordered-pair space is bounded at n(n−1) =
+   7,656 entries for the current 88 documents. A memoised value is the value the forward
+   pass would have produced for the same two strings — the same model, the same weights —
+   so this changes cost and not any score. Over a 40-query evaluation the hit rate is
+   19.5%; on a repeated query it is total, which is where the 93 ms figure comes from.
+3. *Corpus vectors computed at startup.* The anomaly detector embeds
+   `title + summary + content`, which is not the `embedding_text` form the index was built
+   from, so those vectors must genuinely be computed — but not while an analyst waits.
+
+**What this does not establish.** The measurement is at k=5, on one laptop-class card, with
+no concurrent load, against 88 documents. Cost remains quadratic in retrieval depth: k=8
+is 56 ordered pairs against 20, so roughly 2.7× the dominant term, and the escape in §8
+remains the right instrument if retrieval depth grows rather than the corpus. Memoisation
+helps in proportion to how much retrieval sets overlap, which is a property of the query
+mix and not a guarantee.
+
+**Why the pair set was not reduced.** It is the obvious saving and it was rejected. §0.4
+defines `d_conflict` over ordered pairs and takes the maximum across them; C10 —
+authoritative divergence, two Tier-1 sources contradicting each other — is defined
+entirely by that quantity, and the confidence measure's agreement component `C_agr = 1 −
+d_conflict_max` consumes it. Scoring one direction per pair, or comparing each document
+only against a single reference answer, would halve the cost and change the signal. That
+is a scope reduction wearing an optimisation's clothes, and it is not what was asked for.
+
+---
+
 ## 10. Version History
 
 | Version | Date | Change |
 |---|---|---|
+| `design-v1.4` | 2026-09-06 | Added §9A.6, resolving Open Question 2: the O(k²) pairwise conflict measure is affordable at k=5 — 962 ms of a 1,234 ms cold query — and §8's fallback of restricting to cited documents was **not** taken. Records the measured stage costs, the three changes that made the cost affordable (explicit device placement, memoisation of pair results, startup computation of corpus vectors), and the boundaries of the measurement. No case definition, priority, action semantic, headline rule, threshold, feature encoding or signal definition altered: every figure in `eval/results/evaluation.json` that bears on detection is identical before and after. |
 | `design-v1.3` | 2026-09-05 | Added §9A (implementation amendments): the prompt-injection detector is a rule detector after the pretrained classifier was measured and ruled out (§9A.1); `s_inj` band thresholds are declared rather than fitted, because a rule aggregate has no clean distribution and the degeneracy guard was silently disabling the `injection_alone` rule (§9A.2); `s_cnf` now carries §0.4's intra-evidence quantity, which is NOT the parametric-knowledge signal §2.1 defines (§9A.3); the entailment hypothesis is the generated answer per §3.1, the query-text proxy having been measured as INVERTING `s_uns` to AUC 0.248 (§9A.4); corpus extended to five graded `direct_prompt_injection` documents across three payload placements, one of which the detector misses by design (§9A.5). No case definition, priority, action semantic or headline rule altered. |
 | `design-v1.0` | 2026-09-02 | Initial design: case taxonomy (C1–C11), logistic-regression scoring methodology, five-component confidence measure, `analyst_decision` audit schema. |
 | `design-v1.2` | 2026-09-04 | Added §2.9 (three-state headline classification GREEN/ORANGE/RED with RED sub-typed into `ATTACK_DETECTED` and `TRUSTED_SOURCE_COMPROMISE`, the Tier-2/Tier-3 GREEN exclusions, and the fail-safe default). Amends §6 step ordering and adds two constants to §9.1. No case definition, trigger, priority or action altered — §2.9 is derived from §2.6 and §2.2, not a redefinition of them. |
