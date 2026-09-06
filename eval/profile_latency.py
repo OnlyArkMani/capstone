@@ -260,51 +260,88 @@ class NLICallRecorder:
 
 def profile_query(query: str, rag: Any, scorer: Any, recorder: NLICallRecorder,
                   k: int) -> dict[str, Any]:
+    """Time one query three ways, because one number cannot describe it any more.
+
+    Since the NLI backend memoises pair results, "how long does a query take"
+    has two honest answers and they differ by more than a factor of ten. Both
+    are reported, and the per-stage attribution is measured with the cache
+    switched OFF so that a stage's cost is what computing it actually costs
+    rather than what looking it up costs:
+
+      per-stage      cache bypassed. What each signal costs to compute.
+      COLD           cache on, nothing memoised for this query yet. What a
+                     question nobody has asked before costs.
+      WARM           the same query again, every pair now memoised. What a
+                     re-run, a refresh, or a second analyst asking the same
+                     thing costs.
+
+    The earlier version of this function measured the stages first and the end
+    to end second, which -- once the cache existed -- reported cold stage costs
+    against a warm total and produced stage shares above 100%. That is the
+    failure mode this ordering exists to prevent.
+    """
     timings: dict[str, float] = {}
+    backend = recorder.backend
+    can_bypass = hasattr(backend, "cache_enabled")
 
     t = time.perf_counter()
     result = rag.retrieve_top_k(query, k=k)
     timings["retrieval"] = (time.perf_counter() - t) * 1000
     records = result.records
 
-    recorder.reset()
-    t = time.perf_counter()
-    embedding_anomaly_score(records, embedder=scorer.embedder)
-    timings["detector_anomaly"] = (time.perf_counter() - t) * 1000
-    anomaly_nli = recorder.summary()["n_pairs"]
+    # ---- per-stage attribution, cache bypassed ----
+    if can_bypass:
+        backend.cache_enabled = False
+    try:
+        t = time.perf_counter()
+        embedding_anomaly_score(records, embedder=scorer.embedder)
+        timings["detector_anomaly"] = (time.perf_counter() - t) * 1000
 
-    recorder.reset()
-    t = time.perf_counter()
-    inj_mod.injection_probabilities(records)
-    timings["detector_injection"] = (time.perf_counter() - t) * 1000
+        recorder.reset()
+        t = time.perf_counter()
+        inj_mod.injection_probabilities(records)
+        timings["detector_injection"] = (time.perf_counter() - t) * 1000
 
-    recorder.reset()
-    t = time.perf_counter()
-    ent_mod.entailment_scores(query, records)
-    timings["detector_entailment"] = (time.perf_counter() - t) * 1000
-    entailment_calls = recorder.summary()
+        recorder.reset()
+        t = time.perf_counter()
+        ent_mod.entailment_scores(query, records)
+        timings["detector_entailment"] = (time.perf_counter() - t) * 1000
+        entailment_calls = recorder.summary()
 
-    recorder.reset()
-    t = time.perf_counter()
-    ent_mod.pairwise_conflict(records)
-    timings["detector_conflict"] = (time.perf_counter() - t) * 1000
-    conflict_calls = recorder.summary()
+        recorder.reset()
+        t = time.perf_counter()
+        ent_mod.pairwise_conflict(records)
+        timings["detector_conflict"] = (time.perf_counter() - t) * 1000
+        conflict_calls = recorder.summary()
+    finally:
+        if can_bypass:
+            backend.cache_enabled = True
 
-    # End to end, the way the dashboard and the evaluation harness call it.
+    # ---- COLD: nothing memoised for this query ----
+    if hasattr(backend, "clear_cache"):
+        backend.clear_cache()
     recorder.reset()
     t = time.perf_counter()
     score = scorer.score_query(query, records)
-    timings["score_query_total"] = (time.perf_counter() - t) * 1000
-    end_to_end_calls = recorder.summary()
+    timings["score_query_cold"] = (time.perf_counter() - t) * 1000
+    cold_calls = recorder.summary()
 
     t = time.perf_counter()
     build_report(query, score, records)
     timings["report_build"] = (time.perf_counter() - t) * 1000
 
+    # ---- WARM: the same query again, every pair memoised ----
+    t = time.perf_counter()
+    scorer.score_query(query, records)
+    timings["score_query_warm"] = (time.perf_counter() - t) * 1000
+
     detector_sum = (timings["detector_anomaly"] + timings["detector_injection"]
                     + timings["detector_entailment"] + timings["detector_conflict"])
-    timings["fusion_residual"] = timings["score_query_total"] - detector_sum
-    timings["end_to_end"] = timings["retrieval"] + timings["score_query_total"] + timings["report_build"]
+    timings["fusion_residual"] = timings["score_query_cold"] - detector_sum
+    timings["end_to_end_cold"] = (timings["retrieval"] + timings["score_query_cold"]
+                                  + timings["report_build"])
+    timings["end_to_end_warm"] = (timings["retrieval"] + timings["score_query_warm"]
+                                  + timings["report_build"])
 
     n = len(records)
     return {
@@ -319,10 +356,9 @@ def profile_query(query: str, rag: Any, scorer: Any, recorder: NLICallRecorder,
                          "calls": conflict_calls["n_calls"],
                          "expected_pairs": n * (n - 1),
                          "design_reference": "design 0.4: ordered pairs, both directions, max-symmetrised"},
-            "per_score_query": {"pairs": end_to_end_calls["n_pairs"],
-                                "calls": end_to_end_calls["n_calls"],
-                                "single_pair_calls": end_to_end_calls["n_single_calls"]},
-            "anomaly_pairs": anomaly_nli,
+            "per_score_query": {"pairs": cold_calls["n_pairs"],
+                                "calls": cold_calls["n_calls"],
+                                "single_pair_calls": cold_calls["n_single_calls"]},
         },
         "outcome": {"action": score.action, "case_id": score.case_id,
                     "headline": score.headline,
@@ -361,6 +397,7 @@ def main() -> int:
     scorer = FusionScorer.load(embedder=rag.retriever.embedder, verbose=False)
     nli_backend = ent_mod.get_backend()
     inj_backend = inj_mod.get_backend()
+    warmed = scorer.warm_documents(rag.retriever.documents)
     startup_ms = (time.perf_counter() - t_cold) * 1000
 
     placement = model_placement(rag.retriever.embedder, nli_backend, inj_backend)
@@ -380,6 +417,7 @@ def main() -> int:
 
     print("\n(b) MODEL LOADING")
     print(f"    startup (index + artefacts + backends)   {startup_ms:9.1f} ms")
+    print(f"    document vectors warmed at startup       {warmed:9d} documents")
     for label, loads in CONSTRUCTIONS.items():
         print(f"    {label:40s} {len(loads):3d} construction(s), "
               f"{sum(loads):9.1f} ms total")
@@ -399,7 +437,7 @@ def main() -> int:
     stages = ["retrieval", "detector_anomaly", "detector_injection",
               "detector_entailment", "detector_conflict", "fusion_residual",
               "report_build"]
-    total = med("end_to_end")
+    total = med("end_to_end_cold")
 
     print("\n(c)+(d) NLI CALL STRUCTURE  (median query, k=%d)" % args.k)
     r0 = rows[0]
@@ -412,15 +450,23 @@ def main() -> int:
     print(f"    per score_query: {r0['nli']['per_score_query']['pairs']} pairs, "
           f"{r0['nli']['per_score_query']['calls']} call(s), "
           f"{r0['nli']['per_score_query']['single_pair_calls']} unbatched")
+    if hasattr(nli_backend, "cache_stats"):
+        stats = nli_backend.cache_stats()
+        print(f"    pair cache: {stats['hits']} hits / {stats['misses']} misses "
+              f"({stats['hit_rate_pct']}% hit rate), {stats['entries']} entries")
 
     print("\nPER-QUERY BREAKDOWN (median of %d queries, ms)" % len(rows))
-    print("    %-24s %10s   %s" % ("stage", "ms", "share"))
+    print("    stage costs are measured with the pair cache BYPASSED, so each is")
+    print("    what computing that signal costs rather than what a lookup costs.")
+    print("    %-24s %10s   %s" % ("stage", "ms", "share of cold"))
     for stage in stages:
         value = med(stage)
         share = (value / total * 100) if total else 0.0
-        print("    %-24s %10.1f   %5.1f%%  %s" % (stage, value, share, "#" * int(share / 2)))
-    print("    %-24s %10.1f" % ("END TO END", total))
-    print("\n    warm-up (first) query end to end: %.1f ms" % warm["timings_ms"]["end_to_end"])
+        print("    %-24s %10.1f   %5.1f%%  %s" % (stage, value, share, "#" * int(max(share, 0) / 2)))
+    print("    %-24s %10.1f   %s" % ("END TO END (cold)", total, "first time this is asked"))
+    print("    %-24s %10.1f   %s" % ("END TO END (warm)", med("end_to_end_warm"),
+                                     "asked again; every pair memoised"))
+    print("\n    warm-up (first) query, cold: %.1f ms" % warm["timings_ms"]["end_to_end_cold"])
 
     payload = {
         "tag": args.tag,
@@ -429,12 +475,16 @@ def main() -> int:
         "environment": env,
         "device_placement": placement,
         "startup_ms": round(startup_ms, 2),
+        "documents_warmed": warmed,
+        "nli_cache": (nli_backend.cache_stats()
+                      if hasattr(nli_backend, "cache_stats") else None),
         "model_constructions": {label: {"count": len(v), "total_ms": round(sum(v), 2)}
                                 for label, v in CONSTRUCTIONS.items()},
         "reloads_during_steady_state": reloads,
         "warmup_query": warm,
-        "medians_ms": {stage: round(med(stage), 2) for stage in stages + ["score_query_total",
-                                                                          "end_to_end"]},
+        "medians_ms": {stage: round(med(stage), 2) for stage in
+                       stages + ["score_query_cold", "score_query_warm",
+                                 "end_to_end_cold", "end_to_end_warm"]},
         "queries": rows,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

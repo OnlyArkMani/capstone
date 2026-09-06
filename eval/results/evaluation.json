@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-06T23:15:41+0530",
+  "generated_at": "2026-09-06T23:36:04+0530",
   "k": 5,
   "n_queries": 40,
   "n_target_queries": 10,
@@ -95,9 +95,9 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 14.92,
-        "median_total_ms": 10.55,
-        "p95_total_ms": 11.49,
+        "mean_total_ms": 8.92,
+        "median_total_ms": 8.71,
+        "p95_total_ms": 9.63,
         "mean_security_overhead_ms": 0.0,
         "status": "MEASURED",
         "note": "No security layer, so no overhead to measure."
@@ -143,10 +143,10 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 1394.43,
-        "median_total_ms": 1295.03,
-        "p95_total_ms": 1403.79,
-        "mean_security_overhead_ms": 1379.4,
+        "mean_total_ms": 1159.21,
+        "median_total_ms": 1118.26,
+        "p95_total_ms": 1369.77,
+        "mean_security_overhead_ms": 1150.28,
         "status": "MEASURED",
         "note": "Wall clock in this environment, on fallback detector backends. Real models would be substantially slower; treat the overhead as a lower bound."
       }
@@ -249,5 +249,11 @@
     "false_positive_rate": "Clean retrieved documents inside blocked responses.",
     "false_negative_rate": "Poisoned retrieved documents inside responses returned as high-confidence.",
     "high_confidence": "Final action is ACCEPT. REVIEW is deliberately excluded: the answer is returned marked unverified and queued, which is the system declining to vouch for it."
+  },
+  "nli_pair_cache": {
+    "hits": 196,
+    "misses": 808,
+    "entries": 808,
+    "hit_rate_pct": 19.5
   }
 }

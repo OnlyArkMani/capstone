@@ -47,5 +47,44 @@
       "p95_total_ms": 1403.79,
       "mean_security_overhead_ms": 1379.4
     }
+  },
+  {
+    "tag": "after-caching (superseded)",
+    "generated_at": "2026-09-06T23:23:14+0530",
+    "k": 5,
+    "torch": "2.8.0+cu126",
+    "device": "cuda:0",
+    "medians_ms": {
+      "retrieval": 19.45,
+      "detector_anomaly": 57.98,
+      "detector_injection": 1.82,
+      "detector_entailment": 179.61,
+      "detector_conflict": 972.12,
+      "fusion_residual": -1141.77,
+      "report_build": 7.19,
+      "score_query_total": 68.39,
+      "end_to_end": 94.85
+    },
+    "note": "Measurement error, kept for the record. The profiler timed each stage individually before timing score_query, which filled the pair cache and meant cold stage costs were reported against a warm total -- visible as stage shares above 100% and a large negative residual. Superseded by the row below, measured with the cache bypassed for attribution and cold/warm end-to-end reported separately."
+  },
+  {
+    "tag": "after-caching",
+    "generated_at": "2026-09-06T23:32:15+0530",
+    "k": 5,
+    "torch": "2.8.0+cu126",
+    "device": "cuda:0",
+    "medians_ms": {
+      "retrieval": 19.09,
+      "detector_anomaly": 56.61,
+      "detector_injection": 1.75,
+      "detector_entailment": 181.31,
+      "detector_conflict": 962.09,
+      "fusion_residual": 8.95,
+      "report_build": 6.7,
+      "score_query_cold": 1208.76,
+      "score_query_warm": 68.21,
+      "end_to_end_cold": 1234.28,
+      "end_to_end_warm": 93.18
+    }
   }
 ]

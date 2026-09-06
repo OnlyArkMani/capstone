@@ -50,6 +50,7 @@ from detectors import (  # noqa: E402
     embedding_anomaly_score, injection_probabilities, entailment_scores,
     pairwise_conflict, per_document_conflict, d_conflict_max, tier1_conflict_max,
 )
+from detectors.base import doc_text  # noqa: E402
 from .bands import SignalSet, BandThresholds  # noqa: E402
 from .cases import (  # noqa: E402
     ACCEPT, REVIEW, REJECT, ESCALATE, ACTION_MEANING,
@@ -175,6 +176,33 @@ class FusionScorer:
         operating = (json.loads(OPERATING_PATH.read_text(encoding="utf-8"))
                      if OPERATING_PATH.exists() else None)
         return cls(model, bands, operating, embedder)
+
+    # ---------------- warm start ----------------
+
+    def warm_documents(self, documents: Sequence[Any]) -> int:
+        """Pre-encode the corpus into the embedder's document cache.
+
+        The anomaly detector embeds the text of every retrieved document, and
+        that text is `title + summary + content` -- not the `embedding_text`
+        form the index was built from, so the index's vectors cannot stand in
+        for it and the encode genuinely has to happen. It just does not have to
+        happen while an analyst is waiting: the corpus is fixed, so every vector
+        this produces is one the detector would otherwise compute on the query
+        path, and it computes them once at startup instead.
+
+        The values are identical by construction -- same embedder, same texts,
+        the same cache the detector reads from. This moves work in time; it does
+        not change what is computed. Returns how many documents were warmed.
+        """
+        if self.embedder is None or not documents:
+            return 0
+        if getattr(self.embedder, "_doc_cache", None) is None:
+            return 0        # a backend with no cache to fill; nothing to warm
+        texts = [doc_text(d) if isinstance(d, dict) else doc_text(vars(d)) for d in documents]
+        texts = [t for t in texts if t.strip()]
+        if texts:
+            self.embedder.encode(texts, is_query=False)
+        return len(texts)
 
     # ---------------- signals ----------------
 

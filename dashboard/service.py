@@ -63,19 +63,52 @@ def _scorer() -> Any:
     """
     from fusion.scorer import FusionScorer  # noqa: PLC0415
     embedder = getattr(getattr(_rag(), "retriever", None), "embedder", None)
-    return FusionScorer.load(embedder=embedder, verbose=False)
+    scorer = FusionScorer.load(embedder=embedder, verbose=False)
+    # Encode the corpus once here rather than a retrieval set at a time inside
+    # the first few queries an analyst runs. Same vectors, moved off the wait.
+    scorer.warm_documents(getattr(getattr(_rag(), "retriever", None), "documents", []))
+    return scorer
+
+
+# The stages a caller can be told about, in the order they happen, with the
+# words an analyst should see. They live here rather than in the page file
+# because the sequence is a property of the pipeline: if a stage is added or
+# reordered, this is the list that has to change, and the console then follows.
+STAGES: dict[str, str] = {
+    "retrieval": "Retrieving evidence…",
+    "security": "Running security checks…",
+    "report": "Building the analyst report…",
+    "audit": "Recording to the audit log…",
+    "done": "Security checks complete",
+}
 
 
 def run_query(query: str, k: int = DEFAULT_K,
-              db_path: str | None = None) -> tuple[dict[str, Any], str]:
+              db_path: str | None = None,
+              on_stage: Any | None = None) -> tuple[dict[str, Any], str]:
     """Retrieve, score, build the report, log it. Returns (report dict, event id).
 
     Timings for each stage are attached to the report's provenance, because the
     evaluation needs the same numbers and computing them twice in two places is
     how two sets of latency figures end up disagreeing in a presentation.
+
+    `on_stage(key, label)` is called as each stage begins, so a caller with a
+    user in front of it can say which one is running. It is optional and purely
+    advisory: nothing here waits on it, and a caller that does not pass one gets
+    exactly the behaviour it got before. Exceptions raised by the callback are
+    swallowed -- a progress indicator must never be able to fail a query.
     """
     from reports import build_report  # noqa: PLC0415
 
+    def stage(key: str) -> None:
+        if on_stage is None:
+            return
+        try:
+            on_stage(key, STAGES.get(key, key))
+        except Exception:
+            pass
+
+    stage("retrieval")
     t0 = time.perf_counter()
     try:
         retrieval = _rag().retrieve(query, k=k)
@@ -89,10 +122,12 @@ def run_query(query: str, k: int = DEFAULT_K,
         raise ScoringUnavailable("retrieval returned no documents for this query")
     t_retrieval = time.perf_counter() - t0
 
+    stage("security")
     t1 = time.perf_counter()
     score = _scorer().score_query(query, records)
     t_scoring = time.perf_counter() - t1
 
+    stage("report")
     t2 = time.perf_counter()
     report = build_report(query, score, records)
     t_report = time.perf_counter() - t2
@@ -104,7 +139,9 @@ def run_query(query: str, k: int = DEFAULT_K,
         "total": round((time.perf_counter() - t0) * 1000, 2),
     }
 
+    stage("audit")
     event_id = get_audit_log(db_path).record_query(report)
+    stage("done")
     return report.to_dict(), event_id
 
 
@@ -120,4 +157,5 @@ def distinct_cases() -> list[str]:
 __all__ = [
     "run_query", "list_events", "distinct_cases", "get_audit_log",
     "get_decision_writer", "ScoringUnavailable", "OVERRIDE_REASON_CODES", "DEFAULT_K",
+    "STAGES",
 ]

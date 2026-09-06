@@ -34,6 +34,7 @@ question 2).
 
 from __future__ import annotations
 
+import hashlib
 import itertools
 import os
 import re
@@ -48,6 +49,11 @@ DEFAULT_MODEL = "cross-encoder/nli-deberta-v3-base"
 # conflict pairs, so 32 keeps each call to a single batch while staying small
 # enough that padding to the longest sequence in the batch does not dominate.
 BATCH_SIZE = int(os.environ.get("RAG_NLI_BATCH_SIZE", "32"))
+
+# Upper bound on memoised pair results. The corpus is 88 documents, so the whole
+# ordered-pair space is 88*87 = 7,656 entries; this holds all of it several times
+# over and still cannot grow without limit if the corpus does.
+PAIR_CACHE_MAX = int(os.environ.get("RAG_NLI_CACHE_MAX", "50000"))
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _STOP = {
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "to", "of", "for",
@@ -88,6 +94,16 @@ class _CrossEncoderBackend:
         # placement here costs seconds per query rather than milliseconds.
         self.device = resolve_device(device or env_default())
         self._model = CrossEncoder(model_name, device=self.device)
+        # Memoised pair results. See score_batch for why this is sound and what
+        # it is worth.
+        self._cache: dict[tuple[str, str], dict[str, float]] = {}
+        self.cache_hits = 0
+        self.cache_misses = 0
+        # Off only for measurement. A profiler that wants the true cost of
+        # computing a signal cannot have half of it served from a cache it
+        # filled a moment earlier, and a profiler that silently reports cached
+        # numbers as computation cost is worse than no profiler.
+        self.cache_enabled = True
         # Resolve label positions by NAME. This model family has shipped with
         # different orderings, and silently swapping entailment for
         # contradiction would invert the single most important signal in the
@@ -132,8 +148,62 @@ class _CrossEncoderBackend:
         """
         if not pairs:
             return []
-        raw = self._predict(list(pairs), BATCH_SIZE)
-        return [self._from_logits(row) for row in raw]
+
+        # Memoisation, on top of batching.
+        #
+        # This model is a pure function of its two input strings, and the corpus
+        # it is asked about is fixed and small: 88 documents whose text does not
+        # change between queries. The pairwise conflict measure therefore asks
+        # the same document-pair question over and over as retrieval sets
+        # overlap across queries -- 40 evaluation queries at k=5 issue 800
+        # ordered pairs drawn from a space the corpus can only fill 7,656 times,
+        # and the target queries in particular retrieve heavily overlapping
+        # evidence because they are aimed at the same documents.
+        #
+        # A cached result is the SAME arithmetic, not an approximation of it:
+        # same model, same weights, same two strings, so the value returned is
+        # the value the forward pass would have produced. That is what makes
+        # this admissible under a no-change-to-detection constraint, where
+        # reducing the pair count or shortening the inputs would not be.
+        #
+        # Keyed on a digest of each text rather than the text itself, so the
+        # cache holds hashes and floats rather than a second copy of the corpus.
+        # Entailment pairs carry the query as their hypothesis and so rarely
+        # hit; conflict pairs are document-against-document and hit constantly.
+        # Copies go out, so a caller cannot mutate a cached entry.
+        if not self.cache_enabled:
+            self.cache_misses += len(pairs)
+            return [self._from_logits(row) for row in self._predict(list(pairs), BATCH_SIZE)]
+
+        keys = [(_digest(premise), _digest(hypothesis)) for premise, hypothesis in pairs]
+
+        pending: dict[tuple[str, str], tuple[str, str]] = {}
+        for key, pair in zip(keys, pairs):
+            if key not in self._cache and key not in pending:
+                pending[key] = (pair[0], pair[1])
+
+        self.cache_hits += len(keys) - sum(1 for k in keys if k in pending)
+        self.cache_misses += len(pending)
+
+        if pending:
+            pending_keys = list(pending)
+            raw = self._predict([pending[k] for k in pending_keys], BATCH_SIZE)
+            for key, row in zip(pending_keys, raw):
+                if len(self._cache) >= PAIR_CACHE_MAX:
+                    self._cache.clear()     # simple bound; the corpus fits many times over
+                self._cache[key] = self._from_logits(row)
+
+        return [dict(self._cache[key]) for key in keys]
+
+    def clear_cache(self) -> None:
+        """Drop memoised results. For measurement, and for a corpus that changed."""
+        self._cache.clear()
+
+    def cache_stats(self) -> dict[str, int]:
+        total = self.cache_hits + self.cache_misses
+        return {"hits": self.cache_hits, "misses": self.cache_misses,
+                "entries": len(self._cache),
+                "hit_rate_pct": round(100.0 * self.cache_hits / total, 1) if total else 0}
 
     def _predict(self, pairs: list[tuple[str, str]], batch_size: int) -> Any:
         """One forward pass, with a halving retry if the card runs out of memory.
@@ -158,6 +228,12 @@ class _CrossEncoderBackend:
                           f"batch_size={size}. Scores are unaffected.", flush=True)
                     continue
                 raise
+
+
+def _digest(text: str) -> str:
+    """Content key for one side of a pair. blake2b at 16 bytes: collision-free in
+    practice for a corpus of this size, and far cheaper to hold than the text."""
+    return hashlib.blake2b(text.encode("utf-8"), digest_size=16).hexdigest()
 
 
 class _LexicalBackend:

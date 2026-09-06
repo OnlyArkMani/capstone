@@ -195,6 +195,10 @@ class Runner:
         # what makes the sharing visible at the call site rather than incidental.
         self.scorer = FusionScorer.load(embedder=self.rag.retriever.embedder,
                                         verbose=False)
+        # Warm the document-vector cache before the clock starts on any query,
+        # so the per-query latency figures measure detection rather than a
+        # first-touch encode of the corpus. The vectors are the same either way.
+        self.scorer.warm_documents(self.rag.retriever.documents)
         self.poisoned_gt, self.clean_gt, self.manifest = load_ground_truth()
         self.generation_available = self._probe_generation()
 
@@ -308,6 +312,30 @@ class Runner:
 # ---------------------------------------------------------------------------
 # Metrics
 # ---------------------------------------------------------------------------
+
+
+def _runtime_description() -> str:
+    """What actually produced these timings: which backends, on which device.
+
+    Written into the latency note because a latency figure without its device is
+    not a measurement of anything. The same security layer measured 7.8 s per
+    query on a CPU-only torch build and 1.2 s on the GPU of the same machine,
+    and a reader given only one of those numbers cannot tell which they have.
+    """
+    parts = []
+    try:
+        from detectors import entailment as ent  # noqa: PLC0415
+
+        backend = ent.get_backend()
+        kind = "real NLI cross-encoder" if getattr(backend, "is_model", False) else \
+               "the LEXICAL FALLBACK (cannot detect contradiction)"
+        device = getattr(backend, "device", None)
+        parts.append(f"{kind} [{backend.name}]" + (f" on {device}" if device else ""))
+        if hasattr(backend, "cache_stats"):
+            parts.append("pair results memoised within the run")
+    except Exception:
+        parts.append("detector backend undetermined")
+    return "; ".join(parts)
 
 def compute_metrics(cfg: Config, outcomes: list[QueryOutcome],
                     generation_available: bool) -> dict[str, Any]:
@@ -441,9 +469,11 @@ def compute_metrics(cfg: Config, outcomes: list[QueryOutcome],
                          if totals else None),
         "mean_security_overhead_ms": round(statistics.fmean(security), 2) if security else None,
         "status": "MEASURED" if cfg.retrieval else STRUCTURAL,
-        "note": ("Wall clock in this environment, on fallback detector backends. "
-                 "Real models would be substantially slower; treat the overhead as a "
-                 "lower bound." if cfg.security else
+        "note": (f"Wall clock in this environment: {_runtime_description()}. "
+                 f"This note used to read 'on fallback detector backends, real models would "
+                 f"be substantially slower' unconditionally, which stopped being true once "
+                 f"the real models were running and would have understated the system's own "
+                 f"measured cost." if cfg.security else
                  "No security layer, so no overhead to measure."),
     }
 
@@ -794,8 +824,11 @@ def main() -> int:
         "for the security layer, and it is dominated by the NLI cross-encoder, which "
         "already IS a production model: entailment scores k documents and the pairwise "
         "conflict measure scores k(k-1) ordered pairs, so cost grows quadratically in "
-        "retrieval depth. It is a measurement at k=5 on this CPU, not a lower bound to "
-        "be scaled up, and it would fall on a GPU or with a smaller cross-encoder.")
+        f"retrieval depth. It is a measurement at k=5 with {_runtime_description()}, on "
+        "one laptop-class card, under no concurrent load, against a corpus of 88 "
+        "documents. What it does not establish is behaviour at production retrieval "
+        "depth, under concurrency, or on a corpus large enough that the memoised pair "
+        "results stop fitting the access pattern.")
     for i, item in enumerate(unmeasured, start=1):
         print(f"  {i}. {item}")
 
@@ -833,6 +866,28 @@ def main() -> int:
     (args.out / "comparison_table.txt").write_text(
         render_table(results) + "\n" + render_weaknesses(breakdown) + "\n", encoding="utf-8")
     chart = render_chart(results, args.out)
+
+    # The pair cache's hit rate over a whole run, which is the only place it
+    # means anything: the profiler clears the cache per query to measure cold
+    # cost, so its hit rate is an artefact of measurement. Here it is real --
+    # 40 queries drawing overlapping retrieval sets from one fixed corpus.
+    try:
+        from detectors import entailment as _ent  # noqa: PLC0415
+
+        backend = _ent.get_backend()
+        if hasattr(backend, "cache_stats"):
+            stats = backend.cache_stats()
+            payload["nli_pair_cache"] = stats
+            print()
+            print("NLI pair cache over this run: "
+                  f"{stats['hits']} hits / {stats['misses']} computed "
+                  f"({stats['hit_rate_pct']}% hit rate), {stats['entries']} entries held. "
+                  "A hit returns the value the forward pass would have produced for the same "
+                  "two strings, so this changes cost and not any score.")
+            (args.out / "evaluation.json").write_text(
+                json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")
+    except Exception as exc:
+        print(f"(pair-cache statistics unavailable: {type(exc).__name__})")
 
     print()
     print("Saved:")

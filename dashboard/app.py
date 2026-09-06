@@ -42,6 +42,7 @@ from dashboard.components import (  # noqa: E402
 from dashboard.service import (  # noqa: E402
     OVERRIDE_REASON_CODES, ScoringUnavailable, get_audit_log, get_decision_writer,
     run_query,
+    STAGES,
 )
 
 PAGE_TITLE = "Trust & Risk Layer — SOC Analyst Console"
@@ -97,10 +98,26 @@ def main() -> None:
             st.rerun()
 
     if run and query.strip():
-        with st.spinner("Retrieving, scoring and building the report…"):
+        # Named stages rather than one anonymous spinner. The security layer is
+        # the slow part and it is slow because it is doing something -- three
+        # detectors and a pairwise contradiction check over the retrieved
+        # evidence -- so the wait should say that. An unlabelled wait of even a
+        # second or two reads as the system being slow; a labelled one reads as
+        # the system working, which is the truthful reading here.
+        with st.status(STAGES["security"], expanded=True) as status:
             try:
-                report, event_id = run_query(query.strip())
+                def announce(key: str, label: str) -> None:
+                    status.update(label=label)
+                    st.write(label)
+                    if key == "security":
+                        st.caption("Embedding anomaly · prompt injection · "
+                                   "claim–evidence entailment · pairwise contradiction")
+
+                report, event_id = run_query(query.strip(), on_stage=announce)
+                status.update(label=STAGES["done"], state="complete", expanded=False)
             except ScoringUnavailable as exc:
+                status.update(label="Could not score this query", state="error",
+                              expanded=True)
                 st.error(f"Could not score this query: {exc}")
                 return
         st.session_state.report = report
