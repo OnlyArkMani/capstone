@@ -213,7 +213,11 @@ def entailment_scores(
         return []
     b = backend or get_backend()
     info = BackendInfo(b.name, b.is_model,
-                       "cross-encoder NLI" if b.is_model else "token overlap, cannot detect contradiction")
+                       "cross-encoder NLI" if b.is_model else "token overlap, cannot detect contradiction",
+                       # The lexical backend IS a degraded stand-in: it cannot
+                       # detect contradiction at all, which is the thing the real
+                       # model exists for. This one should be flagged loudly.
+                       is_fallback=not b.is_model)
     # One batched call for every document, rather than one call per document.
     # Empty-evidence documents are held out of the batch and given the neutral
     # result directly, so the model is never asked to score an empty premise.

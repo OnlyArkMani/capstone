@@ -172,7 +172,11 @@ def embedding_anomaly_score(
 
     zs = robust_z(distances)
     backend = BackendInfo(f"{method}:{backend_name}", is_model,
-                          f"n={n}, clusters={n_clusters}")
+                          f"n={n}, clusters={n_clusters}",
+                          # Anomaly is only as real as its embedder: the hashing
+                          # fallback carries no semantics, so distances computed
+                          # from it are not anomaly measurements.
+                          is_fallback=not is_model)
 
     return [
         AnomalyScore(

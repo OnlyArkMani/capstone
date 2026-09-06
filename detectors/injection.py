@@ -285,7 +285,12 @@ def injection_probabilities(
         b.name, b.is_model,
         "pretrained classifier; measured as non-separating on this corpus"
         if b.is_model else
-        "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted")
+        "hand-specified patterns, noisy-OR; weights and cut points declared, not fitted",
+        # Neither backend is a fallback. The pattern detector is the PRIMARY,
+        # chosen on measurement (design §9A.1); the transformer is retained for
+        # re-measurement. Reporting either as degraded would misdescribe the
+        # decision that was actually made.
+        is_fallback=False)
     out = []
     for i, d in enumerate(docs):
         text = doc_text(d)

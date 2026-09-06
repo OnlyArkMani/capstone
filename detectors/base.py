@@ -36,14 +36,34 @@ import numpy as np
 
 @dataclass(frozen=True)
 class BackendInfo:
-    """Which implementation produced a score, and whether it is the real one."""
+    """Which implementation produced a score, and how much it can be trusted.
+
+    Two SEPARATE questions, conflated until September 2026 with real consequences
+    for what the reports claimed:
+
+      is_model     is this a neural model? The pattern-based injection detector
+                   answers False, truthfully and permanently.
+      is_fallback  is this a DEGRADED stand-in for something better that was
+                   unavailable?
+
+    `not is_model` was used to mean `is_fallback`, which was fair while every
+    non-model backend was a fallback. It stopped being fair when the pattern
+    injection detector was promoted to primary on measurement (design §9A.1):
+    the evaluation then reported "detectors ran on fallback backends ... because
+    this environment cannot reach Hugging Face", which was false on both counts —
+    Hugging Face was reachable, and the backend was chosen, not settled for. A
+    report that undersells a deliberate, measured decision as a degradation is
+    as wrong as one that oversells it.
+    """
 
     name: str
     is_model: bool
     detail: str = ""
+    is_fallback: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return {"name": self.name, "is_model": self.is_model, "detail": self.detail}
+        return {"name": self.name, "is_model": self.is_model,
+                "detail": self.detail, "is_fallback": self.is_fallback}
 
 
 # ---------------------------------------------------------------------------
