@@ -8,12 +8,15 @@
 # The palette is documented in dashboard/style.py. Keep the two in step.
 
 [theme]
-base                    = "dark"
-primaryColor            = "#5B8DEF"
-backgroundColor         = "#101116"
-secondaryBackgroundColor = "#191B21"
-textColor               = "#E1E6EF"
-font                    = "sans serif"
+base                     = "dark"
+primaryColor             = "#4E8FD4"
+backgroundColor          = "#0B0D11"
+secondaryBackgroundColor = "#12151B"
+textColor                = "#DCE2EA"
+font                     = "sans serif"
 
 [client]
-toolbarMode = "minimal"
+# "viewer" rather than "minimal": minimal still renders the Deploy button, which
+# is development chrome. On a projector it reads as part of the product.
+toolbarMode = "viewer"
+showErrorDetails = true

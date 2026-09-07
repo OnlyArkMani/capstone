@@ -94,6 +94,14 @@ COPY --chown=zetabyte:zetabyte eval/       ./eval/
 COPY --chown=zetabyte:zetabyte docs/       ./docs/
 COPY --chown=zetabyte:zetabyte README.md requirements.txt ./
 
+# The Streamlit theme. Easy to leave out, and the failure is quiet rather than
+# loud: dashboard/style.py paints the page and the panels, so a container without
+# this file still looks broadly right, while Streamlit's OWN widgets -- selectbox
+# menus, the dataframe grid, tooltips, the toolbar -- fall back to the light
+# default and render dark-on-light inside a dark page. It also carries
+# toolbarMode, which is what removes the Deploy button from the demonstration.
+COPY --chown=zetabyte:zetabyte .streamlit/ ./.streamlit/
+
 # These four are volume mount points. Docker seeds an empty named volume from the
 # image's directory at that path, INCLUDING its ownership — but only if the
 # directory exists. If it does not, Docker creates it owned by root and the
