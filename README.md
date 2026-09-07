@@ -9,7 +9,7 @@ specific false conclusion — and distinguishes it from ordinary model error.
 
 | Document | Purpose |
 |---|---|
-| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.5`): case definitions, feature encoding, thresholds, audit schema |
+| [`docs/design/TRUST_RISK_DESIGN.md`](docs/design/TRUST_RISK_DESIGN.md) | Authoritative specification (`design-v1.7`): case definitions, feature encoding, thresholds, audit schema |
 | [`docs/FINAL_PROJECT_LOG.md`](docs/FINAL_PROJECT_LOG.md) | Executive summary, development history, evaluation results, limitations |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Installation, verification and demonstration procedure |
 | [`docs/AUDIT_REPORT.md`](docs/AUDIT_REPORT.md) | Independent verification of deliverables against specification |
@@ -129,9 +129,9 @@ flowchart TD
     SIG --> CONF
 
     subgraph L3["Level 3 — Fusion, confidence and adaptive response"]
-        BAND[Signal banding<br/>Q95 / Q99 of the clean distribution<br/>degenerate signals excluded]
+        BAND[Signal banding — ALL FOUR raw signals<br/>Q95 / Q99 of the clean distribution<br/>degenerate signals excluded<br/>never reads a regression coefficient]
         CASE[Rule track — case classifier<br/>C1–C11 under fixed precedence]
-        ENC[Feature encoding<br/>logit transform, tier dummies,<br/>tier x signal interactions]
+        ENC[Feature encoding — design 9A.10<br/>COMPOSITE_SIGNALS allowlist: conflict only<br/>x_conflict + is_tier1 + is_tier3<br/>unsupport, anomaly, injection excluded as FEATURES]
         LR[Statistical track<br/>logistic regression, Platt-calibrated<br/>200-sample bootstrap interval]
         CONF[Confidence estimate<br/>five components, geometric mean<br/>caps and review floor]
         RECON{Escalation dominance<br/>more conservative track wins}
@@ -162,9 +162,12 @@ flowchart TD
 
     subgraph L3B["Level 3 — Record and operate"]
         AUDIT[(Audit log — SQLite<br/>query_events: signals, features, case,<br/>both proposals, versions, reference ID)]
-        DASH[Analyst console — Streamlit<br/>verdict banner first, thresholded evidence bars,<br/>interval-drawn score, decision capture]
+        DASH[Analyst console — Streamlit<br/>verdict banner first, detector grid across the<br/>retrieval set, thresholded evidence bars,<br/>interval-drawn score, decision capture]
+        PRES[Presentation layer — style.py + charts.py<br/>design tokens, markup builders, Vega-Lite specs<br/>displays report fields, derives nothing<br/>no dependency beyond Streamlit's own runtime]
         AD[(analyst_decisions<br/>written only by the console<br/>append-only, hash-chained)]
     end
+
+    PRES -.supplies markup and chart specs.-> DASH
 
     AUDIT --> DASH
     DASH -->|human decision only| AD
@@ -196,6 +199,7 @@ flowchart TD
 | L3 | Audit trail | `logs/audit.py` — hash-chained, append-only | P3, P6 |
 | L3 | Analyst console | `dashboard/` — headline-first presentation, decision capture | P3, P6 |
 | L3 | Console presentation | `dashboard/style.py` — design tokens and markup builders; computes nothing | Design §2.9 |
+| L3 | Console charts | `dashboard/charts.py` — Vega-Lite specifications; plots report fields only | Design §2.9 |
 
 ---
 
@@ -297,6 +301,21 @@ Tier-3 source produces GREEN under any tested input.
 Logistic regression fitted on the labelled corpus. Bounded signals receive a logit
 transform; the anomaly distance is robustly normalised within each query's retrieval
 set.
+
+**The regression's feature set is restricted to signals that discriminate.** A declared
+allowlist, `COMPOSITE_SIGNALS` in `fusion/features.py`, admits `conflict` alone, so the
+fitted features are `x_conflict`, `is_tier1` and `is_tier3`. Unsupport (AUC 0.488),
+anomaly (AUC 0.410, anti-correlated) and injection (zero variance across all 490 rows)
+are excluded, each for a separately diagnosed reason set out in design §9A.10 and
+summarised in §12. Tier interactions are disabled at single-signal width, the C4/C9
+inversion being asserted by the rule track rather than learned.
+
+**This restricts the regression, not the system.** All four detectors remain active on
+every query and continue to feed the case taxonomy, which compares each detector's raw
+score against its own band thresholds and never consults a regression coefficient. The
+independence is structural: `fusion/cases.py` imports only from `fusion/bands.py`, and
+neither imports `fusion/features.py` or `fusion/model.py`. Injection in particular keeps
+the single-signal MALICIOUS rule that §6.1 describes.
 
 **Source tier is dummy-coded, never ordinal.** An ordinal encoding would impose a
 monotone relationship between tier number and risk, rendering the C4/C9 inversion
@@ -449,34 +468,83 @@ suppressed; each indicator records the documents in which it appeared.
 
 The analyst console renders the report; it does not recompute any part of it. Design
 tokens, the stylesheet and the markup builders are isolated in
-[`dashboard/style.py`](dashboard/style.py), whose functions accept plain values and
-return strings — a dashboard that derives its own figures is a second implementation
-of the scoring logic, and the two drift.
+[`dashboard/style.py`](dashboard/style.py) and the chart specifications in
+[`dashboard/charts.py`](dashboard/charts.py), whose functions accept plain values and
+return strings or specification dictionaries — a dashboard that derives its own
+figures is a second implementation of the scoring logic, and the two drift.
 
-Three presentation rules are load-bearing rather than aesthetic.
+Four presentation rules are load-bearing rather than aesthetic.
 
 **The verdict banner is rendered first.** Nothing precedes it: no heading, no metric,
 no spinner. This is design §2.9, and it is enforced as a property of call order by
 `test_dashboard.py`, which records every rendering call and asserts the banner is the
 first. The stylesheet is therefore injected from the page file rather than from the
 banner function; injected from the banner it would itself become the first call and
-the requirement would cease to be tested.
+the requirement would cease to be tested. The banner carries the recommended action,
+case identifier and priority alongside the band, so that the disposition survives
+being photographed.
 
 **State is never carried by colour alone.** Every band, fired detector and trust tier
-presents an icon and a word beside its colour. The four state colours are validated
-against the console surface — all clear the 3:1 contrast floor, with worst-pair
-separation of ΔE 11.3 under simulated colour-vision deficiency against a ΔE 8 target —
-but a projector, a colourblind reviewer and a greyscale printout each remove the
-colour channel outright, and the verdict must still arrive. Source trust tiers are
+presents a mark and a word beside its colour. The four state colours are validated
+against the console surface and clear the 3:1 contrast floor, but a projector, a
+colourblind reviewer and a greyscale printout each remove the colour channel outright,
+and the verdict must still arrive. In the collapsed evidence rows — a widget label, and
+the least dependable place for colour of any element on the page — the band is carried
+as a three-letter severity code rather than a coloured mark. Source trust tiers are
 drawn as neutral badges of differing weight for the same reason state colour is
-reserved: a tier is an ordinal fact about provenance, not an alarm.
+reserved: a tier is an ordinal fact about provenance, not an alarm. No element of the
+interface is an emoji; emoji render inconsistently across platforms and introduce
+colour the state palette did not choose.
 
 **Absence is distinguished from zero.** Each detector reading is drawn as a bar
 against its two thresholds, so proximity to firing is legible without arithmetic. A
 reading whose status is `unusable` or `missing` is drawn as text instead of as an
-empty bar — an empty bar reads as a clean measurement, which is the opposite of what
-an uncalibrated detector means. The exact values remain in a numeric table beneath
-each set of bars.
+empty bar, and is omitted from the margin chart rather than plotted at zero — an empty
+bar reads as a clean measurement, and on a margin axis zero is precisely the threshold.
+Both are the opposite of what an uncalibrated detector means. The exact values remain
+in a numeric table beneath each set of bars.
+
+**Charts encode status, not raw value, wherever detectors are compared.** The four
+detectors carry different thresholds, so a continuous colour ramp across them would
+imply an equivalence of severity that does not hold. The detector grid is therefore
+coloured by status band with the reading printed in the cell, and cross-detector
+comparison is done on the margin to each detector's own threshold rather than on the
+scores themselves.
+
+Six charts accompany a scored query and three the audit viewer. Each plots values read
+directly from the assembled report or from the audit log's own aggregates:
+
+| Chart | Question it answers |
+|---|---|
+| Detector grid | Which document tripped which detector — a property of one cell, not a comparison across panels |
+| Retrieval profile | How similar each document was, with its tier on the bar. Retrieval is partition-blind, so a Tier 3 document at rank one states the problem without commentary |
+| Threshold margin | How far each reading sat from its own suspicious threshold, which makes one axis meaningful for all four detectors |
+| Composite score and interval | The score on a fixed 0–100 axis, so interval width stays comparable between queries |
+| Confidence decomposition | Which of the five components a confidence figure rests on |
+| Stage latency | The wall-clock cost attributable to the security layer |
+| Band, case and outcome splits | What the log has accumulated across verdict bands, the eleven cases, and analyst decisions |
+
+Charts are declarative Vega-Lite specifications rendered by the runtime Streamlit
+already ships, so they add no dependency; being dictionaries, they are inspectable
+without a browser.
+
+A demonstration set of ten benchmark questions, spanning all six poison families in the
+corpus, sits beside the query field in
+[`dashboard/demo_queries.py`](dashboard/demo_queries.py). It holds question text and a
+display label and nothing else. Ground-truth labels, attacker target answers and
+poisoned document identifiers remain solely in the evaluation manifest, which prohibits
+being read by the scoring path; the cheapest way to keep that true is for the manifest
+never to be imported by the running application. Labels are shown to the operator, and
+only the question text is passed for scoring, so the system reaches its verdict knowing
+what an analyst would have typed and nothing more.
+
+`test_dashboard.py` checks structure and call order and states in its own closing note
+that it cannot check appearance.
+[`dashboard/make_preview.py`](dashboard/make_preview.py) closes that gap: it walks the
+same render functions the live page calls with a recorder that emits static HTML, and
+writes one self-contained file using the project's own stylesheet and chart
+specifications, from a genuinely scored query rather than a fixture. The console can
+therefore be reviewed without starting the stack.
 
 ---
 
@@ -675,7 +743,7 @@ Capstone/
     AUDIT_REPORT.md          Independent verification against specification
     PROJECT_REPORT.md        Extended technical report (superseded in part; see §12)
     design/
-      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.5
+      TRUST_RISK_DESIGN.md   Authoritative specification, design-v1.7
     sprint_logs/             Development session records (.md and .docx)
   corpus/
     schema.py                Shared field names, enumerations, tier rules
@@ -695,10 +763,17 @@ Capstone/
   reports/                   Analyst report: narrative engine, indicators, renderers
   logs/                      Audit log (SQLite) and retrieval log
   dashboard/                 Streamlit analyst console
+    app.py                   Console page: query, verdict, evidence, decision capture
+    service.py               What the console calls; the two write grants in one place
+    components.py            Render functions, ordered; banner first and tested as such
     style.py                 Design tokens, stylesheet, markup builders
+    charts.py                Vega-Lite specifications; plots report fields, derives none
+    demo_queries.py          Ten benchmark questions — text and label only, no answer key
+    make_preview.py          Renders the console to standalone HTML for offline review
     pages/                   Audit log viewer
   eval/
     run_evaluation.py        Three-configuration comparison harness
+    refit_verify.py          Guarded refit: backs up, refits, verifies, restores unless clean
     profile_latency.py       Device, model loading, pair counts, per-stage timings
     results/                 Comparison table, chart, full JSON output
       latency_history.json   One row per profiling run, oldest first
@@ -723,6 +798,7 @@ Open-source components only; no paid API dependency.
 | Audit store | SQLite |
 | Analyst console | Streamlit |
 | Console presentation | CSS and generated markup — no additional dependency |
+| Console charts | Vega-Lite specifications rendered by Streamlit's bundled runtime — no additional dependency |
 | Containerisation | Docker, Docker Compose |
 
 Every layer implements a fallback backend that activates when its model is unavailable,
@@ -771,11 +847,26 @@ Stated directly, since each affects how the results above should be read.
    than genuine ones on data it was not fitted to. The safety result is carried by the
    rule track — the case taxonomy — and preserved by escalation dominance, which
    guarantees the statistical track can never make a disposition less conservative.
-   Three of four signals explain it: the anomaly signal is anti-correlated and is
-   dropped at fit time, the injection signal has zero variance across all 490 training
-   rows, and unsupport sits at chance (AUC 0.488). Only intra-evidence conflict
-   (AUC 0.653) separates the classes. Design §9A.8. This is the most significant open
-   item in the system.
+   Three of four signals explain it: the anomaly signal is anti-correlated (AUC 0.410)
+   because PoisonedRAG documents are built to sit *close* to their target query in
+   embedding space and are therefore less outlier-like than unusual genuine documents —
+   the wrong instrument, not a broken one; the injection signal has zero variance across
+   all 490 training rows, a corpus-coverage consequence rather than a detector failure,
+   since per payload it separates 1.0000 / 0.9925 / 0.9840 MALICIOUS, 0.8000 SUSPICIOUS
+   and one deliberate miss; and unsupport sits at chance (AUC 0.488) because the NLI
+   cross-encoder is a sentence-pair model being handed whole-document premise and
+   whole-answer hypothesis text, which it cannot score at that granularity — the median
+   *clean* reading is 0.9974 unsupported. Only intra-evidence conflict (AUC 0.653)
+   separates the classes. Design §9A.8. This is the most significant open item in the
+   system.
+
+   Those three signals have been removed from the regression's feature set (design
+   §9A.10) so the fit is no longer diluted by features that carry no information. **All
+   three detectors remain active and continue to feed the case taxonomy; only their role
+   as regression features was removed.** The refit has not yet been measured under
+   production backends and is not shipped — `eval/refit_verify.py` performs it under
+   guard — so ROC-AUC 0.179 remains the figure of record, and removing uninformative
+   features cannot by itself create discrimination the remaining signal does not carry.
 2. **Answer-level attack success is still not measured.** A generation backend is now in
    the loop and its answer is the entailment hypothesis, but nothing reads that answer
    and judges whether it asserts the attacker's claim — that needs a human or a separate
@@ -843,7 +934,7 @@ This framing is restated in the corpus module documentation and in the generator
 
 | Component | Status |
 |---|---|
-| Decision-logic specification (`design-v1.5`) | Complete |
+| Decision-logic specification (`design-v1.7`) | Complete |
 | Corpus — 72 genuine, 16 adversarial, three tiers | Complete, validated, 0 errors |
 | Baseline RAG pipeline | Complete, 55 checks passing |
 | Level 2 detectors | Complete, 20 checks passing |
@@ -856,6 +947,8 @@ This framing is restated in the corpus module documentation and in the generator
 | Detector models installed and evaluation re-run | Complete — real models, GPU or CPU |
 | Latency characterisation and device placement | Complete — design §9A.6, Open Question 2 resolved |
 | Generation backend on the inference path | Complete — design §9A.7; console and harness both score against the answer |
+| Composite score feature set restricted to discriminating signals | Complete — design §9A.10; detectors unaffected |
+| Refit of the restricted composite score, measured under production backends | **Outstanding** — run `python -m eval.refit_verify` |
 | Composite score that discriminates on held-out data | **Outstanding** — design §9A.8; see Limitation 1 |
 | Evidence-conflict detector | **Outstanding** |
 | Leave-one-attack-family-out evaluation | **Outstanding** |

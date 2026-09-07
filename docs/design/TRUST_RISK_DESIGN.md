@@ -3,7 +3,7 @@
 **Project:** Hallucinations in AI-Driven Cybersecurity Systems (Healthcare Sector)
 **Team:** Zetabyte — Deloitte Capstone Program 2026, Manipal University Jaipur
 **Document:** `docs/design/TRUST_RISK_DESIGN.md`
-**Document version:** `design-v1.2`
+**Document version:** `design-v1.7`
 **Status:** Authoritative. Per project convention, this document is the source of truth
 for case definitions, feature encoding, and threshold-derivation procedure. Later work
 must not redefine these ad hoc; changes require a version bump and a note in §10.
@@ -2033,12 +2033,129 @@ alone misrepresents the system. The operational reading is that this configurati
 review-generation mechanism, not a filter, and that no threshold change can make it one
 while the signals are as weak as §9A.8 records.
 
+### 9A.10 The composite score's feature set is restricted to signals that discriminate
+
+**Amends §3.2's feature encoding for the statistical track only. No change to §2.1,
+§2.3, §2.6, §2.9, §3.9, to any band threshold, or to any detector.**
+
+§9A.8 recorded that the fitted composite scores at held-out ROC-AUC 0.179 and gave the
+reason: of four signals, one separates the classes and three do not. This section acts
+on that finding by removing the three from the regression's feature set, and records
+what that does and — more importantly — what it does not do.
+
+**The change.** `fusion/features.py` gains `COMPOSITE_SIGNALS`, an explicit allowlist of
+the signals permitted to enter the logistic regression. It holds `conflict` alone. The
+fitted feature set is therefore:
+
+```
+x_conflict, is_tier1, is_tier3
+```
+
+Tier interactions are disabled at single-signal width (`COMPOSITE_INTERACTIONS_ENABLED
+= False`): with one base signal the interaction is close to collinear with the tier
+dummy and buys nothing, and the C4/C9 inversion it existed to carry is **asserted by
+the rule track** (C4 above C9 under §2.7 precedence) rather than learned. §3.2's
+argument for interactions is unchanged and continues to govern the multi-signal rungs.
+
+**What is NOT changed, stated explicitly because it is the point.** All four detectors
+remain active, are still computed on every query, and still feed the rule track exactly
+as before. §2.1's band assignment compares each detector's **raw** score against its own
+`θ^sus` / `θ^mal` thresholds; it has never consulted a regression coefficient and does
+not now. This is structural rather than a matter of discipline: `fusion/cases.py`
+imports only from `fusion/bands.py`, neither module imports `fusion/features.py` or
+`fusion/model.py`, and `cases.py` contains no reference to the model, its coefficients
+or the feature spec. Band thresholds are fitted on clean training rows independently of
+the feature set. **Only the role of these three signals as regression features was
+removed.** `s_inj` in particular keeps the single-signal `injection_alone` MALICIOUS
+rule that §2.1 grants it and §9A.2 gives declared thresholds for.
+
+**Why each signal was removed. Three different diagnoses, not one verdict.**
+
+*`unsupport` — chance-level, and the cause is a granularity mismatch.* Measured AUC
+0.488, with mean 0.9049 on poisoned rows against 0.9009 on clean: a separation of 0.004
+on a unit scale. The cause is that the NLI cross-encoder is a **sentence-pair model**
+and is handed a whole retrieved document as premise and a whole generated answer as
+hypothesis, then asked for one entailment probability over the pair. It has no
+mechanism for reporting that three of an answer's seven claims are supported, and
+saturates instead. The clean-calibration distribution is the direct evidence: over 137
+readings taken on known-clean queries the median unsupport is 0.9974 — the median
+genuinely-supported document is reported as 99.74% unsupported. The consequence for
+banding is arithmetic, since Q95 and Q99 of that distribution land at 0.99961 and
+0.99987, separated by 0.00026 in the tail of a saturated signal. This is a fixable
+implementation fault, not a property of the attack; the remedy is per-claim scoring and
+it is P1 on the roadmap. Until it lands the feature carries no information to fit on.
+
+*`anomaly` — anti-correlated, and it is the wrong instrument rather than a broken one.*
+Measured AUC 0.410, mean 0.0735 on poisoned rows against 0.1616 on clean: poisoned
+documents are **less** outlier-like than genuine ones. This is the attack mechanism
+showing through. PoisonedRAG documents are constructed to sit close to the target query
+in embedding space, because that is how they get retrieved at all; a document engineered
+for retrieval proximity falls inside the cluster it targets, while a genuinely novel
+advisory sits outside it. Nothing about the detector's implementation is wrong. An
+embedding-outlier test is simply the wrong question to ask of an attack defined by
+embedding proximity. The inversion guard in `fusion/train.py` already dropped this
+signal automatically at fit time; naming it in `COMPOSITE_SIGNALS` makes the exclusion
+**declared rather than incidental**, which matters because an automatic drop is silent
+and a reader cannot tell it happened.
+
+*`injection` — zero variance in this training sample, which is corpus coverage.*
+Identically 0.0000 across all 490 rows, mean 0.0000 for both classes, AUC exactly 0.500.
+A feature that never varies cannot contribute at any coefficient, and the one it
+received (−0.1055, wrong-signed) is therefore noise. **This is not a statement that the
+detector fails to separate.** Measured per payload against the five graded injection
+documents of §9A.5 it separates with real differentiation:
+
+| Document | Placement | Score | Band |
+|---|---|---|---|
+| `poison-injection-infusion-t3-forum` | tail | 1.0000 | MALICIOUS |
+| `poison-injection-contec-t3-forum` | tail | 0.9925 | MALICIOUS |
+| `poison-injection-log4shell-t3-note` | mid | 0.9840 | MALICIOUS |
+| `poison-injection-dcmtk-t2-isac` | mid | 0.8000 | SUSPICIOUS |
+| `poison-injection-carescape-t3-unattrib` | split | 0.0000 | MISSED (by design) |
+
+Three MALICIOUS, one SUSPICIOUS and one deliberate miss is a detector discriminating
+across three outcome bands. The zero variance is a property of which documents the
+retriever surfaced across the 98 training queries, not of the detector, and the remedy
+is corpus expansion (roadmap P3). Removing it from the regression removes a noise
+feature; it removes nothing from the system's defences.
+
+**What this does not claim.** Removing uninformative features from an underpowered fit
+is a hygiene measure. It cannot manufacture discrimination that the remaining signal
+does not carry, and `conflict` measured AUC 0.653 in isolation. Whether the reduced
+model clears chance on held-out data is an empirical question that this section does not
+answer, and no figure should be quoted for it until the measurement below has been made.
+
+**Pending measurement.** The refit has NOT yet been run under production backends. It
+requires the real embedding model, the real NLI cross-encoder and a generation backend,
+none of which are reachable from an environment lacking torch, scikit-learn and a model
+host — and a refit on fallback backends reproduces the fault README Limitation 9
+records. `eval/refit_verify.py` performs the measurement under guard: it backs up the
+shipped artifacts, refits, compares the rule track and the disposition set field by
+field against that backup, and restores the shipped state unless every gate passes.
+Until it has been run, §9A.8's ROC-AUC 0.179 remains the figure of record and the
+shipped model remains the six-feature fit.
+
+**The gate on adopting the result, whatever it is.** `tau_review` is derived from
+held-out predictions of the model being refitted (§3.9). It is 0.0 today only because no
+cut point on an anti-predictive score reaches the 0.95 recall target, and that collapse
+is what makes the Accept disposition unreachable and the 0%-vouched-for guarantee
+structural (§9A.9). **A reduced model that discriminates better may therefore move
+`tau_review` off 0.0, which would change the disposition mix and may reopen
+auto-accept.** That is a new operating point, and §9A.9 measured what happened the last
+time one was opened: three of ten attacks became vouched-for answers immediately.
+Recalibration is gated on repairing `unsupport` first. A refit that improves the score
+is consequently to be **recorded as a finding and not adopted** until that repair lands
+and the operating thresholds are re-derived deliberately.
+
+---
+
 ---
 
 ## 10. Version History
 
 | Version | Date | Change |
 |---|---|---|
+| `design-v1.7` | 2026-09-07 | Added §9A.10: the composite score's regression feature set is restricted to `x_conflict` plus the tier dummies via a declared `COMPOSITE_SIGNALS` allowlist; `unsupport` (AUC 0.488, sentence-pair model given whole-document/whole-answer text), `anomaly` (AUC 0.410, wrong instrument — PoisonedRAG documents are embedding-CLOSE to their target by construction) and `injection` (zero variance across all 490 rows of this sample, a corpus-coverage consequence; the detector itself separates 1.0000/0.9925/0.9840 MALICIOUS, 0.8000 SUSPICIOUS, 0.0000 missed per §9A.5) are excluded as REGRESSION FEATURES ONLY. All four detectors remain active and continue to feed the rule track, which compares raw scores against band thresholds and cannot read a coefficient. Tier interactions disabled at single-signal width. The refit is NOT yet measured under production backends and is NOT shipped; `eval/refit_verify.py` performs it under guard. §9A.8's ROC-AUC 0.179 remains the figure of record. No case definition, priority, action semantic, headline rule, band threshold or detector altered. |
 | `design-v1.6` | 2026-09-07 | Added §9A.9: `tau_review` has collapsed to 0.0 because the recall target is unreachable on an anti-predictive score, so the statistical track proposes Review for every query and the Accept disposition is unreachable. Measured on the clean control set: that gate closed on 30 of 30 clean queries and was the only gate on 15. The band thresholds are NOT the constraint and were not changed. A correction making the score track abstain on the review axis was implemented, measured, and REJECTED: it raised clean auto-accept from 0.0% to 45.8% and took attacks-vouched-for from 0.0% to 30.0%. The finding recorded is that the 0%-vouched-for result is structural rather than detective. No case definition, priority, action semantic, headline rule or threshold altered. |
 | `design-v1.5` | 2026-09-06 | Added §9A.7: the inference paths never generated an answer and scored entailment against the query text, so the inversion §9A.4 documents was live at inference while the model had been fitted on generated answers. Corrected in `pipeline/hypothesis.py` for both the console and the harness; `x_unsupport` sign corrected (−0.138 → +0.021), false positive rate 50.0% → 39.3%, exposure 50.0% → 56.3%, and the 0%-vouched-for guarantee held. Recorded as a correctness fix, not an accuracy gain: both held-out ranking metrics were unchanged. Added §9A.8, recording that the fitted composite scores at ROC-AUC 0.179 on held-out data — anti-predictive — and that the safety result is carried by the rule track under escalation dominance. Amends §9A.4, which described the training path but was read as describing the system. No case definition, priority, action semantic or headline rule altered. |
 | `design-v1.4` | 2026-09-06 | Added §9A.6, resolving Open Question 2: the O(k²) pairwise conflict measure is affordable at k=5 — 962 ms of a 1,234 ms cold query — and §8's fallback of restricting to cited documents was **not** taken. Records the measured stage costs, the three changes that made the cost affordable (explicit device placement, memoisation of pair results, startup computation of corpus vectors), and the boundaries of the measurement. No case definition, priority, action semantic, headline rule, threshold, feature encoding or signal definition altered: every figure in `eval/results/evaluation.json` that bears on detection is identical before and after. |
