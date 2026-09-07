@@ -1,0 +1,635 @@
+{
+  "n_clean_queries": 30,
+  "k": 5,
+  "hypothesis": "generated_answer",
+  "distributions": {
+    "unsupport": {
+      "min": 0.0034531205346560734,
+      "p50": 0.9974075397264008,
+      "p90": 0.9992624290642386,
+      "p95": 0.999499118340727,
+      "p99": 0.9997225819028835,
+      "max": 0.9998324248977636,
+      "mean": 0.8579924641624734,
+      "n": 137
+    },
+    "anomaly": {
+      "min": 0.0,
+      "p50": 0.0,
+      "p90": 0.48021737962999494,
+      "p95": 0.6114377309811465,
+      "p99": 0.9968259867438389,
+      "max": 1.0,
+      "mean": 0.16320870126663065,
+      "n": 137
+    },
+    "injection": {
+      "min": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "p95": 0.0,
+      "p99": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "n": 137
+    },
+    "conflict": {
+      "min": 0.00012049581935879538,
+      "p50": 0.006262705508117292,
+      "p90": 0.861882592350026,
+      "p95": 0.9655824444348057,
+      "p99": 0.9930179747239818,
+      "max": 0.9930179747239818,
+      "mean": 0.15469358254398158,
+      "n": 137
+    }
+  },
+  "distributions_by_tier": {
+    "1": {
+      "unsupport": {
+        "min": 0.0034531205346560734,
+        "p50": 0.9960119143885151,
+        "p90": 0.9990107457032198,
+        "p95": 0.9992763564185668,
+        "p99": 0.999505803070547,
+        "max": 0.9997569888691092,
+        "mean": 0.8234894266666857,
+        "n": 98
+      },
+      "anomaly": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.4970358969925294,
+        "p95": 0.693998672695887,
+        "p99": 0.9986234750337482,
+        "max": 1.0,
+        "mean": 0.1850969994748741,
+        "n": 98
+      },
+      "injection": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "n": 98
+      },
+      "conflict": {
+        "min": 0.0004192703412381171,
+        "p50": 0.011869907254372994,
+        "p90": 0.8966896071825181,
+        "p95": 0.9655824444348057,
+        "p99": 0.9930179747239818,
+        "max": 0.9930179747239818,
+        "mean": 0.21241838748871633,
+        "n": 98
+      }
+    },
+    "2": {
+      "unsupport": {
+        "min": 0.019415461760872166,
+        "p50": 0.9979181390699898,
+        "p90": 0.999061493239006,
+        "p95": 0.9993044214904551,
+        "p99": 0.9993961747089375,
+        "max": 0.9994063373063581,
+        "mean": 0.9160013560441073,
+        "n": 25
+      },
+      "anomaly": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.33385918328875064,
+        "p95": 0.4672363294396034,
+        "p99": 0.6125072748878075,
+        "max": 0.647879264945026,
+        "mean": 0.09656368663415912,
+        "n": 25
+      },
+      "injection": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "n": 25
+      },
+      "conflict": {
+        "min": 0.00012049581935879538,
+        "p50": 0.0017946168371303982,
+        "p90": 0.025726552632697124,
+        "p95": 0.05282077239884584,
+        "p99": 0.067120915708829,
+        "max": 0.06979174096693296,
+        "mean": 0.00978423812143739,
+        "n": 25
+      }
+    },
+    "3": {
+      "unsupport": {
+        "min": 0.962146197239979,
+        "p50": 0.9989001453499499,
+        "p90": 0.9996461804769877,
+        "p95": 0.9997212677901196,
+        "p99": 0.9998101934762348,
+        "max": 0.9998324248977636,
+        "mean": 0.9959264197014986,
+        "n": 14
+      },
+      "anomaly": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.3450405049304324,
+        "p95": 0.4472352136162079,
+        "p99": 0.5616437879113148,
+        "max": 0.5902459314850917,
+        "mean": 0.12899956850976846,
+        "n": 14
+      },
+      "injection": {
+        "min": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "n": 14
+      },
+      "conflict": {
+        "min": 0.0010828546242625985,
+        "p50": 0.00604432726346173,
+        "p90": 0.024676696440765374,
+        "p95": 0.026818515089243846,
+        "p99": 0.028924224960432746,
+        "max": 0.029450652428229977,
+        "mean": 0.009386634399667188,
+        "n": 14
+      }
+    }
+  },
+  "band_thresholds": {
+    "unsupport": {
+      "suspicious": 0.9996059720663362,
+      "malicious": 0.9998678470577524
+    },
+    "anomaly": {
+      "suspicious": 0.7761469103368921,
+      "malicious": 0.9993047184600055
+    },
+    "injection": {
+      "suspicious": 0.6,
+      "malicious": 0.9
+    },
+    "conflict": {
+      "suspicious": 0.8616090367708529,
+      "malicious": 0.9677283088491466
+    }
+  },
+  "percent_in_clean_band": {
+    "unsupport": 97.08,
+    "anomaly": 96.35,
+    "injection": 100.0,
+    "conflict": 86.13
+  },
+  "gate_counts": {
+    "tier_rule": 3,
+    "taxonomy": 15,
+    "score_track": 30,
+    "confidence_floor": 5,
+    "reached_green": 0
+  },
+  "binding_gates": [
+    "score_track"
+  ],
+  "review_floor": 0.35,
+  "operating_thresholds": {
+    "tau_review": 0.0,
+    "tau_reject": 0.844867,
+    "recall_target": 0.95,
+    "precision_target": 0.9,
+    "bands_consistent": true,
+    "reject_reachable": true,
+    "regime": "three_band",
+    "note": "Bands consistent: Accept / Review / Reject."
+  },
+  "queries": [
+    {
+      "query_id": "ctrl_analyst-note-downtime-depend",
+      "tier_governing": 3,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C3",
+      "confidence": 0.661208,
+      "risk_upper": 0.413523,
+      "gates": [
+        "tier_rule",
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_analyst-note-imaging-alert-t",
+      "tier_governing": 3,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C3",
+      "confidence": 0.653349,
+      "risk_upper": 0.593206,
+      "gates": [
+        "tier_rule",
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_analyst-note-vendor-access-r",
+      "tier_governing": 3,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C3",
+      "confidence": 0.607234,
+      "risk_upper": 0.714852,
+      "gates": [
+        "tier_rule",
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1021-001-remote-desk",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.157215,
+      "risk_upper": 0.432133,
+      "gates": [
+        "taxonomy",
+        "score_track",
+        "confidence_floor"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1048-exfil-alternati",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.123519,
+      "risk_upper": 0.162149,
+      "gates": [
+        "taxonomy",
+        "score_track",
+        "confidence_floor"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1078-valid-accounts",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.644836,
+      "risk_upper": 0.49287,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1133-external-remote",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.350026,
+      "risk_upper": 0.561985,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1190-exploit-public-",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.234814,
+      "risk_upper": 0.169142,
+      "gates": [
+        "taxonomy",
+        "score_track",
+        "confidence_floor"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1210-exploitation-re",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.239441,
+      "risk_upper": 0.166792,
+      "gates": [
+        "taxonomy",
+        "score_track",
+        "confidence_floor"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1486-data-encrypted-",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.612945,
+      "risk_upper": 0.210942,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1489-service-stop",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.621211,
+      "risk_upper": 0.20198,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1490-inhibit-system-",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.532937,
+      "risk_upper": 0.135503,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1562-001-disable-mod",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.602645,
+      "risk_upper": 0.115835,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1566-phishing",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.677979,
+      "risk_upper": 0.667612,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_attack-t1567-002-exfil-cloud",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.770495,
+      "risk_upper": 0.172883,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-biomedical-network-s",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.628351,
+      "risk_upper": 0.689948,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-data-exfiltration-cl",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.600578,
+      "risk_upper": 0.116703,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-hph-ransomware-doubl",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.703368,
+      "risk_upper": 0.185447,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-legacy-medical-devic",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.642042,
+      "risk_upper": 0.535666,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-phishing-credential-",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.748367,
+      "risk_upper": 0.3964,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-remote-access-exploi",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.234796,
+      "risk_upper": 0.169142,
+      "gates": [
+        "taxonomy",
+        "score_track",
+        "confidence_floor"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-aa-supply-chain-clinica",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.675607,
+      "risk_upper": 0.468309,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-25-030-01",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C5",
+      "confidence": 0.762085,
+      "risk_upper": 0.114434,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-25-364-01",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C5",
+      "confidence": 0.898443,
+      "risk_upper": 0.460318,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-041-01",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.616241,
+      "risk_upper": 0.124251,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-083-01",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.680753,
+      "risk_upper": 0.176128,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-148-01",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.359826,
+      "risk_upper": 0.898502,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-176-01",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.649308,
+      "risk_upper": 0.574074,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-176-02",
+      "tier_governing": 1,
+      "headline": "ORANGE",
+      "action": "REVIEW",
+      "case_id": "C1",
+      "confidence": 0.668288,
+      "risk_upper": 0.177163,
+      "gates": [
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    },
+    {
+      "query_id": "ctrl_cisa-icsma-26-181-01",
+      "tier_governing": 1,
+      "headline": "RED",
+      "action": "ESCALATE",
+      "case_id": "C4",
+      "confidence": 0.771052,
+      "risk_upper": 0.613959,
+      "gates": [
+        "taxonomy",
+        "score_track"
+      ],
+      "hypothesis_source": "generated_answer"
+    }
+  ]
+}

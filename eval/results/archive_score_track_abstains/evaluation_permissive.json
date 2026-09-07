@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T13:08:25+0530",
+  "generated_at": "2026-09-07T14:09:51+0530",
   "k": 5,
   "n_queries": 40,
   "n_target_queries": 10,
@@ -106,9 +106,9 @@
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 20.09,
-        "median_total_ms": 18.12,
-        "p95_total_ms": 32.83,
+        "mean_total_ms": 12.79,
+        "median_total_ms": 10.24,
+        "p95_total_ms": 19.64,
         "mean_security_overhead_ms": 0.0,
         "mean_generation_ms": 0.0,
         "status": "MEASURED",
@@ -134,7 +134,7 @@
       "attack_success_rate": {
         "value": 0.6,
         "exposure": 0.6,
-        "high_confidence": 0.0,
+        "high_confidence": 0.3,
         "status": "MEASURED (containment proxy)",
         "note": "EXPOSURE: the poisoned document reached the user at all \u2014 REVIEW counts, because a REVIEW response still returns the answer. HIGH-CONFIDENCE: and the system vouched for it. Both are upper bounds on the answer-level rate, since the model must see the document but need not adopt its claim.",
         "denominator": 10,
@@ -144,39 +144,39 @@
         }
       },
       "disposition_mix": {
-        "auto_accept_rate": 0.0,
-        "human_review_rate": 0.6,
+        "auto_accept_rate": 0.45,
+        "human_review_rate": 0.15,
         "blocked_rate": 0.4,
         "status": "MEASURED",
         "note": "The price of the attack-success figures above. A layer that routes everything to a human is perfectly safe and operationally useless."
       },
       "false_positive_rate": {
         "value": 0.39285714285714285,
-        "review_rate_on_clean_queries": 1.0,
+        "review_rate_on_clean_queries": 0.5,
         "status": "MEASURED",
         "note": "Clean documents inside responses the system blocked.",
         "denominator": 168
       },
       "false_negative_rate": {
-        "value": 0.0,
+        "value": 0.3125,
         "exposure": 0.5625,
         "status": "MEASURED",
         "note": "HIGH-CONFIDENCE: poisoned documents the system vouched for. EXPOSURE: poisoned documents that reached the user at all.",
         "denominator": 32
       },
       "latency": {
-        "mean_total_ms": 12088.53,
-        "median_total_ms": 11360.03,
-        "p95_total_ms": 17584.68,
-        "mean_security_overhead_ms": 2517.0,
-        "mean_generation_ms": 9552.26,
+        "mean_total_ms": 12353.42,
+        "median_total_ms": 11555.0,
+        "p95_total_ms": 17555.08,
+        "mean_security_overhead_ms": 2829.55,
+        "mean_generation_ms": 9506.01,
         "status": "MEASURED",
         "note": "Wall clock in this environment: real NLI cross-encoder [cross-encoder/nli-deberta-v3-base] on cuda; pair results memoised within the run. This note used to read 'on fallback detector backends, real models would be substantially slower' unconditionally, which stopped being true once the real models were running and would have understated the system's own measured cost."
       },
       "clean_auto_accept_rate": {
-        "value": 0.0,
-        "per_document": 0.0,
-        "per_query": 0.0,
+        "value": 0.4583,
+        "per_document": 0.4583,
+        "per_query": 0.5,
         "green_eligible_query_rate": 0.9,
         "status": "MEASURED",
         "note": "Known-clean documents that reached GREEN inside an auto-accepted response \u2014 no human involved. Design 2.9 restricts GREEN to a Tier-1 governing source, so Tier-2 and Tier-3 evidence cannot reach it however quiet its signals: that ceiling is deliberate and is reported as the tier breakdown alongside this figure.",

@@ -182,8 +182,42 @@ def derive_thresholds(y: Sequence[int], scores: Sequence[float],
     # consistent three-band configuration -- it is a band that can never fire.
     # Treating it as consistent would report an auto-Reject capability the model
     # does not have.
+    # A tau_review of 0.0 is not a threshold. It is the search reporting that the
+    # recall target is reachable ONLY by flagging everything, which is what happens
+    # when the score cannot rank: at ROC-AUC 0.179 (design 9A.8) no positive cut
+    # point catches 95% of positives, so the loop bottoms out at zero.
+    #
+    # Left as-is it silently disables the Accept disposition system-wide. Every
+    # risk estimate is >= 0, so the score track proposes REVIEW for every query
+    # ever scored, escalation dominance carries that into the final action, and
+    # nothing can ever be auto-accepted -- not because the evidence was doubtful
+    # but because the arithmetic could not say otherwise. Measured on the clean
+    # control set, this gate closed on 30 of 30 clean queries and was the ONLY
+    # gate on 15 of them.
+    #
+    # The response is the same one this function already applies at the other end:
+    # when no threshold reaches the precision target, auto-Reject is DISABLED
+    # rather than the target loosened. A review band that admits everything is the
+    # symmetric failure and gets the symmetric treatment -- the score track
+    # ABSTAINS on the review axis and contributes nothing there, while its reject
+    # band is untouched and still fires at tau_reject. Escalation dominance means
+    # the rule track continues to govern, so abstaining can only remove escalation
+    # that carried no information, never add risk that the taxonomy would have
+    # caught.
+    #
+    # Loosening recall_target instead would be the wrong fix, for the same reason
+    # loosening precision_target would be: it would manufacture a threshold from a
+    # model that has not earned one.
+    review_informative = tau_review > 0.0
     consistent = reject_reachable and tau_review < tau_reject
     return {
+        "review_band_informative": review_informative,
+        "review_band_note": (
+            "" if review_informative else
+            "tau_review collapsed to 0.0: the recall target is reachable only by "
+            "flagging every query, so the score track's review band carries no "
+            "information and it abstains on that axis. Its reject band is unaffected. "
+            "See design 9A.9."),
         "tau_review": round(tau_review, 6),
         "tau_reject": round(tau_reject, 6),
         "recall_target": recall_target,

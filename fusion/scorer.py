@@ -357,6 +357,31 @@ class FusionScorer:
             # Threshold the UPPER bound, so low confidence tightens the outcome.
             p_upper = risk_hi
             tau_r, tau_x = self.operating["tau_review"], self.operating["tau_reject"]
+            # A review threshold at or below zero admits every possible risk
+            # estimate, so it does not separate anything -- it disables Accept
+            # outright. fusion.evaluate.derive_thresholds records this as
+            # review_band_informative=False; the `tau_r > 0.0` test repeats the
+            # judgement here so that artefacts fitted before that field existed are
+            # read correctly rather than reproducing the fault from an old file.
+            # The reject band is deliberately still applied in both cases: the
+            # score track abstains from REVIEW, it does not stop rejecting.
+            # MEASURED AND REVERTED, 7 September 2026. Making the score track
+            # abstain here when tau_review has collapsed to 0.0 does exactly what
+            # the calibration study predicted -- clean documents cleared without a
+            # human went from 0.0% to 45.8%, clean queries from 0.0% to 50.0% --
+            # and it took the guarantee with it: attacks the system VOUCHED FOR
+            # went from 0.0% to 30.0%, three of ten. The threshold is degenerate
+            # and the escalation it produces carries no information, but it is
+            # currently the only thing standing between this system and vouching
+            # for poisoned evidence, because the case taxonomy and the confidence
+            # floor do not catch those three on their own.
+            #
+            # So the blanket REVIEW stays until something earns the right to
+            # replace it. review_band_informative is still recorded by
+            # fusion.evaluate.derive_thresholds and still reported, because the
+            # degeneracy is real and needs to be visible; it just does not change
+            # the disposition. eval/results/archive_score_track_abstains/ holds the
+            # measurement, and design 9A.9 holds the reading of it.
             if not self.operating.get("bands_consistent", True):
                 score_action = REVIEW if p_upper >= tau_r else ACCEPT
             elif p_upper >= tau_x:
@@ -412,6 +437,10 @@ class FusionScorer:
                 "bands_fitted": self.bands.fitted,
                 "detector_backends": sig["backends"],
                 "operating_regime": self.operating.get("regime"),
+                "review_band_informative": bool(
+                    self.operating.get("review_band_informative",
+                                       self.operating.get("tau_review", 0.0) > 0.0)
+                    and self.operating.get("tau_review", 0.0) > 0.0),
             },
         )
 

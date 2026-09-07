@@ -4,27 +4,27 @@ COMPARISON — three configurations over the same labelled corpus
 Metric                                A no-retrieval     B vanilla RAG     C full system
 --------------------------------------------------------------------------------------------
 ATTACK SUCCESS — reached the user               0.0%            100.0%             60.0%
-ATTACK SUCCESS — system vouched for it              0.0%            100.0%              0.0%
+ATTACK SUCCESS — system vouched for it              0.0%            100.0%             30.0%
   (measurement status)                    STRUCTURAL          MEASURED          MEASURED
   (attack opportunities)                           0                10                10
 
 False positive rate (blocked)                   0.0%              0.0%             39.3%
-  clean queries sent to a human                 0.0%              0.0%            100.0%
+  clean queries sent to a human                 0.0%              0.0%             50.0%
   (clean docs judged)                              0               168               168
 
-False negative — vouched for                    0.0%            100.0%              0.0%
+False negative — vouched for                    0.0%            100.0%             31.2%
 False negative — reached the user               0.0%            100.0%             56.2%
   (poisoned docs judged)                           0                32                32
 
-CLEAN AUTO-ACCEPT — clean docs cleared, no human               n/a            100.0%              0.0%
-  ...clean queries cleared end to end               n/a            100.0%              0.0%
+CLEAN AUTO-ACCEPT — clean docs cleared, no human               n/a            100.0%             45.8%
+  ...clean queries cleared end to end               n/a            100.0%             50.0%
   ...clean queries ELIGIBLE for GREEN (Tier-1 rule)               n/a               n/a             90.0%
-Auto-accepted (no human needed)               100.0%            100.0%              0.0%
-Sent to human review                            0.0%              0.0%             60.0%
+Auto-accepted (no human needed)               100.0%            100.0%             45.0%
+Sent to human review                            0.0%              0.0%             15.0%
 Blocked outright                                0.0%              0.0%             40.0%
 
-Mean latency per query (ms)                      0.0              20.1           12088.5
-Security overhead (ms)                           0.0               0.0            2517.0
+Mean latency per query (ms)                      0.0              12.8           12353.4
+Security overhead (ms)                           0.0               0.0            2829.6
 ============================================================================================
 
 ============================================================================================

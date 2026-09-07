@@ -1986,12 +1986,60 @@ fit six features that generalise. The honest reading is that the composite score
 evidence of anything, and no figure derived from it should be presented as a detection
 result.
 
+### 9A.9 The 0%-vouched-for result is structural, and the review threshold is degenerate
+
+**Recorded, not resolved. A change was measured and rejected; nothing in §2.3, §2.9 or
+§3.9 is altered.**
+
+`tau_review` is 0.0. §3.9 derives it as the highest threshold still reaching the recall
+target, and at ROC-AUC 0.179 (§9A.8) no positive cut point reaches 95% recall, so the
+search bottoms out at zero. Every risk estimate is ≥ 0, so the statistical track proposes
+Review for **every query it has ever scored**, escalation dominance carries that into the
+final action, and the Accept disposition is unreachable by construction.
+
+Measured on the clean control set, that gate closed on 30 of 30 clean queries and was the
+*only* gate on 15 of them. It is not the bands: clean documents sit inside the CLEAN band
+on 97.1% of `unsupport`, 96.4% of `anomaly`, 100% of `s_inj` and 86.1% of `d_conflict`
+measurements. Relaxing the band thresholds would therefore have changed nothing.
+
+**The change and why it was rejected.** Making the score track abstain on the review axis
+— the treatment §3.9 already applies at the other end, where an unreachable precision
+target disables auto-Reject rather than loosening the target — was implemented and
+measured:
+
+| | Before | With the change |
+|---|---|---|
+| Clean documents cleared without a human | 0.0% | 45.8% |
+| Clean queries cleared end to end | 0.0% | 50.0% |
+| Clean queries sent to a human | 100.0% | 50.0% |
+| False positive rate | 39.3% | 39.3% |
+| Attack success — reached the user | 60.0% | 60.0% |
+| **Attack success — system vouched for it** | **0.0%** | **30.0%** |
+
+Three of ten attacks became answers the system presented as trustworthy. The change was
+reverted.
+
+**What that measurement establishes.** The 0%-vouched-for result is **structural, not
+detective**. It holds because the system auto-accepts nothing; the moment it is permitted
+to accept anything, the case taxonomy and the confidence floor let three attacks through
+unflagged. It is not evidence that the detectors identify poisoned documents. §9A.8
+recorded that the statistical track is anti-predictive; this records that the rule track
+does not carry the guarantee either, and that what currently carries it is the absence of
+an Accept disposition.
+
+Both figures should be quoted together, always. "0% of attacks were vouched for" alongside
+"0% of clean traffic was cleared and 100% went to a human" is the honest pair; either
+alone misrepresents the system. The operational reading is that this configuration is a
+review-generation mechanism, not a filter, and that no threshold change can make it one
+while the signals are as weak as §9A.8 records.
+
 ---
 
 ## 10. Version History
 
 | Version | Date | Change |
 |---|---|---|
+| `design-v1.6` | 2026-09-07 | Added §9A.9: `tau_review` has collapsed to 0.0 because the recall target is unreachable on an anti-predictive score, so the statistical track proposes Review for every query and the Accept disposition is unreachable. Measured on the clean control set: that gate closed on 30 of 30 clean queries and was the only gate on 15. The band thresholds are NOT the constraint and were not changed. A correction making the score track abstain on the review axis was implemented, measured, and REJECTED: it raised clean auto-accept from 0.0% to 45.8% and took attacks-vouched-for from 0.0% to 30.0%. The finding recorded is that the 0%-vouched-for result is structural rather than detective. No case definition, priority, action semantic, headline rule or threshold altered. |
 | `design-v1.5` | 2026-09-06 | Added §9A.7: the inference paths never generated an answer and scored entailment against the query text, so the inversion §9A.4 documents was live at inference while the model had been fitted on generated answers. Corrected in `pipeline/hypothesis.py` for both the console and the harness; `x_unsupport` sign corrected (−0.138 → +0.021), false positive rate 50.0% → 39.3%, exposure 50.0% → 56.3%, and the 0%-vouched-for guarantee held. Recorded as a correctness fix, not an accuracy gain: both held-out ranking metrics were unchanged. Added §9A.8, recording that the fitted composite scores at ROC-AUC 0.179 on held-out data — anti-predictive — and that the safety result is carried by the rule track under escalation dominance. Amends §9A.4, which described the training path but was read as describing the system. No case definition, priority, action semantic or headline rule altered. |
 | `design-v1.4` | 2026-09-06 | Added §9A.6, resolving Open Question 2: the O(k²) pairwise conflict measure is affordable at k=5 — 962 ms of a 1,234 ms cold query — and §8's fallback of restricting to cited documents was **not** taken. Records the measured stage costs, the three changes that made the cost affordable (explicit device placement, memoisation of pair results, startup computation of corpus vectors), and the boundaries of the measurement. No case definition, priority, action semantic, headline rule, threshold, feature encoding or signal definition altered: every figure in `eval/results/evaluation.json` that bears on detection is identical before and after. |
 | `design-v1.3` | 2026-09-05 | Added §9A (implementation amendments): the prompt-injection detector is a rule detector after the pretrained classifier was measured and ruled out (§9A.1); `s_inj` band thresholds are declared rather than fitted, because a rule aggregate has no clean distribution and the degeneracy guard was silently disabling the `injection_alone` rule (§9A.2); `s_cnf` now carries §0.4's intra-evidence quantity, which is NOT the parametric-knowledge signal §2.1 defines (§9A.3); the entailment hypothesis is the generated answer per §3.1, the query-text proxy having been measured as INVERTING `s_uns` to AUC 0.248 (§9A.4); corpus extended to five graded `direct_prompt_injection` documents across three payload placements, one of which the detector misses by design (§9A.5). No case definition, priority, action semantic or headline rule altered. |
