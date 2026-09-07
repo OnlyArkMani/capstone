@@ -81,3 +81,5 @@ Claude outputs/
 *.swp
 .DS_Store
 Thumbs.db
+
+_to_delete/
