@@ -4,41 +4,42 @@ HTML builders that the render functions in `components.py` compose.
 
 Why this is a separate module
 -----------------------------
-Two reasons.
-
 Nothing here reads the report or decides anything. Every function takes plain
-numbers and strings and returns a string of HTML. That keeps the rule that
-`components.py` already follows — the dashboard displays figures, it never
-derives them — true one level further down, and it means the visual layer can be
+numbers and strings and returns a string of HTML. That keeps the rule
+`components.py` already follows -- the dashboard displays figures, it never
+derives them -- true one level further down, and it means the visual layer can be
 changed without reopening any file that touches the scoring path.
 
-And the CSS is injected exactly once, from `app.py`, *after* `set_page_config`
+The CSS is injected exactly once, from the page file, *after* `set_page_config`
 and *before* anything else renders. It is deliberately not injected from
 `render_banner`: the banner has to be the first thing rendered on the results
-view (design §2.9) and `test_dashboard.py` asserts that by checking the very
-first recorded Streamlit call. A stylesheet emitted from inside the banner would
-be call number one and the requirement would quietly stop being tested.
+view (design 2.9) and `test_dashboard.py` asserts that by checking the very first
+recorded Streamlit call. A stylesheet emitted from inside the banner would be
+call number one and the requirement would quietly stop being tested.
 
 Palette
 -------
-Dark console, in the manner of the security-operations tools this system would
-sit beside. Surfaces and ink are our own; the four state colours are taken from a
-validated status palette and checked against the panel surface `#191B21`:
+A graphite console, in the manner of the security-operations tools this system
+would sit beside. The surfaces are deliberately dark and low-chroma so that the
+only saturated colour on the page is a verdict; state colour is scarce because
+scarcity is what makes it mean something.
 
-    good  #0CA30C   warning #FAB219   critical #E15554   accent #5B8DEF
+    good  #2FA36B   warning #D2971F   critical #C8453D   accent #4E8FD4
 
-All four clear 3:1 against the panel. Worst adjacent separation under simulated
-colour-vision deficiency is dE 11.3, and dE 23.5 for normal vision — comfortably
-above the dE 8 / dE 15 floors. That margin is not a licence to lean on hue: every
-state in this interface carries an icon and a word as well as a colour, because a
-projector, a colourblind reviewer, or a greyscale printout each remove the colour
-channel entirely and the verdict still has to survive.
+All four clear 3:1 against the panel surface `#12151B`. That margin is not a
+licence to lean on hue: every state in this interface carries a mark and a word
+as well as a colour, because a projector, a colourblind reviewer, or a greyscale
+printout each remove the colour channel entirely and the verdict still has to
+survive.
 
 State colour is reserved. GREEN / ORANGE / RED mean a verdict and nothing else,
 which is why source trust tiers are drawn as neutral badges of differing weight
-rather than as a third colour ramp — a tier is an ordinal fact about provenance,
-not an alarm, and colouring it would put two unrelated meanings in the same
-channel.
+rather than as a third colour ramp -- a tier is an ordinal fact about provenance,
+not an alarm, and colouring it would put two unrelated meanings in one channel.
+
+No emoji, anywhere. Numerals are monospaced and tabular so that a column of
+scores aligns on the decimal point and a figure that changes between two runs
+does not move the ones beside it.
 """
 
 from __future__ import annotations
@@ -49,21 +50,21 @@ from typing import Any
 # Tokens
 # ---------------------------------------------------------------------------
 
-BG = "#101116"          # page plane
-PANEL = "#191B21"       # card / panel surface
-PANEL_2 = "#1F222A"     # nested surface: table headers, inset blocks
-LINE = "#2C303A"        # hairline border
-LINE_SOFT = "#23262E"   # separator inside a panel
+BG = "#0B0D11"          # page plane
+PANEL = "#12151B"       # card / panel surface
+PANEL_2 = "#181C24"     # nested surface: table headers, inset blocks
+LINE = "#242932"        # hairline border
+LINE_SOFT = "#1C2029"   # separator inside a panel
 
-INK = "#E1E6EF"         # primary text
-INK_2 = "#A2AAB8"       # secondary text
-INK_3 = "#737C8B"       # muted: labels, axis, captions
+INK = "#DCE2EA"         # primary text
+INK_2 = "#97A1AF"       # secondary text
+INK_3 = "#68727F"       # muted: labels, axis, captions
 
-ACCENT = "#5B8DEF"      # links, focus, "measured and below threshold"
-GOOD = "#0CA30C"
-WARN = "#FAB219"
-CRIT = "#E15554"
-NEUTRAL = "#6F7784"     # not measured — deliberately colourless
+ACCENT = "#4E8FD4"      # links, focus, "measured and below threshold"
+GOOD = "#2FA36B"
+WARN = "#D2971F"
+CRIT = "#C8453D"
+NEUTRAL = "#5C6673"     # not measured -- deliberately colourless
 
 MONO = ('ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, '
         '"Liberation Mono", monospace')
@@ -71,11 +72,20 @@ MONO = ('ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, '
 #: Verdict bands. ``bg`` is the banner fill (white text sits on it at display
 #: size); ``accent`` is the same state at a step bright enough to read as a rule,
 #: a dot or a bar against the dark panel. Two roles, because one colour cannot do
-#: both — a fill dark enough for white text is too dark to see as a 3px line.
+#: both -- a fill dark enough for white text is too dark to see as a 3px line.
+#: ``dot`` is a plain geometric mark and ``code`` a three-letter severity word.
+#: Neither is an emoji and neither is Streamlit colour-markdown: a widget label
+#: that fails to parse markdown shows the source text, and ":red[*]" printed
+#: literally in a demo looks broken in a way a plain mark never can. The code is
+#: what the expander rows carry, because a collapsed row is exactly where the
+#: colour channel is least reliable and a word still reads in greyscale.
 BAND: dict[str, dict[str, str]] = {
-    "GREEN":  {"bg": "#1B7F4C", "accent": GOOD,  "icon": "✓", "dot": "\U0001F7E2"},
-    "ORANGE": {"bg": "#A85A0B", "accent": WARN,  "icon": "!",      "dot": "\U0001F7E0"},
-    "RED":    {"bg": "#B3261E", "accent": CRIT,  "icon": "✕", "dot": "\U0001F534"},
+    "GREEN":  {"bg": "#145A3C", "accent": GOOD, "icon": "✓",
+               "dot": "●", "code": "OK"},
+    "ORANGE": {"bg": "#8A5411", "accent": WARN, "icon": "!",
+               "dot": "●", "code": "SUS"},
+    "RED":    {"bg": "#8E2F29", "accent": CRIT, "icon": "✕",
+               "dot": "●", "code": "MAL"},
 }
 
 STATUS_COLOUR = {
@@ -84,6 +94,17 @@ STATUS_COLOUR = {
     "below": ACCENT,
     "unusable": NEUTRAL,
     "missing": NEUTRAL,
+}
+
+#: What each detector status is called in front of an analyst. `below` is not
+#: "clean" -- it is a measurement that came in under the line, which is a
+#: narrower claim and the one the number actually supports.
+STATUS_LABEL = {
+    "over_malicious": "over malicious",
+    "over_suspicious": "over suspicious",
+    "below": "below threshold",
+    "unusable": "not calibrated",
+    "missing": "did not run",
 }
 
 
@@ -95,6 +116,10 @@ def band_dot(band: str) -> str:
     return BAND.get(band, BAND["ORANGE"])["dot"]
 
 
+def band_code(band: str) -> str:
+    return BAND.get(band, BAND["ORANGE"])["code"]
+
+
 # ---------------------------------------------------------------------------
 # The stylesheet
 # ---------------------------------------------------------------------------
@@ -102,359 +127,395 @@ def band_dot(band: str) -> str:
 _CSS = f"""
 <style>
 :root {{
-  --tz-bg: {BG};        --tz-panel: {PANEL};   --tz-panel2: {PANEL_2};
-  --tz-line: {LINE};    --tz-line-soft: {LINE_SOFT};
-  --tz-ink: {INK};      --tz-ink2: {INK_2};    --tz-ink3: {INK_3};
-  --tz-accent: {ACCENT};
-  --tz-good: {GOOD};    --tz-warn: {WARN};     --tz-crit: {CRIT};
-  --tz-mono: {MONO};
+  --bg: {BG};
+  --panel: {PANEL};
+  --panel-2: {PANEL_2};
+  --line: {LINE};
+  --line-soft: {LINE_SOFT};
+  --ink: {INK};
+  --ink-2: {INK_2};
+  --ink-3: {INK_3};
+  --accent: {ACCENT};
+  --good: {GOOD};
+  --warn: {WARN};
+  --crit: {CRIT};
+  --mono: {MONO};
 }}
 
-/* ---- page plane -------------------------------------------------------- */
-.stApp {{ background: var(--tz-bg); }}
-[data-testid="stHeader"] {{ background: transparent; }}
-.block-container {{ padding-top: 2.2rem; padding-bottom: 4rem; max-width: 1400px; }}
+/* ---- page plane ---------------------------------------------------- */
 
-/* Streamlit stacks a lot of air between blocks. Tighten it so panels group. */
-[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
-[data-testid="stVerticalBlock"] {{ gap: 0.55rem; }}
+.stApp {{ background: var(--bg); }}
 
-/* Horizontal rules become hairlines rather than the default heavy divider. */
-hr {{ border: none; border-top: 1px solid var(--tz-line); margin: 1.1rem 0; }}
-
-/* ---- typography -------------------------------------------------------- */
-html, body, .stApp {{ color: var(--tz-ink); }}
-p, li, span, label {{ color: var(--tz-ink); }}
-
-/* Every st.subheader in this app is a section header. Small caps, letterspaced,
-   with a hairline beneath — the pattern the reference console uses to separate
-   panels without drawing boxes around everything. */
-.stApp h3, [data-testid="stHeading"] h3, .stMarkdown h3 {{
-  font-size: 0.70rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--tz-ink3) !important;
-  border-bottom: 1px solid var(--tz-line);
-  padding: 0 0 0.42rem 0 !important;
-  margin: 1.5rem 0 0.85rem 0 !important;
+[data-testid="stAppViewContainer"] > .main .block-container {{
+  padding-top: 1.6rem;
+  padding-bottom: 4rem;
+  max-width: 1500px;
 }}
 
-[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {{
-  color: var(--tz-ink3) !important;
-  font-size: 0.78rem;
-  line-height: 1.5;
+/* The deploy button and the coloured run-decoration are development chrome.
+   On a projector they read as part of the product, which they are not. */
+[data-testid="stDecoration"], [data-testid="stToolbar"] {{ display: none; }}
+header[data-testid="stHeader"] {{ background: transparent; height: 0; }}
+
+html, body, [class*="css"] {{
+  font-feature-settings: "tnum" 1, "cv05" 1;
 }}
 
-code, kbd {{
-  font-family: var(--tz-mono) !important;
-  background: var(--tz-panel2) !important;
-  color: {ACCENT} !important;
-  border: 1px solid var(--tz-line);
-  border-radius: 3px;
-  padding: 0.05rem 0.32rem !important;
-  font-size: 0.82em !important;
-}}
-
-/* ---- sidebar ----------------------------------------------------------- */
-[data-testid="stSidebar"] {{
-  background: {PANEL};
-  border-right: 1px solid var(--tz-line);
-}}
-[data-testid="stSidebar"] .block-container {{ padding-top: 1.6rem; }}
-[data-testid="stSidebar"] h1 {{
-  font-size: 1.02rem !important; font-weight: 650 !important;
-  letter-spacing: 0.01em; color: var(--tz-ink) !important;
-  margin-bottom: 0.15rem !important;
-}}
-[data-testid="stSidebarNavLink"], [data-testid="stPageLink"] a {{
-  border: 1px solid var(--tz-line); border-radius: 5px;
-  background: var(--tz-panel2);
-}}
-
-/* ---- metric tiles ------------------------------------------------------ */
-/* The reference draws a stat as a bordered panel with a coloured rule down its
-   left edge. Streamlit's own metric is close enough in structure to restyle. */
-[data-testid="stMetric"] {{
-  background: var(--tz-panel);
-  border: 1px solid var(--tz-line);
-  border-left: 3px solid var(--tz-accent);
-  border-radius: 5px;
-  padding: 0.75rem 0.95rem 0.8rem 0.95rem;
-}}
-[data-testid="stMetricLabel"] p {{
-  font-size: 0.66rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--tz-ink3) !important;
-}}
-[data-testid="stMetricValue"] {{
-  font-size: 1.95rem !important;
-  font-weight: 350 !important;
-  line-height: 1.15 !important;
-  color: var(--tz-ink) !important;
-  letter-spacing: -0.01em;
-}}
-
-/* ---- expanders --------------------------------------------------------- */
-[data-testid="stExpander"] {{
-  background: var(--tz-panel);
-  border: 1px solid var(--tz-line) !important;
-  border-radius: 5px;
-  margin-bottom: 0.45rem;
-}}
-[data-testid="stExpander"] summary {{
-  font-size: 0.86rem;
-  padding: 0.62rem 0.9rem !important;
-}}
-[data-testid="stExpander"] summary:hover {{ background: var(--tz-panel2); }}
-[data-testid="stExpander"] summary p {{
-  font-family: var(--tz-mono);
-  font-size: 0.83rem !important;
-  color: var(--tz-ink) !important;
-}}
-[data-testid="stExpanderDetails"] {{ padding: 0.2rem 0.95rem 0.9rem 0.95rem; }}
-
-/* ---- tables ------------------------------------------------------------ */
-[data-testid="stTable"] table {{
-  background: transparent;
-  border: 1px solid var(--tz-line);
-  border-radius: 5px;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.79rem;
+/* Every numeral in the interface is tabular and monospaced. A column of
+   detector scores has to align on the decimal point to be scannable, and a
+   figure that changes between runs must not shift the ones beside it. */
+code, kbd, samp, pre, .tz-num {{
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }}
-[data-testid="stTable"] thead th {{
-  background: var(--tz-panel2) !important;
-  color: var(--tz-ink3) !important;
-  font-size: 0.63rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  border: none !important;
-  border-bottom: 1px solid var(--tz-line) !important;
-  text-align: left !important;
-  padding: 0.5rem 0.7rem !important;
-}}
-[data-testid="stTable"] tbody th {{ display: none; }}
-[data-testid="stTable"] tbody td {{
-  background: transparent !important;
-  color: var(--tz-ink2) !important;
-  border: none !important;
-  border-bottom: 1px solid var(--tz-line-soft) !important;
-  padding: 0.45rem 0.7rem !important;
-  font-family: var(--tz-mono);
-}}
-[data-testid="stTable"] tbody tr:last-child td {{ border-bottom: none !important; }}
-[data-testid="stDataFrame"] {{
-  border: 1px solid var(--tz-line);
-  border-radius: 5px;
+code {{
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.06rem 0.3rem;
+  font-size: 0.82em;
+  color: var(--ink-2);
 }}
 
-/* ---- controls ---------------------------------------------------------- */
-.stButton button, .stDownloadButton button {{
-  border-radius: 5px;
-  border: 1px solid var(--tz-line);
-  background: var(--tz-panel2);
-  color: var(--tz-ink);
-  font-size: 0.82rem;
-  font-weight: 550;
-  letter-spacing: 0.01em;
-  transition: border-color 120ms ease, background 120ms ease;
-}}
-.stButton button:hover {{ border-color: var(--tz-accent); background: #242833; }}
-.stButton button[kind="primary"] {{
-  background: var(--tz-accent); border-color: var(--tz-accent); color: #0B1220;
-  font-weight: 650;
-}}
-.stButton button[kind="primary"]:hover {{ background: #7AA4F3; border-color: #7AA4F3; }}
+/* ---- masthead ------------------------------------------------------ */
 
-[data-baseweb="input"], [data-baseweb="select"] > div, [data-baseweb="textarea"] {{
-  background: var(--tz-panel) !important;
-  border-color: var(--tz-line) !important;
-  border-radius: 5px !important;
+.tz-masthead {{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.35rem;
 }}
-[data-testid="stWidgetLabel"] p {{
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--tz-ink3) !important;
+.tz-masthead-l {{ display: flex; align-items: baseline; gap: 0.85rem;
+                  flex-wrap: wrap; }}
+.tz-title {{
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 0;
 }}
-
-/* ---- alerts ------------------------------------------------------------ */
-[data-testid="stAlert"] {{
-  border-radius: 5px;
-  border: 1px solid var(--tz-line);
-  background: var(--tz-panel);
-  font-size: 0.83rem;
+.tz-sub {{ font-size: 0.82rem; color: var(--ink-3); font-weight: 400; }}
+.tz-mark {{
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.16rem 0.42rem;
+  white-space: nowrap;
 }}
 
-/* ======================================================================== */
-/*  Project components                                                       */
-/* ======================================================================== */
+/* ---- eyebrow: the small capitalised label above a block ------------ */
 
 .tz-eyebrow {{
-  font-size: 0.63rem; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--tz-ink3);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }}
 
-/* Page masthead ---------------------------------------------------------- */
-.tz-masthead {{
-  display: flex; align-items: baseline; gap: 0.85rem;
-  border-bottom: 1px solid var(--tz-line);
-  padding-bottom: 0.7rem; margin-bottom: 1.3rem;
-}}
-.tz-masthead .tz-title {{
-  font-size: 1.12rem; font-weight: 650; color: var(--tz-ink);
-  letter-spacing: -0.01em;
-}}
-.tz-masthead .tz-sub {{ font-size: 0.78rem; color: var(--tz-ink3); }}
+/* ---- panels -------------------------------------------------------- */
 
-/* Verdict banner --------------------------------------------------------- */
-.tz-banner {{
-  border-radius: 6px;
-  padding: 1.9rem 2.2rem 2rem 2.2rem;
-  margin: 0 0 0.9rem 0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}}
-.tz-banner::before {{
-  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
-  background: rgba(255,255,255,0.32);
-}}
-.tz-banner .tz-banner-eyebrow {{
-  font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em;
-  text-transform: uppercase; opacity: 0.78; margin-bottom: 0.5rem;
-}}
-.tz-banner .tz-banner-sub {{
-  font-size: 1.5rem; font-weight: 600; margin-top: 0.28rem; letter-spacing: 0.02em;
-}}
-.tz-banner .tz-banner-subtype {{
-  font-size: 1.5rem; font-weight: 600; margin-top: 0.45rem;
-  padding-top: 0.45rem; letter-spacing: 0.01em;
-  border-top: 1px solid rgba(255,255,255,0.25);
-  display: inline-block; padding-left: 1.4rem; padding-right: 1.4rem;
-}}
-
-/* Panels ----------------------------------------------------------------- */
 .tz-panel {{
-  background: var(--tz-panel);
-  border: 1px solid var(--tz-line);
-  border-radius: 5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
   padding: 0.85rem 1rem;
 }}
-.tz-panel-accent {{ border-left-width: 3px; border-left-style: solid; }}
+.tz-panel-accent {{ border-left: 2px solid var(--accent); }}
 
-/* Key/value grid --------------------------------------------------------- */
-.tz-kv {{ display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1.1rem; }}
-.tz-kv dt {{
-  font-size: 0.63rem; font-weight: 700; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--tz-ink3); white-space: nowrap;
-  padding-top: 0.12rem;
+/* ---- the verdict banner -------------------------------------------- */
+/* Geometry stays inline in components.py: the test reads that string and
+   asserts the display size and the fill are present, and a banner whose
+   loudness could be removed by a stylesheet that failed to load is exactly
+   the failure the requirement exists to prevent. What lives here is only
+   what is safe to lose. */
+
+.tz-banner {{
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 1.6rem;
+  padding: 1.05rem 1.5rem;
+  margin-bottom: 0.9rem;
 }}
-.tz-kv dd {{
-  margin: 0; font-size: 0.86rem; color: var(--tz-ink);
-  font-family: var(--tz-mono);
+.tz-banner-eyebrow {{
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 0.1rem;
+}}
+.tz-banner-sub {{
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.95;
+}}
+.tz-banner-subtype {{
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(255,255,255,0.22);
+  opacity: 0.97;
+}}
+.tz-banner-side {{
+  display: flex;
+  gap: 1.9rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}}
+.tz-banner-fig {{ text-align: right; }}
+.tz-banner-fig .k {{
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}}
+.tz-banner-fig .v {{
+  display: block;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.28rem;
+  font-weight: 600;
+  line-height: 1.35;
 }}
 
-/* State chip ------------------------------------------------------------- */
+/* ---- chips and badges ---------------------------------------------- */
+
 .tz-chip {{
-  display: inline-flex; align-items: center; gap: 0.42rem;
-  border-radius: 3px; padding: 0.16rem 0.55rem;
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; white-space: nowrap;
-  border: 1px solid; background: rgba(255,255,255,0.03);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 2px;
+  padding: 0.12rem 0.42rem;
+  white-space: nowrap;
 }}
-.tz-chip .tz-chip-dot {{
-  width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px;
+.tz-chip-dot {{
+  width: 5px; height: 5px; border-radius: 50%;
+  display: inline-block; flex: none;
 }}
 
-/* Tier badge — neutral by design; see the module docstring. */
+/* A tier is an ordinal fact about provenance, not an alarm. Weight, not hue. */
 .tz-tier {{
-  display: inline-block; border-radius: 3px; padding: 0.12rem 0.48rem;
-  font-size: 0.66rem; font-weight: 650; letter-spacing: 0.06em;
-  font-family: var(--tz-mono); white-space: nowrap;
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  border-radius: 2px;
+  padding: 0.12rem 0.42rem;
+  white-space: nowrap;
 }}
-.tz-tier-1 {{ color: var(--tz-ink);  border: 1px solid var(--tz-ink3); }}
-.tz-tier-2 {{ color: var(--tz-ink2); border: 1px solid var(--tz-line); }}
-.tz-tier-3 {{ color: var(--tz-ink3); border: 1px dashed var(--tz-line); }}
+.tz-tier-1 {{ background: #2B313C; color: #D3DAE4; border: 1px solid #3A4250; }}
+.tz-tier-2 {{ background: #1E232B; color: #A6AFBC; border: 1px solid #2C323C; }}
+.tz-tier-3 {{ background: #171A21; color: #7C8593; border: 1px solid #232830; }}
 
-/* Threshold meter -------------------------------------------------------- */
-.tz-meter {{ margin: 0 0 0.72rem 0; }}
+/* ---- key/value block ----------------------------------------------- */
+
+.tz-kv {{ margin: 0; display: grid; grid-template-columns: 8.5rem 1fr;
+          gap: 0.3rem 0.9rem; }}
+.tz-kv dt {{
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 0.06rem;
+}}
+.tz-kv dd {{ margin: 0; font-size: 0.83rem; color: var(--ink); word-break: break-word; }}
+
+/* ---- detector meter ------------------------------------------------ */
+
+.tz-meter {{ margin-bottom: 0.85rem; }}
 .tz-meter-head {{
-  display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 0.28rem; gap: 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.7rem; margin-bottom: 0.3rem;
 }}
 .tz-meter-name {{
-  font-family: var(--tz-mono); font-size: 0.75rem; color: var(--tz-ink2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
 }}
 .tz-meter-val {{
-  font-family: var(--tz-mono); font-size: 0.8rem; font-weight: 650;
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+  font-weight: 600;
 }}
 .tz-track {{
-  position: relative; height: 8px; border-radius: 2px;
-  background: rgba(255,255,255,0.055); overflow: visible;
+  position: relative; height: 5px; border-radius: 1px;
+  background: var(--panel-2); border: 1px solid var(--line-soft); overflow: hidden;
 }}
-.tz-fill {{
-  position: absolute; left: 0; top: 0; bottom: 0;
-  border-radius: 2px 4px 4px 2px; min-width: 2px;
-}}
+.tz-fill {{ position: absolute; top: 0; bottom: 0; left: 0; border-radius: 1px; }}
 .tz-tick {{
-  position: absolute; top: -4px; bottom: -4px; width: 2px;
-  background: rgba(255,255,255,0.45);
+  position: absolute; top: -2px; bottom: -2px; width: 1px;
+  background: {WARN}; opacity: 0.85;
 }}
-/* The malicious tick is taller as well as brighter. Two ticks separated only
-   by brightness is a distinction that dies on a projector. */
-.tz-tick-crit {{
-  top: -7px; bottom: -7px;
-  background: rgba(255,255,255,0.88);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
-}}
+.tz-tick-crit {{ background: {CRIT}; }}
 .tz-meter-foot {{
-  display: flex; gap: 1.1rem; margin-top: 0.26rem;
-  font-size: 0.66rem; color: var(--tz-ink3);
-  font-family: var(--tz-mono); font-variant-numeric: tabular-nums;
+  display: flex; gap: 1.05rem; margin-top: 0.22rem;
+  font-family: var(--mono); font-size: 0.65rem; color: var(--ink-3);
 }}
 .tz-meter-none {{
-  font-size: 0.7rem; color: var(--tz-ink3); font-style: italic;
+  font-size: 0.72rem; color: var(--ink-3); font-style: italic;
+  border-left: 2px solid var(--line); padding-left: 0.5rem;
 }}
 
-/* Interval bar ----------------------------------------------------------- */
-.tz-int {{ margin: 0.5rem 0 0.2rem 0; }}
+/* ---- interval bar --------------------------------------------------- */
+
+.tz-int {{ margin-top: 0.3rem; }}
 .tz-int-track {{
-  position: relative; height: 6px; border-radius: 2px;
-  background: rgba(255,255,255,0.055);
+  position: relative; height: 4px; border-radius: 1px;
+  background: var(--panel-2); border: 1px solid var(--line-soft);
 }}
 .tz-int-range {{
-  position: absolute; top: 0; bottom: 0; border-radius: 2px;
-  background: rgba(91,141,239,0.42);
+  position: absolute; top: 0; bottom: 0;
+  background: var(--accent); opacity: 0.4; border-radius: 1px;
 }}
 .tz-int-point {{
-  position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--tz-accent);
-  box-shadow: 0 0 0 2px var(--tz-panel);
+  position: absolute; top: -3px; width: 2px; height: 10px;
+  background: var(--ink); border-radius: 1px;
 }}
 .tz-int-foot {{
-  display: flex; justify-content: space-between; margin-top: 0.3rem;
-  font-size: 0.66rem; color: var(--tz-ink3);
-  font-family: var(--tz-mono); font-variant-numeric: tabular-nums;
+  display: flex; justify-content: space-between; margin-top: 0.24rem;
+  font-family: var(--mono); font-size: 0.63rem; color: var(--ink-3);
 }}
 
-/* Sidebar stat strip ----------------------------------------------------- */
+/* ---- sidebar -------------------------------------------------------- */
+
+[data-testid="stSidebar"] {{
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}}
+[data-testid="stSidebar"] .block-container {{ padding-top: 1.4rem; }}
 .tz-side-stat {{
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: 0.3rem 0; border-bottom: 1px solid var(--tz-line-soft);
-  font-size: 0.74rem;
+  padding: 0.34rem 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 0.78rem; color: var(--ink-2);
 }}
-.tz-side-stat span:first-child {{ color: var(--tz-ink3); }}
 .tz-side-stat span:last-child {{
-  color: var(--tz-ink); font-family: var(--tz-mono); font-weight: 650;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--ink); font-weight: 600;
+}}
+.tz-side-brand {{
+  font-size: 0.78rem; font-weight: 600; color: var(--ink);
+  letter-spacing: 0.01em;
+}}
+.tz-side-brand-sub {{
+  font-size: 0.68rem; color: var(--ink-3); margin-top: 0.1rem;
+  line-height: 1.45;
+}}
+
+/* ---- Streamlit widget overrides ------------------------------------- */
+
+.stButton > button {{
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.38rem 0.9rem;
+  transition: border-color 120ms ease, background 120ms ease;
+}}
+.stButton > button:hover {{ border-color: var(--accent); color: var(--ink); }}
+.stButton > button[kind="primary"] {{
+  background: var(--accent); border-color: var(--accent); color: #06090D;
+}}
+.stButton > button[kind="primary"]:hover {{ filter: brightness(1.08); }}
+
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea {{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font-size: 0.86rem;
+}}
+[data-testid="stTextInput"] input:focus {{ border-color: var(--accent); }}
+
+[data-testid="stMetric"] {{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem 0.75rem 0.9rem;
+}}
+[data-testid="stMetricLabel"] p {{
+  font-size: 0.65rem !important;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3) !important;
+}}
+[data-testid="stMetricValue"] {{
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.62rem !important;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}}
+
+[data-testid="stExpander"] {{
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+}}
+[data-testid="stExpander"] summary {{ font-size: 0.82rem; }}
+[data-testid="stExpander"] summary p {{
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+}}
+
+.stTabs [data-baseweb="tab-list"] {{
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--line);
+}}
+.stTabs [data-baseweb="tab"] {{
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0.5rem 0.85rem;
+}}
+.stTabs [aria-selected="true"] {{ color: var(--ink); }}
+
+[data-testid="stDataFrame"] {{ border: 1px solid var(--line); border-radius: 3px; }}
+
+hr {{ border-color: var(--line); }}
+
+h1, h2, h3, h4 {{ color: var(--ink); letter-spacing: -0.008em; }}
+h2 {{ font-size: 1.02rem !important; font-weight: 600 !important;
+      margin-top: 1.6rem !important; }}
+h3 {{ font-size: 0.9rem !important; font-weight: 600 !important; }}
+
+[data-testid="stCaptionContainer"] p {{
+  font-size: 0.74rem; color: var(--ink-3); line-height: 1.55;
+}}
+
+/* Streamlit's alerts default to saturated pastel fills that read as a fifth
+   and sixth state colour. Flattened to a rule and a surface so the only loud
+   colour on the page stays the verdict. */
+[data-testid="stAlert"] {{
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  border-left-width: 2px;
+  background: var(--panel);
+  font-size: 0.8rem;
 }}
 </style>
 """
@@ -463,7 +524,7 @@ code, kbd {{
 def inject(st: Any) -> None:
     """Emit the stylesheet. Call once, from the page file, after set_page_config.
 
-    Never call this from a render function — see the module docstring.
+    Never call this from a render function -- see the module docstring.
     """
     st.markdown(_CSS, unsafe_allow_html=True)
 
@@ -472,10 +533,17 @@ def inject(st: Any) -> None:
 # HTML builders
 # ---------------------------------------------------------------------------
 
-def masthead(title: str, subtitle: str = "") -> str:
+def masthead(title: str, subtitle: str = "", mark: str = "") -> str:
+    """Page header. `mark` is the right-hand system stamp -- build, corpus, mode.
+
+    It sits in the masthead rather than the sidebar because it qualifies
+    everything on the page: a reader who has scrolled past it has still seen it,
+    and a screenshot of the page carries the conditions it was taken under.
+    """
     sub = f'<div class="tz-sub">{subtitle}</div>' if subtitle else ""
-    return (f'<div class="tz-masthead"><div class="tz-title">{title}</div>'
-            f'{sub}</div>')
+    right = f'<div class="tz-mark">{mark}</div>' if mark else ""
+    return (f'<div class="tz-masthead"><div class="tz-masthead-l">'
+            f'<div class="tz-title">{title}</div>{sub}</div>{right}</div>')
 
 
 def chip(label: str, colour: str, icon: str = "") -> str:
@@ -496,7 +564,7 @@ def tier_badge(tier: Any, label: str = "") -> str:
         n = int(tier)
     except (TypeError, ValueError):
         n = 3
-    text = f"T{n}" + (f" · {label}" if label else "")
+    text = f"T{n}" + (f" {label}" if label else "")
     return f'<span class="tz-tier tz-tier-{max(1, min(3, n))}">{text}</span>'
 
 
@@ -531,11 +599,10 @@ def meter(name: str, value: Any, suspicious: Any, malicious: Any,
         return (f'<div class="tz-meter"><div class="tz-meter-head">'
                 f'<span class="tz-meter-name">{name}</span>'
                 f'<span class="tz-meter-val" style="color:{NEUTRAL}">n/a</span></div>'
-                f'<div class="tz-meter-none">{word} — this is not a clean '
+                f'<div class="tz-meter-none">{word} &mdash; this is not a clean '
                 f'result, it means the system does not know</div></div>')
 
-    scale = max(1.0, float(value),
-                float(malicious or 0), float(suspicious or 0))
+    scale = max(1.0, float(value), float(malicious or 0), float(suspicious or 0))
     ticks = ""
     if suspicious is not None:
         ticks += (f'<div class="tz-tick" style="left:'
@@ -574,9 +641,7 @@ def interval(point: Any, lo: Any, hi: Any, unit: str = "%") -> str:
     previously a line of caption text under the number. Drawn, a wide one is
     obviously wide.
     """
-    if point is None:
-        return ""
-    if lo is None or hi is None:
+    if point is None or lo is None or hi is None:
         return ""
     lo_f, hi_f, p_f = float(lo), float(hi), float(point)
     return (
@@ -594,9 +659,22 @@ def side_stat(label: str, value: Any) -> str:
             f'<span>{value}</span></div>')
 
 
+def stat_cards(items: list[tuple[str, Any, str]]) -> str:
+    """A row of figures, each with its own accent rule. `items` is (label, value,
+    colour). Used where `st.metric` would be too tall to repeat five times."""
+    cells = "".join(
+        f'<div class="tz-panel tz-panel-accent" style="border-left-color:{c};">'
+        f'<div class="tz-eyebrow">{label}</div>'
+        f'<div class="tz-num" style="font-size:1.5rem;font-weight:500;'
+        f'line-height:1.25;margin-top:0.2rem;color:{INK};">{value}</div></div>'
+        for label, value, c in items)
+    return (f'<div style="display:grid;grid-template-columns:'
+            f'repeat({len(items)},minmax(0,1fr));gap:0.55rem;">{cells}</div>')
+
+
 __all__ = [
-    "BAND", "STATUS_COLOUR", "ACCENT", "GOOD", "WARN", "CRIT", "NEUTRAL",
-    "INK", "INK_2", "INK_3", "PANEL", "LINE",
+    "BAND", "STATUS_COLOUR", "STATUS_LABEL", "ACCENT", "GOOD", "WARN", "CRIT",
+    "NEUTRAL", "INK", "INK_2", "INK_3", "PANEL", "PANEL_2", "LINE", "MONO", "BG",
     "inject", "masthead", "chip", "band_chip", "tier_badge", "kv", "meter",
-    "interval", "side_stat", "band_accent", "band_dot",
+    "interval", "side_stat", "stat_cards", "band_accent", "band_dot", "band_code",
 ]

@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<title>Trust and Risk Layer — console preview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vega/5.25.0/vega.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.16.3/vega-lite.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.22.2/vega-embed.min.js"></script>
+
+<style>
+:root {
+  --bg: #0B0D11;
+  --panel: #12151B;
+  --panel-2: #181C24;
+  --line: #242932;
+  --line-soft: #1C2029;
+  --ink: #DCE2EA;
+  --ink-2: #97A1AF;
+  --ink-3: #68727F;
+  --accent: #4E8FD4;
+  --good: #2FA36B;
+  --warn: #D2971F;
+  --crit: #C8453D;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ---- page plane ---------------------------------------------------- */
+
+.stApp { background: var(--bg); }
+
+[data-testid="stAppViewContainer"] > .main .block-container {
+  padding-top: 1.6rem;
+  padding-bottom: 4rem;
+  max-width: 1500px;
+}
+
+/* The deploy button and the coloured run-decoration are development chrome.
+   On a projector they read as part of the product, which they are not. */
+[data-testid="stDecoration"], [data-testid="stToolbar"] { display: none; }
+header[data-testid="stHeader"] { background: transparent; height: 0; }
+
+html, body, [class*="css"] {
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
+
+/* Every numeral in the interface is tabular and monospaced. A column of
+   detector scores has to align on the decimal point to be scannable, and a
+   figure that changes between runs must not shift the ones beside it. */
+code, kbd, samp, pre, .tz-num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+code {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.06rem 0.3rem;
+  font-size: 0.82em;
+  color: var(--ink-2);
+}
+
+/* ---- masthead ------------------------------------------------------ */
+
+.tz-masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.35rem;
+}
+.tz-masthead-l { display: flex; align-items: baseline; gap: 0.85rem;
+                  flex-wrap: wrap; }
+.tz-title {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 0;
+}
+.tz-sub { font-size: 0.82rem; color: var(--ink-3); font-weight: 400; }
+.tz-mark {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.16rem 0.42rem;
+  white-space: nowrap;
+}
+
+/* ---- eyebrow: the small capitalised label above a block ------------ */
+
+.tz-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---- panels -------------------------------------------------------- */
+
+.tz-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.85rem 1rem;
+}
+.tz-panel-accent { border-left: 2px solid var(--accent); }
+
+/* ---- the verdict banner -------------------------------------------- */
+/* Geometry stays inline in components.py: the test reads that string and
+   asserts the display size and the fill are present, and a banner whose
+   loudness could be removed by a stylesheet that failed to load is exactly
+   the failure the requirement exists to prevent. What lives here is only
+   what is safe to lose. */
+
+.tz-banner {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 1.6rem;
+  padding: 1.05rem 1.5rem;
+  margin-bottom: 0.9rem;
+}
+.tz-banner-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 0.1rem;
+}
+.tz-banner-sub {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.95;
+}
+.tz-banner-subtype {
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(255,255,255,0.22);
+  opacity: 0.97;
+}
+.tz-banner-side {
+  display: flex;
+  gap: 1.9rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.tz-banner-fig { text-align: right; }
+.tz-banner-fig .k {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.tz-banner-fig .v {
+  display: block;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.28rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* ---- chips and badges ---------------------------------------------- */
+
+.tz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 2px;
+  padding: 0.12rem 0.42rem;
+  white-space: nowrap;
+}
+.tz-chip-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  display: inline-block; flex: none;
+}
+
+/* A tier is an ordinal fact about provenance, not an alarm. Weight, not hue. */
+.tz-tier {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  border-radius: 2px;
+  padding: 0.12rem 0.42rem;
+  white-space: nowrap;
+}
+.tz-tier-1 { background: #2B313C; color: #D3DAE4; border: 1px solid #3A4250; }
+.tz-tier-2 { background: #1E232B; color: #A6AFBC; border: 1px solid #2C323C; }
+.tz-tier-3 { background: #171A21; color: #7C8593; border: 1px solid #232830; }
+
+/* ---- key/value block ----------------------------------------------- */
+
+.tz-kv { margin: 0; display: grid; grid-template-columns: 8.5rem 1fr;
+          gap: 0.3rem 0.9rem; }
+.tz-kv dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 0.06rem;
+}
+.tz-kv dd { margin: 0; font-size: 0.83rem; color: var(--ink); word-break: break-word; }
+
+/* ---- detector meter ------------------------------------------------ */
+
+.tz-meter { margin-bottom: 0.85rem; }
+.tz-meter-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.7rem; margin-bottom: 0.3rem;
+}
+.tz-meter-name {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+.tz-meter-val {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.tz-track {
+  position: relative; height: 5px; border-radius: 1px;
+  background: var(--panel-2); border: 1px solid var(--line-soft); overflow: hidden;
+}
+.tz-fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 1px; }
+.tz-tick {
+  position: absolute; top: -2px; bottom: -2px; width: 1px;
+  background: #D2971F; opacity: 0.85;
+}
+.tz-tick-crit { background: #C8453D; }
+.tz-meter-foot {
+  display: flex; gap: 1.05rem; margin-top: 0.22rem;
+  font-family: var(--mono); font-size: 0.65rem; color: var(--ink-3);
+}
+.tz-meter-none {
+  font-size: 0.72rem; color: var(--ink-3); font-style: italic;
+  border-left: 2px solid var(--line); padding-left: 0.5rem;
+}
+
+/* ---- interval bar --------------------------------------------------- */
+
+.tz-int { margin-top: 0.3rem; }
+.tz-int-track {
+  position: relative; height: 4px; border-radius: 1px;
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+}
+.tz-int-range {
+  position: absolute; top: 0; bottom: 0;
+  background: var(--accent); opacity: 0.4; border-radius: 1px;
+}
+.tz-int-point {
+  position: absolute; top: -3px; width: 2px; height: 10px;
+  background: var(--ink); border-radius: 1px;
+}
+.tz-int-foot {
+  display: flex; justify-content: space-between; margin-top: 0.24rem;
+  font-family: var(--mono); font-size: 0.63rem; color: var(--ink-3);
+}
+
+/* ---- sidebar -------------------------------------------------------- */
+
+[data-testid="stSidebar"] {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+[data-testid="stSidebar"] .block-container { padding-top: 1.4rem; }
+.tz-side-stat {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0.34rem 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 0.78rem; color: var(--ink-2);
+}
+.tz-side-stat span:last-child {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--ink); font-weight: 600;
+}
+.tz-side-brand {
+  font-size: 0.78rem; font-weight: 600; color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.tz-side-brand-sub {
+  font-size: 0.68rem; color: var(--ink-3); margin-top: 0.1rem;
+  line-height: 1.45;
+}
+
+/* ---- Streamlit widget overrides ------------------------------------- */
+
+.stButton > button {
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.38rem 0.9rem;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.stButton > button:hover { border-color: var(--accent); color: var(--ink); }
+.stButton > button[kind="primary"] {
+  background: var(--accent); border-color: var(--accent); color: #06090D;
+}
+.stButton > button[kind="primary"]:hover { filter: brightness(1.08); }
+
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+[data-testid="stTextInput"] input:focus { border-color: var(--accent); }
+
+[data-testid="stMetric"] {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem 0.75rem 0.9rem;
+}
+[data-testid="stMetricLabel"] p {
+  font-size: 0.65rem !important;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3) !important;
+}
+[data-testid="stMetricValue"] {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.62rem !important;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+[data-testid="stExpander"] {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+}
+[data-testid="stExpander"] summary { font-size: 0.82rem; }
+[data-testid="stExpander"] summary p {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.stTabs [data-baseweb="tab"] {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0.5rem 0.85rem;
+}
+.stTabs [aria-selected="true"] { color: var(--ink); }
+
+[data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 3px; }
+
+hr { border-color: var(--line); }
+
+h1, h2, h3, h4 { color: var(--ink); letter-spacing: -0.008em; }
+h2 { font-size: 1.02rem !important; font-weight: 600 !important;
+      margin-top: 1.6rem !important; }
+h3 { font-size: 0.9rem !important; font-weight: 600 !important; }
+
+[data-testid="stCaptionContainer"] p {
+  font-size: 0.74rem; color: var(--ink-3); line-height: 1.55;
+}
+
+/* Streamlit's alerts default to saturated pastel fills that read as a fifth
+   and sixth state colour. Flattened to a rule and a surface so the only loud
+   colour on the page stays the verdict. */
+[data-testid="stAlert"] {
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  border-left-width: 2px;
+  background: var(--panel);
+  font-size: 0.8rem;
+}
+</style>
+
+<style>
+  body { background:#0B0D11; color:#DCE2EA; margin:0;
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+                      "Helvetica Neue",Arial,sans-serif; }
+  .tz-shell { display:grid; grid-template-columns:250px 1fr; min-height:100vh; }
+  .tz-side { background:#12151B; border-right:1px solid #242932;
+              padding:1.4rem 1.1rem; }
+  .tz-main { padding:1.6rem 2rem 4rem 2rem; max-width:1500px; }
+  .tz-cols { display:flex; gap:1.1rem; align-items:flex-start; margin:0.2rem 0; }
+  .tz-col { min-width:0; }
+  .tz-p { font-size:0.85rem; line-height:1.6; color:#97A1AF; }
+  .tz-cap { font-size:0.74rem; color:#68727F; line-height:1.55;
+             margin:0.3rem 0 0.6rem 0; }
+  .tz-h2 { font-size:1.02rem; font-weight:600; margin:1.7rem 0 0.7rem 0;
+            color:#DCE2EA; }
+  .tz-metric { background:#12151B; border:1px solid #242932;
+                border-radius:3px; padding:0.7rem 0.9rem 0.75rem 0.9rem; }
+  .tz-metric-k { font-size:0.65rem; font-weight:600; letter-spacing:0.12em;
+                  text-transform:uppercase; color:#68727F; }
+  .tz-metric-v { font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-variant-numeric:tabular-nums;
+                  font-size:1.62rem; font-weight:500; margin-top:0.2rem; }
+  .tz-table { width:100%; border-collapse:collapse; font-size:0.76rem;
+               font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; margin:0.5rem 0 0.2rem 0; }
+  .tz-table th { text-align:left; font-size:0.62rem; letter-spacing:0.1em;
+                  text-transform:uppercase; color:#68727F; font-weight:600;
+                  border-bottom:1px solid #242932; padding:0.35rem 0.5rem; }
+  .tz-table td { border-bottom:1px solid #1C2029; padding:0.35rem 0.5rem;
+                  color:#97A1AF; }
+  .tz-alert { background:#12151B; border:1px solid #242932;
+               border-left-width:2px; border-radius:3px; padding:0.6rem 0.85rem;
+               font-size:0.8rem; margin:0.5rem 0; color:#97A1AF; }
+  .tz-exp { background:#12151B; border:1px solid #242932;
+             border-radius:3px; margin:0.45rem 0; padding:0.1rem 0.9rem; }
+  .tz-exp summary { font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size:0.78rem; cursor:pointer;
+                     padding:0.6rem 0; color:#DCE2EA; }
+  .tz-viz { margin:0.2rem 0 0.4rem 0; }
+  .tz-preview-note { font-size:0.7rem; color:#68727F; border:1px dashed
+      #242932; border-radius:3px; padding:0.5rem 0.7rem; margin-bottom:1.2rem; }
+</style></head>
+<body><div class="tz-shell">
+  <div class="tz-side">
+    <div class="tz-side-brand">Trust and Risk Layer</div>
+    <div class="tz-side-brand-sub">Healthcare threat-intelligence RAG<br/>
+      Team Zetabyte</div>
+    <div style="height:1px;background:#242932;margin:0.9rem 0 1rem 0;"></div>
+    <div class="tz-eyebrow">Analyst</div>
+    <div class="tz-cap">analyst-01 · tier2_soc</div>
+    <div class="tz-eyebrow" style="margin-top:1.3rem;">Queue</div>
+    <div class="tz-side-stat"><span>Queries logged</span><span>—</span></div>
+    <div class="tz-side-stat"><span>Awaiting review</span><span>—</span></div>
+  </div>
+  <div class="tz-main">
+    <div class="tz-masthead"><div class="tz-masthead-l"><div class="tz-title">Trust and Risk Layer — SOC Analyst Console</div><div class="tz-sub">Corpus poisoning detection for retrieval-augmented threat intelligence</div></div><div class="tz-mark">DESIGN-V1.7 · HEALTHCARE THREAT INTELLIGENCE</div></div>
+    <div class="tz-preview-note">
+      Static design preview generated by <code>dashboard/make_preview.py</code>.
+      The stylesheet and the charts are the console's own. Query:
+      <code>Is the Contec CMS8000 patient monitor safe to keep connected to our clinical network?</code> · audit reference
+      <code>evt-7e952183-f96a-4486-a925-506b23a235c5</code>
+    </div>
+    
+        <div class="tz-banner" style="background:#8E2F29;
+                    color:#FFFFFF;border-radius:4px;">
+          <div>
+            <div class="tz-banner-eyebrow">System verdict</div>
+            <div style="font-size:3.5rem;font-weight:700;line-height:1.02;
+                        letter-spacing:0.01em;">
+              ✕&nbsp;RED
+            </div>
+            <div class="tz-banner-sub">REJECTED — DO NOT ACT ON THIS ANSWER</div>
+            <div class="tz-banner-subtype" style="font-size:1.05rem;font-weight:600;">Trusted Source Compromise Suspected</div>
+          </div>
+          <div class="tz-banner-side"><div class="tz-banner-fig"><span class="k">Action</span><span class="v">ESCALATE</span></div><div class="tz-banner-fig"><span class="k">Case</span><span class="v">C5</span></div><div class="tz-banner-fig"><span class="k">Priority</span><span class="v">P0</span></div></div>
+        </div>
+        <div class="tz-cap">A source we had already verified is behaving anomalously. The source is the unit of concern — this is a finding about our own trust infrastructure and it outlives this query.</div><div class="tz-cols"><div class="tz-col" style="flex:1.35;"><div class="tz-metric"><div class="tz-metric-k">Composite trust score</div><div class="tz-metric-v">not computed</div></div></div><div class="tz-col" style="flex:1.0;"><div class="tz-metric"><div class="tz-metric-k">Confidence in that score</div><div class="tz-metric-v">0.81</div></div></div><div class="tz-col" style="flex:1.0;"><div class="tz-metric"><div class="tz-metric-k">Risk tier</div><div class="tz-metric-v">CRITICAL</div></div></div></div><div style='height:2px;background:#C8453D;opacity:0.5;border-radius:1px;margin:0.55rem 0 0 0;'></div>
+        <div class="tz-panel tz-panel-accent"
+             style="border-left-color:#C8453D;margin-top:0.6rem;">
+          <div class="tz-eyebrow">Case classification</div>
+          <div style="font-size:0.98rem;font-weight:600;margin:0.28rem 0 0.5rem 0;">
+            C5 — Authoritative Channel Compromise
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;"><span class="tz-chip-dot" style="background:#C8453D"></span>ESCALATE</span>
+            <span style="font-size:0.78rem;color:#68727F;">
+              recommended action · P0</span>
+          </div>
+        </div><div class="tz-cap">Raise a security event to the threat-intelligence owner. PROTECTS THE SYSTEM — a source or the pipeline is the unit of concern; this query is merely how we noticed.</div><div class="tz-alert" style="border-left-color:#D2971F;">3 detector(s) ran on fallback backends (anomaly, entailment, injection). Scores are structural indicators, not measurements of detection performance.</div><div class="tz-alert" style="border-left-color:#D2971F;">No fitted model: the case taxonomy ran alone and no composite score is reported.</div><div class="tz-alert" style="border-left-color:#D2971F;">Entailment used the query as the hypothesis because no generated answer was supplied; it measures support for the QUESTION, not the ANSWER.</div><div class="tz-eyebrow" style="margin:1.4rem 0 0.5rem 0;">Detector readings across the retrieval set</div><div class="tz-viz" id="viz1_133056351635488"></div><script>window.__specs=window.__specs||[];window.__specs.push(["viz1_133056351635488",{"data": {"values": [{"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Injection", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Injection = 0.000 (below threshold)"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Anomaly", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Anomaly = 0.000 (below threshold)"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Unsupport", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Unsupport = 0.000 (below threshold)"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Conflict", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Conflict = 0.000 (below threshold)"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Injection", "status": "over malicious", "value": 0.9924999999999999, "text": "0.99", "detail": "Injection = 0.992 (over malicious)"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Anomaly", "status": "over malicious", "value": 0.9999998844438418, "text": "1.00", "detail": "Anomaly = 1.000 (over malicious)"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Unsupport", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Unsupport = 0.000 (below threshold)"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Conflict", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Conflict = 0.000 (below threshold)"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Injection", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Injection = 0.000 (below threshold)"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Anomaly", "status": "over malicious", "value": 0.9999999964703622, "text": "1.00", "detail": "Anomaly = 1.000 (over malicious)"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Unsupport", "status": "below threshold", "value": 0.4, "text": "0.40", "detail": "Unsupport = 0.400 (below threshold)"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Conflict", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Conflict = 0.000 (below threshold)"}, {"document": "4  nvd-cve-2020-6961", "signal": "Injection", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Injection = 0.000 (below threshold)"}, {"document": "4  nvd-cve-2020-6961", "signal": "Anomaly", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Anomaly = 0.000 (below threshold)"}, {"document": "4  nvd-cve-2020-6961", "signal": "Unsupport", "status": "below threshold", "value": 0.7, "text": "0.70", "detail": "Unsupport = 0.700 (below threshold)"}, {"document": "4  nvd-cve-2020-6961", "signal": "Conflict", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Conflict = 0.000 (below threshold)"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Injection", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Injection = 0.000 (below threshold)"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Anomaly", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Anomaly = 0.000 (below threshold)"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Unsupport", "status": "below threshold", "value": 0.6, "text": "0.60", "detail": "Unsupport = 0.600 (below threshold)"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Conflict", "status": "below threshold", "value": 0.0, "text": "0.00", "detail": "Conflict = 0.000 (below threshold)"}]}, "encoding": {"x": {"field": "signal", "type": "nominal", "title": null, "sort": ["Injection", "Anomaly", "Unsupport", "Conflict"], "axis": {"orient": "top", "labelAngle": 0, "labelFontSize": 10, "domain": false, "ticks": false, "labelColor": "#97A1AF"}}, "y": {"field": "document", "type": "nominal", "title": null, "sort": ["1  poison-authority-contec-t1-ci\u2026", "2  poison-injection-contec-t3-fo\u2026", "3  cisa-icsma-25-030-01", "4  nvd-cve-2020-6961", "5  poison-authority-carescape-t1\u2026"], "axis": {"labelLimit": 240, "domain": false, "ticks": false, "labelPadding": 6}}}, "layer": [{"mark": {"type": "rect", "stroke": "#0B0D11", "strokeWidth": 2, "cornerRadius": 2}, "encoding": {"color": {"field": "status", "type": "nominal", "scale": {"domain": ["over malicious", "over suspicious", "below threshold", "not calibrated", "did not run"], "range": ["#C8453D", "#D2971F", "#4E8FD4", "#5C6673", "#5C6673"]}, "legend": {"title": "Detector status", "orient": "bottom"}}, "opacity": {"condition": {"test": "datum.status === 'below threshold'", "value": 0.32}, "value": 0.92}, "tooltip": [{"field": "document", "type": "nominal", "title": "Document"}, {"field": "detail", "type": "nominal", "title": "Reading"}]}}, {"mark": {"type": "text", "fontSize": 10, "fontWeight": 600, "font": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "encoding": {"text": {"field": "text", "type": "nominal"}, "color": {"value": "#F2F5F9"}}}], "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "width": "container", "height": 280, "config": {"background": "transparent", "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif", "view": {"stroke": "transparent"}, "padding": {"left": 2, "top": 6, "right": 2, "bottom": 2}, "axis": {"labelColor": "#68727F", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 10, "titleFontWeight": 500, "titlePadding": 8, "gridColor": "#1C2029", "gridOpacity": 0.85, "domainColor": "#242932", "tickColor": "#242932", "labelFont": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "legend": {"labelColor": "#97A1AF", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 9, "titleFontWeight": 600, "symbolType": "square", "orient": "bottom", "direction": "horizontal", "columns": 4}, "title": {"color": "#DCE2EA", "fontSize": 11, "fontWeight": 600, "anchor": "start", "offset": 8}, "range": {"category": ["#4E8FD4", "#2FA36B", "#D2971F", "#C8453D", "#5C6673"]}}}]);</script><div class="tz-cap">Colour is the status band, not the value — the four detectors have different thresholds, so equal colours would not mean equal severity. The number in each cell is the reading itself.</div><div class="tz-cols"><div class="tz-col" style="flex:1.0;"><div class="tz-eyebrow" style="margin:1.1rem 0 0.5rem 0;">Retrieval profile</div><div class="tz-viz" id="viz1_133056306072880"></div><script>window.__specs=window.__specs||[];window.__specs.push(["viz1_133056306072880",{"data": {"values": [{"document": "1  poison-authority-contec-t1-ci\u2026", "similarity": 0.623804, "tier": "Tier 1", "source": "CISA ICS Medical Advisory", "band": "GREEN"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "similarity": 0.53664, "tier": "Tier 3", "source": "Security Community Forum Post", "band": "RED"}, {"document": "3  cisa-icsma-25-030-01", "similarity": 0.418143, "tier": "Tier 1", "source": "CISA ICS Medical Advisory", "band": "RED"}, {"document": "4  nvd-cve-2020-6961", "similarity": 0.378758, "tier": "Tier 1", "source": "NIST National Vulnerability Database", "band": "GREEN"}, {"document": "5  poison-authority-carescape-t1\u2026", "similarity": 0.335405, "tier": "Tier 1", "source": "Medical Device Vendor PSIRT Bulletin", "band": "GREEN"}]}, "mark": {"type": "bar", "height": {"band": 0.62}, "cornerRadiusEnd": 2}, "encoding": {"y": {"field": "document", "type": "nominal", "title": null, "sort": ["1  poison-authority-contec-t1-ci\u2026", "2  poison-injection-contec-t3-fo\u2026", "3  cisa-icsma-25-030-01", "4  nvd-cve-2020-6961", "5  poison-authority-carescape-t1\u2026"], "axis": {"labelLimit": 240, "domain": false, "ticks": false}}, "x": {"field": "similarity", "type": "quantitative", "title": "Similarity to query", "scale": {"domain": [0, 1]}, "axis": {"format": ".2f", "grid": true}}, "color": {"field": "tier", "type": "nominal", "scale": {"domain": ["Tier 1", "Tier 2", "Tier 3"], "range": ["#7F8CA0", "#4E6076", "#33404F"]}, "legend": {"title": "Source trust tier"}}, "tooltip": [{"field": "document", "type": "nominal", "title": "Document"}, {"field": "source", "type": "nominal", "title": "Source"}, {"field": "tier", "type": "nominal", "title": "Tier"}, {"field": "similarity", "type": "quantitative", "title": "Similarity", "format": ".4f"}]}, "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "width": "container", "height": 250, "config": {"background": "transparent", "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif", "view": {"stroke": "transparent"}, "padding": {"left": 2, "top": 6, "right": 2, "bottom": 2}, "axis": {"labelColor": "#68727F", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 10, "titleFontWeight": 500, "titlePadding": 8, "gridColor": "#1C2029", "gridOpacity": 0.85, "domainColor": "#242932", "tickColor": "#242932", "labelFont": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "legend": {"labelColor": "#97A1AF", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 9, "titleFontWeight": 600, "symbolType": "square", "orient": "bottom", "direction": "horizontal", "columns": 4}, "title": {"color": "#DCE2EA", "fontSize": 11, "fontWeight": 600, "anchor": "start", "offset": 8}, "range": {"category": ["#4E8FD4", "#2FA36B", "#D2971F", "#C8453D", "#5C6673"]}}}]);</script><div class="tz-cap">Retrieval is partition-blind: it ranks by similarity alone and knows nothing about provenance. A Tier 3 bar at the top is the attack this system is built to catch.</div></div><div class="tz-col" style="flex:1.0;"><div class="tz-eyebrow" style="margin:1.1rem 0 0.5rem 0;">Distance to the suspicious threshold</div><div class="tz-viz" id="viz1_133056306082672"></div><script>window.__specs=window.__specs||[];window.__specs.push(["viz1_133056306082672",{"data": {"values": [{"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Injection", "margin": -0.6, "value": 0.0, "threshold": 0.6, "status": "below threshold"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Anomaly", "margin": -0.7761478827654915, "value": 0.0, "threshold": 0.7761478827654915, "status": "below threshold"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Unsupport", "margin": -0.9996093770604461, "value": 0.0, "threshold": 0.9996093770604461, "status": "below threshold"}, {"document": "1  poison-authority-contec-t1-ci\u2026", "signal": "Conflict", "margin": -0.8616055749778663, "value": 0.0, "threshold": 0.8616055749778663, "status": "below threshold"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Injection", "margin": 0.39249999999999996, "value": 0.9924999999999999, "threshold": 0.6, "status": "over malicious"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Anomaly", "margin": 0.2238520016783503, "value": 0.9999998844438418, "threshold": 0.7761478827654915, "status": "over malicious"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Unsupport", "margin": -0.9996093770604461, "value": 0.0, "threshold": 0.9996093770604461, "status": "below threshold"}, {"document": "2  poison-injection-contec-t3-fo\u2026", "signal": "Conflict", "margin": -0.8616055749778663, "value": 0.0, "threshold": 0.8616055749778663, "status": "below threshold"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Injection", "margin": -0.6, "value": 0.0, "threshold": 0.6, "status": "below threshold"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Anomaly", "margin": 0.22385211370487068, "value": 0.9999999964703622, "threshold": 0.7761478827654915, "status": "over malicious"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Unsupport", "margin": -0.599609377060446, "value": 0.4, "threshold": 0.9996093770604461, "status": "below threshold"}, {"document": "3  cisa-icsma-25-030-01", "signal": "Conflict", "margin": -0.8616055749778663, "value": 0.0, "threshold": 0.8616055749778663, "status": "below threshold"}, {"document": "4  nvd-cve-2020-6961", "signal": "Injection", "margin": -0.6, "value": 0.0, "threshold": 0.6, "status": "below threshold"}, {"document": "4  nvd-cve-2020-6961", "signal": "Anomaly", "margin": -0.7761478827654915, "value": 0.0, "threshold": 0.7761478827654915, "status": "below threshold"}, {"document": "4  nvd-cve-2020-6961", "signal": "Unsupport", "margin": -0.2996093770604461, "value": 0.7, "threshold": 0.9996093770604461, "status": "below threshold"}, {"document": "4  nvd-cve-2020-6961", "signal": "Conflict", "margin": -0.8616055749778663, "value": 0.0, "threshold": 0.8616055749778663, "status": "below threshold"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Injection", "margin": -0.6, "value": 0.0, "threshold": 0.6, "status": "below threshold"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Anomaly", "margin": -0.7761478827654915, "value": 0.0, "threshold": 0.7761478827654915, "status": "below threshold"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Unsupport", "margin": -0.3996093770604461, "value": 0.6, "threshold": 0.9996093770604461, "status": "below threshold"}, {"document": "5  poison-authority-carescape-t1\u2026", "signal": "Conflict", "margin": -0.8616055749778663, "value": 0.0, "threshold": 0.8616055749778663, "status": "below threshold"}]}, "layer": [{"mark": {"type": "circle", "size": 82, "opacity": 0.95}, "encoding": {"x": {"field": "margin", "type": "quantitative", "title": "Margin to suspicious threshold (left of zero = under the line)", "axis": {"format": "+.2f"}}, "y": {"field": "signal", "type": "nominal", "title": null, "sort": ["Injection", "Anomaly", "Unsupport", "Conflict"], "axis": {"domain": false, "ticks": false}}, "color": {"field": "status", "type": "nominal", "scale": {"domain": ["over malicious", "over suspicious", "below threshold", "not calibrated", "did not run"], "range": ["#C8453D", "#D2971F", "#4E8FD4", "#5C6673", "#5C6673"]}, "legend": {"title": "Detector status"}}, "tooltip": [{"field": "document", "type": "nominal", "title": "Document"}, {"field": "signal", "type": "nominal", "title": "Detector"}, {"field": "value", "type": "quantitative", "title": "Reading", "format": ".3f"}, {"field": "threshold", "type": "quantitative", "title": "Suspicious at", "format": ".3f"}, {"field": "margin", "type": "quantitative", "title": "Margin", "format": "+.3f"}]}}, {"mark": {"type": "rule", "color": "#D2971F", "strokeWidth": 1, "strokeDash": [4, 3], "opacity": 0.9}, "encoding": {"x": {"datum": 0}}}], "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "width": "container", "height": 250, "config": {"background": "transparent", "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif", "view": {"stroke": "transparent"}, "padding": {"left": 2, "top": 6, "right": 2, "bottom": 2}, "axis": {"labelColor": "#68727F", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 10, "titleFontWeight": 500, "titlePadding": 8, "gridColor": "#1C2029", "gridOpacity": 0.85, "domainColor": "#242932", "tickColor": "#242932", "labelFont": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "legend": {"labelColor": "#97A1AF", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 9, "titleFontWeight": 600, "symbolType": "square", "orient": "bottom", "direction": "horizontal", "columns": 4}, "title": {"color": "#DCE2EA", "fontSize": 11, "fontWeight": 600, "anchor": "start", "offset": 8}, "range": {"category": ["#4E8FD4", "#2FA36B", "#D2971F", "#C8453D", "#5C6673"]}}}]);</script><div class="tz-cap">Plotted as a margin rather than a raw score, so one axis is meaningful for all four detectors. Left of the dashed line is under threshold.</div></div></div><div class="tz-cols"><div class="tz-col" style="flex:1.1;"><div class="tz-eyebrow" style="margin:1.4rem 0 0.5rem 0;">Composite trust score and 95% interval</div><div class="tz-cap">No composite score was computed for this query.</div></div><div class="tz-col" style="flex:1.0;"><div class="tz-eyebrow" style="margin:1.4rem 0 0.5rem 0;">What the confidence figure rests on</div><div class="tz-viz" id="viz1_133056306072880"></div><script>window.__specs=window.__specs||[];window.__specs.push(["viz1_133056306072880",{"data": {"values": [{"component": "model stability", "value": 0.5}, {"component": "coherence", "value": 0.720626}, {"component": "volume", "value": 0.864665}, {"component": "agreement", "value": 1.0}, {"component": "independence", "value": 1.0}]}, "layer": [{"mark": {"type": "bar", "height": {"band": 0.55}, "cornerRadiusEnd": 2, "color": "#4E8FD4", "opacity": 0.85}, "encoding": {"tooltip": [{"field": "component", "type": "nominal", "title": "Component"}, {"field": "value", "type": "quantitative", "title": "Value", "format": ".3f"}]}}, {"mark": {"type": "text", "align": "left", "dx": 6, "fontSize": 10, "font": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace", "color": "#97A1AF"}, "encoding": {"text": {"field": "value", "type": "quantitative", "format": ".2f"}}}], "encoding": {"y": {"field": "component", "type": "nominal", "title": null, "sort": ["model stability", "coherence", "volume", "agreement", "independence"], "axis": {"domain": false, "ticks": false, "labelLimit": 150}}, "x": {"field": "value", "type": "quantitative", "title": null, "scale": {"domain": [0, 1]}, "axis": {"format": ".1f", "values": [0, 0.25, 0.5, 0.75, 1]}}}, "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "width": "container", "height": 174, "config": {"background": "transparent", "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif", "view": {"stroke": "transparent"}, "padding": {"left": 2, "top": 6, "right": 2, "bottom": 2}, "axis": {"labelColor": "#68727F", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 10, "titleFontWeight": 500, "titlePadding": 8, "gridColor": "#1C2029", "gridOpacity": 0.85, "domainColor": "#242932", "tickColor": "#242932", "labelFont": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "legend": {"labelColor": "#97A1AF", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 9, "titleFontWeight": 600, "symbolType": "square", "orient": "bottom", "direction": "horizontal", "columns": 4}, "title": {"color": "#DCE2EA", "fontSize": 11, "fontWeight": 600, "anchor": "start", "offset": 8}, "range": {"category": ["#4E8FD4", "#2FA36B", "#D2971F", "#C8453D", "#5C6673"]}}}]);</script></div></div><h2 class="tz-h2">Reasoning</h2><div class="tz-panel"><ul style="margin:0;padding-left:1.1rem;font-size:0.87rem;line-height:1.6;"><li style="margin-bottom:0.4rem;">Classified RED — Trusted Source Compromise Suspected (C5 Authoritative Channel Compromise): a Tier 1 source we had already verified is behaving anomalously. The source, not the document, is the unit of concern.</li><li style="margin-bottom:0.4rem;">Flagged because injection_probability = 0.992 on document poison-injection-contec-t3-forum, exceeding the malicious threshold of 0.900 by +0.092, on a Tier 3 source.</li><li style="margin-bottom:0.4rem;">Flagged because embedding_anomaly_score = 1.000 on document poison-injection-contec-t3-forum, exceeding the malicious threshold of 0.999 by +0.001, on a Tier 3 source.</li><li style="margin-bottom:0.4rem;">Flagged because embedding_anomaly_score = 1.000 on document cisa-icsma-25-030-01, exceeding the malicious threshold of 0.999 by +0.001, on a Tier 1 source.</li><li style="margin-bottom:0.4rem;">No fitted model was available for this query, so no composite score is reported. The case taxonomy ran alone, which is a valid configuration.</li><li style="margin-bottom:0.4rem;">Confidence in that estimate is 0.809, drawn from 4 effective independent documents across 4 distinct sources.</li><li style="margin-bottom:0.4rem;">The case taxonomy proposed ESCALATE and the fitted score proposed ACCEPT; the more conservative of the two, ESCALATE, was taken.</li><li style="margin-bottom:0.4rem;">Extracted 1 indicators from the retrieved documents by pattern matching: 1 cve.</li><li style="margin-bottom:0.4rem;">CAVEAT: 3 of the detectors ran on fallback backends (anomaly, entailment, injection). The scores above are structural indicators, not measurements, and must not be quoted as detector performance.</li></ul></div><div class="tz-cap">32 values above are substituted from computed fields of this report; none is model-generated.</div><h2 class="tz-h2">Evidence — 5 retrieved documents</h2><details class="tz-exp" ><summary><code>[OK]</code>  1  <code>poison-authority-contec-t1-cisa</code>  ·  T1  ·  sim 0.624</summary>
+                <div style="display:flex;align-items:center;gap:0.5rem;
+                            flex-wrap:wrap;margin:0.3rem 0 0.7rem 0;">
+                  <span class="tz-chip" style="color:#2FA36B;border-color:#2FA36B66;"><span class="tz-chip-dot" style="background:#2FA36B"></span><span>✓</span>GREEN</span>
+                  <span class="tz-tier tz-tier-1">T1 verified_authoritative</span>
+                  <span class="tz-chip" style="color:#97A1AF;border-color:#97A1AF66;"><span class="tz-chip-dot" style="background:#97A1AF"></span>ACCEPT</span>
+                </div>
+                <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
+                  Contec Health CMS8000 Patient Monitor (Update C)</div><div class="tz-panel"><dl class="tz-kv"><dt>Source</dt><dd>CISA ICS Medical Advisory (cisa_ics_medical)</dd><dt>Trust tier</dt><dd>1 — verified_authoritative</dd><dt>Case</dt><dd>C1 Authoritative Confirmation</dd><dt>Action</dt><dd>ACCEPT (P5)</dd></dl></div><div class="tz-eyebrow" style="margin:1rem 0 0.5rem 0;">Detector readings</div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">injection_probability</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:60.00%"></div><div class="tz-tick tz-tick-crit" style="left:90.00%"></div></div><div class="tz-meter-foot"><span>suspicious 0.600</span><span>malicious 0.900</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">embedding_anomaly_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:77.61%"></div><div class="tz-tick tz-tick-crit" style="left:99.93%"></div></div><div class="tz-meter-foot"><span>suspicious 0.776</span><span>malicious 0.999</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">claim_unsupport_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:99.96%"></div><div class="tz-tick tz-tick-crit" style="left:99.98%"></div></div><div class="tz-meter-foot"><span>suspicious 1.000</span><span>malicious 1.000</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">evidence_conflict_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:86.16%"></div><div class="tz-tick tz-tick-crit" style="left:96.77%"></div></div><div class="tz-meter-foot"><span>suspicious 0.862</span><span>malicious 0.968</span></div></div><table class="tz-table"><thead><tr><th>Detector</th><th>Score</th><th>Suspicious at</th><th>Malicious at</th><th>Status</th></tr></thead><tbody><tr><td>injection_probability</td><td>0.000</td><td>0.600</td><td>0.900</td><td>below</td></tr><tr><td>embedding_anomaly_score</td><td>0.000</td><td>0.776</td><td>0.999</td><td>below</td></tr><tr><td>claim_unsupport_score</td><td>0.000</td><td>1.000</td><td>1.000</td><td>below</td></tr><tr><td>evidence_conflict_score</td><td>0.000</td><td>0.862</td><td>0.968</td><td>below</td></tr></tbody></table><div class="tz-cap">Published 2026-07-08 · ingested 2026-09-05 · reference verified: False</div></details><details class="tz-exp" open><summary><code>[MAL]</code>  2  <code>poison-injection-contec-t3-forum</code>  ·  T3  ·  sim 0.537  ·  2 signal(s) fired</summary>
+                <div style="display:flex;align-items:center;gap:0.5rem;
+                            flex-wrap:wrap;margin:0.3rem 0 0.7rem 0;">
+                  <span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;"><span class="tz-chip-dot" style="background:#C8453D"></span><span>✕</span>RED</span>
+                  <span class="tz-tier tz-tier-3">T3 unverified_unknown</span>
+                  <span class="tz-chip" style="color:#97A1AF;border-color:#97A1AF66;"><span class="tz-chip-dot" style="background:#97A1AF"></span>REJECT</span>
+                </div>
+                <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
+                  Forum Thread: Contec CMS8000 — That Advisory Was Pulled, Keep The Monitors Online</div><div class="tz-panel"><dl class="tz-kv"><dt>Source</dt><dd>Security Community Forum Post (community_forum)</dd><dt>Trust tier</dt><dd>3 — unverified_unknown</dd><dt>Case</dt><dd>C9 Expected-Path Poisoning</dd><dt>Action</dt><dd>REJECT (P2)</dd></dl></div><div class="tz-eyebrow" style="margin:1rem 0 0.5rem 0;">Detector readings</div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">injection_probability<span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;margin-left:0.5rem;"><span class="tz-chip-dot" style="background:#C8453D"></span>fired</span></span><span class="tz-meter-val" style="color:#C8453D">0.992</span></div><div class="tz-track"><div class="tz-fill" style="width:99.25%;background:#C8453D"></div><div class="tz-tick" style="left:60.00%"></div><div class="tz-tick tz-tick-crit" style="left:90.00%"></div></div><div class="tz-meter-foot"><span>suspicious 0.600</span><span>malicious 0.900</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">embedding_anomaly_score<span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;margin-left:0.5rem;"><span class="tz-chip-dot" style="background:#C8453D"></span>fired</span></span><span class="tz-meter-val" style="color:#C8453D">1.000</span></div><div class="tz-track"><div class="tz-fill" style="width:100.00%;background:#C8453D"></div><div class="tz-tick" style="left:77.61%"></div><div class="tz-tick tz-tick-crit" style="left:99.93%"></div></div><div class="tz-meter-foot"><span>suspicious 0.776</span><span>malicious 0.999</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">claim_unsupport_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:99.96%"></div><div class="tz-tick tz-tick-crit" style="left:99.98%"></div></div><div class="tz-meter-foot"><span>suspicious 1.000</span><span>malicious 1.000</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">evidence_conflict_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:86.16%"></div><div class="tz-tick tz-tick-crit" style="left:96.77%"></div></div><div class="tz-meter-foot"><span>suspicious 0.862</span><span>malicious 0.968</span></div></div><table class="tz-table"><thead><tr><th>Detector</th><th>Score</th><th>Suspicious at</th><th>Malicious at</th><th>Status</th></tr></thead><tbody><tr><td>injection_probability</td><td>0.992</td><td>0.600</td><td>0.900</td><td>FIRED</td></tr><tr><td>embedding_anomaly_score</td><td>1.000</td><td>0.776</td><td>0.999</td><td>FIRED</td></tr><tr><td>claim_unsupport_score</td><td>0.000</td><td>1.000</td><td>1.000</td><td>below</td></tr><tr><td>evidence_conflict_score</td><td>0.000</td><td>0.862</td><td>0.968</td><td>below</td></tr></tbody></table><div class="tz-cap">Published 2026-06-27 · ingested 2026-09-05 · reference verified: False</div></details><details class="tz-exp" open><summary><code>[MAL]</code>  3  <code>cisa-icsma-25-030-01</code>  ·  T1  ·  sim 0.418  ·  1 signal(s) fired</summary>
+                <div style="display:flex;align-items:center;gap:0.5rem;
+                            flex-wrap:wrap;margin:0.3rem 0 0.7rem 0;">
+                  <span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;"><span class="tz-chip-dot" style="background:#C8453D"></span><span>✕</span>RED</span>
+                  <span class="tz-tier tz-tier-1">T1 verified_authoritative</span>
+                  <span class="tz-chip" style="color:#97A1AF;border-color:#97A1AF66;"><span class="tz-chip-dot" style="background:#97A1AF"></span>ESCALATE</span>
+                </div>
+                <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
+                  Contec Health CMS8000 Patient Monitor</div><div class="tz-panel"><dl class="tz-kv"><dt>Source</dt><dd>CISA ICS Medical Advisory (cisa_ics_medical)</dd><dt>Trust tier</dt><dd>1 — verified_authoritative</dd><dt>Case</dt><dd>C4 Trusted-Source Anomaly</dd><dt>Action</dt><dd>ESCALATE (P1)</dd></dl></div><div class="tz-eyebrow" style="margin:1rem 0 0.5rem 0;">Detector readings</div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">injection_probability</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:60.00%"></div><div class="tz-tick tz-tick-crit" style="left:90.00%"></div></div><div class="tz-meter-foot"><span>suspicious 0.600</span><span>malicious 0.900</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">embedding_anomaly_score<span class="tz-chip" style="color:#C8453D;border-color:#C8453D66;margin-left:0.5rem;"><span class="tz-chip-dot" style="background:#C8453D"></span>fired</span></span><span class="tz-meter-val" style="color:#C8453D">1.000</span></div><div class="tz-track"><div class="tz-fill" style="width:100.00%;background:#C8453D"></div><div class="tz-tick" style="left:77.61%"></div><div class="tz-tick tz-tick-crit" style="left:99.93%"></div></div><div class="tz-meter-foot"><span>suspicious 0.776</span><span>malicious 0.999</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">claim_unsupport_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.400</span></div><div class="tz-track"><div class="tz-fill" style="width:40.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:99.96%"></div><div class="tz-tick tz-tick-crit" style="left:99.98%"></div></div><div class="tz-meter-foot"><span>suspicious 1.000</span><span>malicious 1.000</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">evidence_conflict_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:86.16%"></div><div class="tz-tick tz-tick-crit" style="left:96.77%"></div></div><div class="tz-meter-foot"><span>suspicious 0.862</span><span>malicious 0.968</span></div></div><table class="tz-table"><thead><tr><th>Detector</th><th>Score</th><th>Suspicious at</th><th>Malicious at</th><th>Status</th></tr></thead><tbody><tr><td>injection_probability</td><td>0.000</td><td>0.600</td><td>0.900</td><td>below</td></tr><tr><td>embedding_anomaly_score</td><td>1.000</td><td>0.776</td><td>0.999</td><td>FIRED</td></tr><tr><td>claim_unsupport_score</td><td>0.400</td><td>1.000</td><td>1.000</td><td>below</td></tr><tr><td>evidence_conflict_score</td><td>0.000</td><td>0.862</td><td>0.968</td><td>below</td></tr></tbody></table><div class="tz-cap">Published 2025-01-30 · ingested 2026-09-02 · reference verified: True</div></details><details class="tz-exp" ><summary><code>[OK]</code>  4  <code>nvd-cve-2020-6961</code>  ·  T1  ·  sim 0.379</summary>
+                <div style="display:flex;align-items:center;gap:0.5rem;
+                            flex-wrap:wrap;margin:0.3rem 0 0.7rem 0;">
+                  <span class="tz-chip" style="color:#2FA36B;border-color:#2FA36B66;"><span class="tz-chip-dot" style="background:#2FA36B"></span><span>✓</span>GREEN</span>
+                  <span class="tz-tier tz-tier-1">T1 verified_authoritative</span>
+                  <span class="tz-chip" style="color:#97A1AF;border-color:#97A1AF66;"><span class="tz-chip-dot" style="background:#97A1AF"></span>ACCEPT</span>
+                </div>
+                <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
+                  CVE-2020-6961: GE CARESCAPE Patient Monitoring Devices - Exposed SSH Private Key</div><div class="tz-panel"><dl class="tz-kv"><dt>Source</dt><dd>NIST National Vulnerability Database (nvd_cve)</dd><dt>Trust tier</dt><dd>1 — verified_authoritative</dd><dt>Case</dt><dd>C1 Authoritative Confirmation</dd><dt>Action</dt><dd>ACCEPT (P5)</dd></dl></div><div class="tz-eyebrow" style="margin:1rem 0 0.5rem 0;">Detector readings</div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">injection_probability</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:60.00%"></div><div class="tz-tick tz-tick-crit" style="left:90.00%"></div></div><div class="tz-meter-foot"><span>suspicious 0.600</span><span>malicious 0.900</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">embedding_anomaly_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:77.61%"></div><div class="tz-tick tz-tick-crit" style="left:99.93%"></div></div><div class="tz-meter-foot"><span>suspicious 0.776</span><span>malicious 0.999</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">claim_unsupport_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.700</span></div><div class="tz-track"><div class="tz-fill" style="width:70.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:99.96%"></div><div class="tz-tick tz-tick-crit" style="left:99.98%"></div></div><div class="tz-meter-foot"><span>suspicious 1.000</span><span>malicious 1.000</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">evidence_conflict_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:86.16%"></div><div class="tz-tick tz-tick-crit" style="left:96.77%"></div></div><div class="tz-meter-foot"><span>suspicious 0.862</span><span>malicious 0.968</span></div></div><table class="tz-table"><thead><tr><th>Detector</th><th>Score</th><th>Suspicious at</th><th>Malicious at</th><th>Status</th></tr></thead><tbody><tr><td>injection_probability</td><td>0.000</td><td>0.600</td><td>0.900</td><td>below</td></tr><tr><td>embedding_anomaly_score</td><td>0.000</td><td>0.776</td><td>0.999</td><td>below</td></tr><tr><td>claim_unsupport_score</td><td>0.700</td><td>1.000</td><td>1.000</td><td>below</td></tr><tr><td>evidence_conflict_score</td><td>0.000</td><td>0.862</td><td>0.968</td><td>below</td></tr></tbody></table><div class="tz-cap">Published 2020-01-23 · ingested 2026-09-02 · reference verified: True</div></details><details class="tz-exp" ><summary><code>[OK]</code>  5  <code>poison-authority-carescape-t1-psirt</code>  ·  T1  ·  sim 0.335</summary>
+                <div style="display:flex;align-items:center;gap:0.5rem;
+                            flex-wrap:wrap;margin:0.3rem 0 0.7rem 0;">
+                  <span class="tz-chip" style="color:#2FA36B;border-color:#2FA36B66;"><span class="tz-chip-dot" style="background:#2FA36B"></span><span>✓</span>GREEN</span>
+                  <span class="tz-tier tz-tier-1">T1 verified_authoritative</span>
+                  <span class="tz-chip" style="color:#97A1AF;border-color:#97A1AF66;"><span class="tz-chip-dot" style="background:#97A1AF"></span>ACCEPT</span>
+                </div>
+                <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
+                  Product Security Bulletin: Key Material Rotation Completed on Patient Monitoring Platform</div><div class="tz-panel"><dl class="tz-kv"><dt>Source</dt><dd>Medical Device Vendor PSIRT Bulletin (vendor_psirt)</dd><dt>Trust tier</dt><dd>1 — verified_authoritative</dd><dt>Case</dt><dd>C1 Authoritative Confirmation</dd><dt>Action</dt><dd>ACCEPT (P5)</dd></dl></div><div class="tz-eyebrow" style="margin:1rem 0 0.5rem 0;">Detector readings</div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">injection_probability</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:60.00%"></div><div class="tz-tick tz-tick-crit" style="left:90.00%"></div></div><div class="tz-meter-foot"><span>suspicious 0.600</span><span>malicious 0.900</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">embedding_anomaly_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:77.61%"></div><div class="tz-tick tz-tick-crit" style="left:99.93%"></div></div><div class="tz-meter-foot"><span>suspicious 0.776</span><span>malicious 0.999</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">claim_unsupport_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.600</span></div><div class="tz-track"><div class="tz-fill" style="width:60.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:99.96%"></div><div class="tz-tick tz-tick-crit" style="left:99.98%"></div></div><div class="tz-meter-foot"><span>suspicious 1.000</span><span>malicious 1.000</span></div></div><div class="tz-meter"><div class="tz-meter-head"><span class="tz-meter-name">evidence_conflict_score</span><span class="tz-meter-val" style="color:#4E8FD4">0.000</span></div><div class="tz-track"><div class="tz-fill" style="width:0.00%;background:#4E8FD4"></div><div class="tz-tick" style="left:86.16%"></div><div class="tz-tick tz-tick-crit" style="left:96.77%"></div></div><div class="tz-meter-foot"><span>suspicious 0.862</span><span>malicious 0.968</span></div></div><table class="tz-table"><thead><tr><th>Detector</th><th>Score</th><th>Suspicious at</th><th>Malicious at</th><th>Status</th></tr></thead><tbody><tr><td>injection_probability</td><td>0.000</td><td>0.600</td><td>0.900</td><td>below</td></tr><tr><td>embedding_anomaly_score</td><td>0.000</td><td>0.776</td><td>0.999</td><td>below</td></tr><tr><td>claim_unsupport_score</td><td>0.600</td><td>1.000</td><td>1.000</td><td>below</td></tr><tr><td>evidence_conflict_score</td><td>0.000</td><td>0.862</td><td>0.968</td><td>below</td></tr></tbody></table><div class="tz-cap">Published 2026-06-30 · ingested 2026-09-05 · reference verified: False</div></details><h2 class="tz-h2">Extracted indicators (1)</h2>
+            <div style="margin-bottom:0.55rem;">
+              <span class="tz-eyebrow">cve (1)</span><br/>
+              <div style="margin-top:0.3rem;"><span class="tz-tier tz-tier-2" style="margin:0 0.3rem 0.3rem 0;display:inline-block;">CVE-2020-6961</span></div>
+            </div><div class="tz-cap">Extracted by pattern matching only. No language model was involved, so nothing here can have been invented.</div><div class="tz-eyebrow" style="margin:1.4rem 0 0.5rem 0;">Where the time went</div><div class="tz-viz" id="viz2_133056351635488"></div><script>window.__specs=window.__specs||[];window.__specs.push(["viz2_133056351635488",{"data": {"values": [{"stage": "retrieval", "ms": 136.5}, {"stage": "generation", "ms": 0.0}, {"stage": "scoring", "ms": 42.53}, {"stage": "report", "ms": 4.68}]}, "mark": {"type": "bar", "height": 22, "cornerRadius": 1}, "encoding": {"x": {"field": "ms", "type": "quantitative", "title": "milliseconds", "stack": "zero"}, "color": {"field": "stage", "type": "nominal", "scale": {"domain": ["retrieval", "generation", "scoring", "report"], "range": ["#3D4B5C", "#5C6673", "#4E8FD4", "#2E5C7E"]}, "legend": {"title": "Pipeline stage"}}, "tooltip": [{"field": "stage", "type": "nominal", "title": "Stage"}, {"field": "ms", "type": "quantitative", "title": "Milliseconds", "format": ".1f"}]}, "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "width": "container", "height": 110, "config": {"background": "transparent", "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif", "view": {"stroke": "transparent"}, "padding": {"left": 2, "top": 6, "right": 2, "bottom": 2}, "axis": {"labelColor": "#68727F", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 10, "titleFontWeight": 500, "titlePadding": 8, "gridColor": "#1C2029", "gridOpacity": 0.85, "domainColor": "#242932", "tickColor": "#242932", "labelFont": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace"}, "legend": {"labelColor": "#97A1AF", "titleColor": "#68727F", "labelFontSize": 10, "titleFontSize": 9, "titleFontWeight": 600, "symbolType": "square", "orient": "bottom", "direction": "horizontal", "columns": 4}, "title": {"color": "#DCE2EA", "fontSize": 11, "fontWeight": 600, "anchor": "start", "offset": 8}, "range": {"category": ["#4E8FD4", "#2FA36B", "#D2971F", "#C8453D", "#5C6673"]}}}]);</script><div class="tz-cap">Total 188 ms end to end, retrieval through audit write. The cost of the security layer is a fair question to ask of it; this is the answer for this query.</div>
+  </div>
+</div>
+<script>
+  window.addEventListener("load", function () {
+    (window.__specs || []).forEach(function (pair) {
+      vegaEmbed("#" + pair[0], pair[1], {actions:false, renderer:"svg"})
+        .catch(console.error);
+    });
+  });
+</script>
+</body></html>

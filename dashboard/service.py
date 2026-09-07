@@ -48,8 +48,26 @@ def get_decision_writer(db_path: str | None = None) -> DecisionWriter:
 
 @lru_cache(maxsize=1)
 def _rag() -> Any:
+    """The retrieval pipeline, built once and reused for the life of the process.
+
+    `BaselineRAG.__init__` takes a retriever; it has no zero-argument form, and
+    calling it as `BaselineRAG()` raised a TypeError on the first query of every
+    session -- which the console then reported as "retrieval failed", pointing the
+    analyst at the index. The index was fine. Constructing through the documented
+    classmethods removes the possibility of that mistake recurring.
+
+    `from_disk` first, because loading a persisted index is seconds faster than
+    re-embedding 88 documents and is the normal path once `build_index` has run.
+    The fallback to `build` is deliberate rather than defensive: the container
+    mounts `pipeline/index` as an empty named volume on a fresh machine, so the
+    very first run of the dashboard has no index to load. Failing there would make
+    a first-time demo look broken when it is merely cold.
+    """
     from pipeline.rag import BaselineRAG  # noqa: PLC0415
-    return BaselineRAG()
+    try:
+        return BaselineRAG.from_disk()
+    except Exception:
+        return BaselineRAG.build(verbose=False)
 
 
 @lru_cache(maxsize=1)
