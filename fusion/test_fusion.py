@@ -62,7 +62,8 @@ from fusion.confidence import (  # noqa: E402
     N_EFF_ONE_CAP, REVIEW_FLOOR, SINGLETON_CAP, compute_confidence,
     effective_sample_size, forces_review,
 )
-from fusion.features import choose_feature_spec, encode, logit  # noqa: E402
+from fusion.features import choose_feature_spec, encode, logit  # noqa: E402  # noqa: E501
+from fusion.features import COMPOSITE_INTERACTIONS_ENABLED, COMPOSITE_SIGNALS, FeatureSpec  # noqa: E402,E501
 from fusion.model import TrustModel  # noqa: E402
 from fusion.evaluate import (  # noqa: E402
     compute_metrics, derive_thresholds, precision_at_prevalence,
@@ -542,10 +543,32 @@ def test_features() -> None:
           base.underpowered and "UNDERPOWERED" in base.note)
 
     reduced = choose_feature_spec(sigs, 100)
-    check("the reduced rung keeps the two interactions carrying the Tier-1 inversion",
-          set(reduced.interactions) == {("is_tier1", "anomaly"), ("is_tier1", "conflict")}
-          or set(reduced.interactions) == {("is_tier1", "anomaly")},
-          str(reduced.interactions))
+    # Design 3.2 requires the reduced rung to carry the Tier-1 interactions -- but only
+    # where interactions are enabled at all. Design 9A.10 disables them while
+    # COMPOSITE_SIGNALS holds a single signal, the C4/C9 inversion then being asserted
+    # by the rule track rather than learned. Both contracts are checked, so neither can
+    # be broken silently.
+    if COMPOSITE_INTERACTIONS_ENABLED and len(COMPOSITE_SIGNALS) > 1:
+        check("the reduced rung keeps the two interactions carrying the Tier-1 inversion",
+              set(reduced.interactions) == {("is_tier1", "anomaly"), ("is_tier1", "conflict")}
+              or set(reduced.interactions) == {("is_tier1", "anomaly")},
+              str(reduced.interactions))
+    else:
+        check("interactions are disabled at single-signal width (design 9A.10)",
+              reduced.interactions == [], str(reduced.interactions))
+
+    # Design 9A.10: the allowlist governs which signals may enter the regression, and
+    # the excluded ones must be named in the note rather than dropped silently.
+    restricted = choose_feature_spec(["unsupport", "anomaly", "injection", "conflict"], 100)
+    check("only allowlisted signals become regression features (design 9A.10)",
+          set(restricted.base_signals) <= set(COMPOSITE_SIGNALS), str(restricted.base_signals))
+    check("excluded signals are named in the feature-spec note, not dropped silently",
+          all(sig in restricted.note
+              for sig in ("unsupport", "anomaly", "injection")
+              if sig not in COMPOSITE_SIGNALS),
+          restricted.note)
+    check("the events-per-variable rung is not renamed by the allowlist",
+          restricted.rung in ("full", "reduced", "base_only"), restricted.rung)
 
     full = choose_feature_spec(sigs, 200)
     check("feature names are unique and match the vector length",
@@ -573,11 +596,18 @@ def test_features() -> None:
     check("a missing signal does not produce NaN in the feature vector",
           np.all(np.isfinite(x)), str(x))
 
-    # The anomaly z-score is passed through, not re-squashed.
-    xz = encode(sig(anomaly=0.5), 2, full, anomaly_z=3.7)
+    # The anomaly z-score is passed through, not re-squashed. This is a property of
+    # `encode`, so the spec is built explicitly rather than taken from
+    # choose_feature_spec: design 9A.10's allowlist keeps `anomaly` out of the fitted
+    # feature set, but the encoder contract must still hold for any spec that has it
+    # -- including every artifact fitted before that restriction.
+    anom_spec = FeatureSpec(names=["x_anomaly", "is_tier1", "is_tier3"],
+                            base_signals=["anomaly"], interactions=[], rung="reduced",
+                            n_pos_at_fit=100, underpowered=False, note="encoder contract test")
+    xz = encode(sig(anomaly=0.5), 2, anom_spec, anomaly_z=3.7)
     check("the anomaly robust-z is used as-is when supplied",
-          abs(xz[full.names.index("x_anomaly")] - 3.7) < 1e-9,
-          str(xz[full.names.index("x_anomaly")]))
+          abs(xz[anom_spec.names.index("x_anomaly")] - 3.7) < 1e-9,
+          str(xz[anom_spec.names.index("x_anomaly")]))
 
 
 def _toy_dataset(n: int = 400, seed: int = 3) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

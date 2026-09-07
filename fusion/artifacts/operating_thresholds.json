@@ -1,6 +1,8 @@
 {
-  "tau_review": 0.0,
-  "tau_reject": 0.844867,
+  "review_band_informative": true,
+  "review_band_note": "",
+  "tau_review": 0.129559,
+  "tau_reject": 0.600176,
   "recall_target": 0.95,
   "precision_target": 0.9,
   "bands_consistent": true,

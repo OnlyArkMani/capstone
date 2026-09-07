@@ -3,25 +3,19 @@
     "n_train": 385,
     "n_pos": 64,
     "n_neg": 321,
-    "chosen_C": 10.0,
-    "n_features": 6,
+    "chosen_C": 0.01,
+    "n_features": 3,
     "feature_names": [
-      "x_unsupport",
-      "x_injection",
       "x_conflict",
       "is_tier1",
-      "is_tier3",
-      "is_tier1_x_conflict"
+      "is_tier3"
     ],
     "coefficients": {
-      "x_unsupport": 0.020989,
-      "x_injection": -0.105521,
-      "x_conflict": 1.214273,
-      "is_tier1": -1.797638,
-      "is_tier3": 0.60384,
-      "is_tier1_x_conflict": -1.406655
+      "x_conflict": 0.350899,
+      "is_tier1": -0.527212,
+      "is_tier3": 0.35813
     },
-    "intercept": 0.107194,
+    "intercept": 0.347898,
     "calibrated": true,
     "backend": "sklearn",
     "underpowered": false,
@@ -29,27 +23,17 @@
   },
   "feature_spec": {
     "names": [
-      "x_unsupport",
-      "x_injection",
       "x_conflict",
       "is_tier1",
-      "is_tier3",
-      "is_tier1_x_conflict"
+      "is_tier3"
     ],
     "base_signals": [
-      "unsupport",
-      "injection",
       "conflict"
     ],
-    "interactions": [
-      [
-        "is_tier1",
-        "conflict"
-      ]
-    ],
+    "interactions": [],
     "rung": "reduced",
     "n_pos_at_fit": 64,
     "underpowered": false,
-    "note": "Reduced interactions: only the two that carry the Tier-1 inversion. Events-per-variable does not support the full set."
+    "note": "Reduced interactions: only the two that carry the Tier-1 inversion. Events-per-variable does not support the full set. COMPOSITE RESTRICTION (design 9A.10): unsupport, injection excluded from the regression on measured discrimination; still active in the rule track. Tier interactions disabled at single-signal width."
   }
 }
