@@ -11,6 +11,29 @@ else, and that ordering is a requirement rather than a style choice (design
 GREEN; the score, the case, the evidence and the reasoning are the detail they
 open when it is not -- or when they want to verify a GREEN.
 
+The reading order, and why the decision panel moved
+---------------------------------------------------
+The results view is now two halves with a rule between them.
+
+The first half is the DECISION: the banner, the verdict in one sentence, the
+classification detail, any caveats, what to do next, the case, the two scores,
+and then the decision panel itself. An analyst who trusts the verdict can act
+without scrolling, which is the normal case in a queue.
+
+The second half is the VERIFICATION: how the layer reached the verdict, the
+detector readings, the charts, the reasoning, the evidence document by document,
+the indicators and the latency. This is what an analyst opens when they do not
+trust the verdict, or when they are the person being shown the system.
+
+The decision panel used to sit at the bottom, after all of that. The layout
+therefore asked every analyst to read the verification before they were offered
+the decision, which is the wrong default for the common case and, in a demo, put
+eight screens between the verdict and the only interactive thing on the page.
+There is still exactly ONE place a decision is committed -- a second set of
+Accept and Reject buttons higher up would need its own widget keys and would
+silently discard the optional per-document verdicts, which are the most valuable
+field in the table.
+
 Writing a decision goes through `DecisionWriter`, which is the only class in the
 project that may insert into `analyst_decisions`. This module never touches that
 table directly, and `AuditLog` -- which the scoring path holds -- has no method
@@ -34,12 +57,15 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st  # noqa: E402
 
-from dashboard import style  # noqa: E402
+from dashboard import glossary, style  # noqa: E402
 from dashboard.components import (  # noqa: E402
-    render_banner, render_caveats, render_case_and_action, render_documents,
-    render_entities, render_headline_metrics, render_performance, render_reasoning,
-    render_score_analysis, render_signal_overview,
+    render_banner, render_caveats, render_case_and_action,
+    render_classification_strip, render_documents, render_entities,
+    render_headline_metrics, render_next_steps, render_performance,
+    render_reasoning, render_score_analysis, render_signal_overview,
+    render_verdict_ladder, render_verdict_sentence,
 )
+from dashboard import demo_queries  # noqa: E402
 from dashboard.demo_queries import CUSTOM, DEMO_QUERIES  # noqa: E402
 from dashboard.service import (  # noqa: E402
     OVERRIDE_REASON_CODES, ScoringUnavailable, get_audit_log, get_decision_writer,
@@ -71,6 +97,7 @@ def main() -> None:
 
     st.markdown(style.masthead(PAGE_TITLE, SUBTITLE, SYSTEM_MARK),
                 unsafe_allow_html=True)
+    _render_nav()
 
     query, run = _render_query_bar()
 
@@ -85,19 +112,38 @@ def main() -> None:
 
     # ---- THE BANNER IS FIRST. Nothing renders above it. ----
     render_banner(st, report)
-    render_headline_metrics(st, report)
-    render_case_and_action(st, report)
-    render_caveats(st, report)
 
+    # ---- half one: the decision ----
+    render_verdict_sentence(st, report)
+    render_classification_strip(st, report)
+    # Caveats sit here rather than lower down because every detector in this
+    # build may be running on a fallback backend, and an analyst who is about to
+    # act on a score needs to know that before they act, not after.
+    render_caveats(st, report)
+    render_next_steps(st, report)
+    render_case_and_action(st, report)
+    render_headline_metrics(st, report)
+
+    _render_decision_panel(st, report, analyst_id, analyst_role)
+
+    # ---- half two: the verification ----
+    _md(f'<div style="height:1px;background:{style.LINE};'
+        f'margin:2.2rem 0 0 0;"></div>')
+    st.markdown('<div class="tz-eyebrow" style="margin:1.1rem 0 0.2rem 0;">'
+                'Verification — the evidence behind the verdict</div>',
+                unsafe_allow_html=True)
+    st.caption(
+        "Everything below this line is the working. An analyst who accepts the "
+        "verdict does not need it; an analyst who doubts it, or anyone being "
+        "shown how the layer decides, starts here.")
+
+    render_verdict_ladder(st, report)
     render_signal_overview(st, report)
     render_score_analysis(st, report)
-
     render_reasoning(st, report)
     render_documents(st, report)
     render_entities(st, report)
     render_performance(st, report)
-
-    _render_decision_panel(st, report, analyst_id, analyst_role)
 
     with st.expander("Reference and provenance"):
         st.markdown(
@@ -111,6 +157,26 @@ def main() -> None:
 # ---------------------------------------------------------------------------
 # Chrome
 # ---------------------------------------------------------------------------
+
+def _md(html: str) -> None:
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def _render_nav() -> None:
+    """Page navigation in the body, not only in the sidebar.
+
+    The sidebar can be collapsed, and when it is, anything reachable only from
+    there is gone until the page is reloaded. The audit log is half of this
+    product -- it is where a reviewer confirms that a decision was recorded and
+    that the chain still verifies -- so it gets a route that does not depend on
+    a panel being open.
+    """
+    c1, c2, _ = st.columns([1, 1, 5])
+    with c1:
+        st.page_link("app.py", label="Console")
+    with c2:
+        st.page_link("pages/1_Audit_Log.py", label="Audit log")
+
 
 def _render_sidebar() -> tuple[str, str]:
     with st.sidebar:
@@ -138,7 +204,10 @@ def _render_sidebar() -> tuple[str, str]:
             + style.side_stat("Rejected or escalated",
                               stats["by_headline"].get("RED", 0)),
             unsafe_allow_html=True)
-        st.page_link("pages/1_Audit_Log.py", label="Open the audit log")
+        st.markdown('<div class="tz-eyebrow" style="margin:1.3rem 0 0.4rem 0;">'
+                    'Pages</div>', unsafe_allow_html=True)
+        st.page_link("app.py", label="Console")
+        st.page_link("pages/1_Audit_Log.py", label="Audit log")
     return analyst_id, analyst_role
 
 
@@ -151,17 +220,33 @@ def _render_query_bar() -> tuple[str, bool]:
     system reaches its verdict knowing what an analyst would have typed and
     nothing else.
     """
-    st.markdown('<div class="tz-eyebrow">Security query</div>',
+    st.markdown('<div class="tz-eyebrow">Ask a security question</div>',
                 unsafe_allow_html=True)
 
     c_input, c_pick = st.columns([2.6, 1])
     with c_pick:
-        labels = [CUSTOM] + [f"{label}" for label, _ in DEMO_QUERIES]
+        # Grouped by attack family, with the family name carried in the option
+        # label rather than in a section header. Streamlit's selectbox has no
+        # option-group concept, and the two alternatives were both worse: a
+        # second selectbox for the family costs a click on every demonstration,
+        # and an expander here would render above the banner, which the ordering
+        # requirement forbids and `test_dashboard.py` checks.
+        labels = [CUSTOM]
+        for _family, items in demo_queries.by_family():
+            labels += [label for label, _ in items]
+
+        def _label(option: str) -> str:
+            if option == CUSTOM:
+                return option
+            family = demo_queries.family_of(option)
+            return f"{family} · {option}" if family else option
+
         choice = st.selectbox(
             "Demonstration set", labels, label_visibility="collapsed",
+            format_func=_label,
             help="Ten benchmark questions covering all six poison families in the "
-                 "corpus. Selecting one fills the box; it is still an ordinary "
-                 "query and is scored like any other.")
+                 "corpus, grouped by attack family. Selecting one fills the box; "
+                 "it is still an ordinary query and is scored like any other.")
         if choice != CUSTOM and choice != st.session_state.get("_demo_choice"):
             st.session_state["_demo_choice"] = choice
             for label, text in DEMO_QUERIES:
@@ -176,9 +261,18 @@ def _render_query_bar() -> tuple[str, bool]:
                         "imaging systems?",
             key="query_input")
 
+    # What the selected scenario is testing, stated before it runs. The line
+    # describes the adversary's technique only -- never the verdict, never which
+    # document is hostile. Those live in the ground-truth manifest, which no part
+    # of this console may read.
+    probes = demo_queries.probes(choice) if choice != CUSTOM else ""
+    if probes:
+        st.caption(f"**What this scenario probes:** {probes}")
+
     col_run, col_clear, _ = st.columns([1, 1, 5])
     with col_run:
-        run = st.button("Run query", type="primary", use_container_width=True)
+        run = st.button("Run security check", type="primary",
+                        use_container_width=True)
     with col_clear:
         if st.button("Clear", use_container_width=True):
             st.session_state.report = None
@@ -224,30 +318,82 @@ def _score(query: str) -> bool:
 
 
 def _render_empty_state() -> None:
-    st.info("No query scored yet. Enter a security query above, or pick one from "
-            "the demonstration set, to score it against the corpus.")
-    st.markdown(
-        f"""
-        <div class="tz-panel" style="margin-top:0.9rem;">
-          <div class="tz-eyebrow">What this console does</div>
-          <div style="font-size:0.85rem;line-height:1.65;color:{style.INK_2};
-                      margin-top:0.5rem;">
-            Every question is answered from a retrieval corpus that contains
-            adversarial documents alongside genuine threat intelligence. Before the
-            answer is shown, three detectors run over the retrieved evidence, the
-            situation is classified into one of eleven named cases, and the detector
-            signals are fused into a calibrated score with a separate confidence
-            estimate. The two assessments are reconciled conservatively, and the
-            decision is written to a tamper-evident audit trail.
-          </div>
-          <div style="font-size:0.85rem;line-height:1.65;color:{style.INK_2};
-                      margin-top:0.7rem;">
-            Retrieval is partition-blind: it ranks by similarity alone and knows
-            nothing about which documents are adversarial. Nothing in this console
-            reads the ground-truth manifest.
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    """The landing page: what the product is, before any query has been run.
+
+    This is the first screen a panel sees, and the old version of it opened by
+    describing the console. That framing is wrong in a way that matters: the
+    console is a REFERENCE CLIENT, and the deliverable is the layer behind it --
+    a pipeline-agnostic gateway that sits between retrieval and answer delivery
+    in any healthcare RAG system, in the position a web application firewall
+    occupies in front of a web app. So the page now leads with the layer, states
+    the safety property it is built around, walks the four stages, and only then
+    offers the scenarios.
+
+    Expanders are used freely here. They are forbidden above the banner on the
+    results view, but there is no banner on this view -- `report is None` is
+    exactly the branch that returns before one is rendered.
+    """
+    st.info("Nothing scored yet. Ask a question above, or pick one of the ten "
+            "benchmark scenarios, to run it against the poisoned corpus.")
+
+    _md(style.hero(glossary.WHAT_THIS_IS_TITLE, glossary.WHAT_THIS_IS,
+                   glossary.SAFETY_CLAIM))
+
+    st.markdown('<div class="tz-eyebrow" style="margin:1.5rem 0 0 0;">'
+                'How a question becomes a verdict</div>', unsafe_allow_html=True)
+    _md(style.flow(glossary.HOW_IT_WORKS))
+
+    st.markdown('<div class="tz-eyebrow" style="margin:1.6rem 0 0.3rem 0;">'
+                'What the four detectors look for</div>', unsafe_allow_html=True)
+    _md(style.detector_legend([
+        (spec["name"], spec["field"], spec["what"])
+        for spec in glossary.DETECTOR.values()]))
+    _md(f'<div style="margin-top:0.55rem;">'
+        f'{style.note("<strong>Reading direction.</strong> " + glossary.DETECTOR_DIRECTION)}'
+        f'</div>')
+
+    st.markdown('<div class="tz-eyebrow" style="margin:1.7rem 0 0.3rem 0;">'
+                'The benchmark scenarios</div>', unsafe_allow_html=True)
+    st.caption(glossary.GROUND_TRUTH_NOTE)
+    for family, items in demo_queries.by_family():
+        with st.expander(f"{family} — {len(items)} scenario(s)"):
+            note = demo_queries.FAMILY_NOTE.get(family, "")
+            if note:
+                st.caption(note)
+            for label, text in items:
+                _md(f'<div style="margin:0.55rem 0 0.75rem 0;padding-left:0.7rem;'
+                    f'border-left:2px solid {style.LINE};">'
+                    f'<div style="font-size:0.82rem;font-weight:650;'
+                    f'color:{style.INK};">{label}</div>'
+                    f'<div style="font-size:0.79rem;line-height:1.55;'
+                    f'color:{style.INK_2};margin-top:0.22rem;">"{text}"</div>'
+                    f'<div style="font-size:0.75rem;line-height:1.5;'
+                    f'color:{style.INK_3};margin-top:0.25rem;">'
+                    f'Probes: {demo_queries.probes(label)}</div></div>')
+
+    st.markdown('<div class="tz-eyebrow" style="margin:1.7rem 0 0.3rem 0;">'
+                'The eleven cases the layer can reach</div>',
+                unsafe_allow_html=True)
+    st.caption(
+        "Detector outcome crossed with source trust tier, under a fixed "
+        "precedence order. The case carries the action — which is what makes the "
+        "safety property a rule rather than a threshold on a score.")
+    with st.expander("Open the case reference"):
+        for case_id, copy in glossary.CASE_COPY.items():
+            view = glossary.case_view(case_id)
+            _md(f'<div style="margin-bottom:0.85rem;padding-left:0.7rem;'
+                f'border-left:2px solid {style.LINE};">'
+                f'<div style="font-size:0.83rem;font-weight:650;color:{style.INK};">'
+                f'{copy["title"]}</div>'
+                f'<div style="font-family:{style.MONO};font-size:0.68rem;'
+                f'color:{style.INK_3};margin-top:0.1rem;">{view["case_id"]} — '
+                f'{view["formal_name"]} · {view["priority"]} · '
+                f'{view["action"]}</div>'
+                f'<div style="font-size:0.78rem;line-height:1.55;'
+                f'color:{style.INK_2};margin-top:0.3rem;">{copy["plain"]}</div>'
+                f'<div style="font-size:0.75rem;line-height:1.5;'
+                f'color:{style.INK_3};margin-top:0.25rem;">'
+                f'{copy["distinct"]}</div></div>')
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +415,8 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
     the wrong order: an analyst saw the actions before the fields those actions
     submit. Inputs first, then the commit.
     """
-    st_mod.subheader("Analyst decision")
+    action = str(report.get("recommended_action", "—"))
+    st_mod.subheader("Your decision")
 
     saved = st_mod.session_state.get("decision_saved")
     if saved:
@@ -280,24 +427,41 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
             st_mod.rerun()
         return
 
+    # The recommendation is restated here, in the plain form, because this is the
+    # moment the analyst is agreeing or disagreeing with it -- and by this point
+    # the banner may have scrolled off the top of the screen.
+    st_mod.markdown(style.band_panel(
+        report.get("headline", "ORANGE"),
+        f'<div style="font-size:0.86rem;line-height:1.6;color:{style.INK_2};">'
+        f'The layer recommends <strong style="color:{style.INK};">{action}</strong>'
+        f' — {glossary.ACTION_SHORT.get(action, "")}. '
+        f'Agreeing records that; disagreeing records an override with a reason '
+        f'code, which is what a future recalibration learns from.</div>'),
+        unsafe_allow_html=True)
+
     st_mod.caption(
-        "This is never filled in by the system. Until you choose, this query has no "
-        "decision record at all.")
+        "The system never fills this in. Until you choose, this query has no "
+        "decision record at all — not a blank one and not a pending one.")
 
     verdicts = _per_document_verdicts(st_mod, report)
-    confidence = st_mod.slider("Your confidence (optional)", 1, 5, 3)
+    confidence = st_mod.slider(
+        "How sure are you? (optional — 1 is a guess, 5 is certain)", 1, 5, 3)
 
     c1, c2, c3, _ = st_mod.columns([1, 1, 1, 2])
     with c1:
-        accept = st_mod.button("Accept", use_container_width=True,
-                               help="The system's recommendation is correct.")
+        accept = st_mod.button(f"Agree — {action}", use_container_width=True,
+                               help="The layer's recommendation is correct. "
+                                    "Recorded as ACCEPT.")
     with c2:
-        reject = st_mod.button("Reject", use_container_width=True,
-                               help="The content is untrustworthy.")
+        reject = st_mod.button("Reject the content", use_container_width=True,
+                               help="The retrieved material is untrustworthy, "
+                                    "whatever the layer recommended. Recorded as "
+                                    "REJECT.")
     with c3:
-        override = st_mod.button("Override", use_container_width=True,
-                                 help="Disagree with the system's recommendation. "
-                                      "Requires an action and a reason code.")
+        override = st_mod.button("Disagree — override", use_container_width=True,
+                                 help="You would have taken a different action. "
+                                      "Requires the action you would have taken "
+                                      "and a reason code.")
 
     if override:
         st_mod.session_state.show_override = True
@@ -311,10 +475,14 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
         st_mod.markdown('<div class="tz-eyebrow" style="margin-top:1rem;">'
                         'Override details — both fields are required</div>',
                         unsafe_allow_html=True)
-        action = st_mod.selectbox("What should the action have been?",
-                                  ["ACCEPT", "REVIEW", "REJECT", "ESCALATE"])
+        override_action = st_mod.selectbox(
+            "What should the action have been?",
+            ["ACCEPT", "REVIEW", "REJECT", "ESCALATE"],
+            format_func=lambda a: f"{a} — {glossary.ACTION_SHORT.get(a, '')}")
+        st_mod.caption(glossary.ACTION_SENTENCE.get(override_action, ""))
         code = st_mod.selectbox(
-            "Reason code", list(OVERRIDE_REASON_CODES),
+            "Why? (this is the field a future recalibration learns from)",
+            list(OVERRIDE_REASON_CODES),
             format_func=lambda c: f"{c} — {OVERRIDE_REASON_CODES[c]}")
         text = st_mod.text_area(
             "Notes" + (" (required for OTHER)" if code == "OTHER" else " (optional)"))
@@ -323,7 +491,7 @@ def _render_decision_panel(st_mod: Any, report: dict[str, Any],
                 st_mod.error("Reason code OTHER requires a note.")
                 return
             _save(st_mod, "OVERRIDE", analyst_id, analyst_role, verdicts, confidence,
-                  override_action=action, override_reason_code=code,
+                  override_action=override_action, override_reason_code=code,
                   override_reason_text=text.strip() or None)
 
 
@@ -333,14 +501,18 @@ def _per_document_verdicts(st_mod: Any, report: dict[str, Any]) -> list[dict[str
     Response-level labels are weak supervision; the detectors operate on documents,
     so document-level judgement is what a future retraining pass actually needs.
     """
-    with st_mod.expander("Per-document verdicts (optional, most valuable field)"):
+    with st_mod.expander("Judge each document individually (optional — the most "
+                         "valuable thing you can record here)"):
         st_mod.caption(
-            "Response-level decisions are weak supervision. The detectors work on "
-            "documents, so a per-document verdict is what a future recalibration needs.")
+            "A single verdict on the whole answer is weak supervision. The "
+            "detectors work document by document, so a per-document judgement is "
+            "what a future recalibration can actually learn from. Skip any you "
+            "are unsure about.")
         out = []
         for doc in report.get("documents", []) or []:
             verdict = st_mod.radio(
-                f"`{doc['doc_id']}` (Tier {doc['source_tier']})",
+                f"`{doc['doc_id']}` — Tier {doc['source_tier']}, "
+                f"rank {doc.get('rank', '?')}",
                 ["— skip —", "CLEAN", "POISONED", "UNCERTAIN"],
                 horizontal=True, key=f"verdict_{doc['doc_id']}")
             if verdict != "— skip —":
