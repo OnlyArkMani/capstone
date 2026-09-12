@@ -162,8 +162,8 @@ flowchart TD
 
     subgraph L3B["Level 3 — Record and operate"]
         AUDIT[(Audit log — SQLite<br/>query_events: signals, features, case,<br/>both proposals, versions, reference ID)]
-        DASH[Analyst console — Streamlit<br/>verdict banner first, detector grid across the<br/>retrieval set, thresholded evidence bars,<br/>interval-drawn score, decision capture]
-        PRES[Presentation layer — style.py + charts.py<br/>design tokens, markup builders, Vega-Lite specs<br/>displays report fields, derives nothing<br/>no dependency beyond Streamlit's own runtime]
+        DASH[Reference client — Streamlit console<br/>verdict banner first, plain-language verdict,<br/>classification detail, next steps, decision capture;<br/>verification below the rule: derivation, detector<br/>grid, thresholded evidence bars, interval-drawn score]
+        PRES[Presentation layer — style.py + charts.py + glossary.py<br/>design tokens, markup builders, Vega-Lite specs,<br/>analyst-facing wording keyed to fusion/cases.py<br/>displays report fields, derives nothing<br/>no dependency beyond Streamlit's own runtime]
         AD[(analyst_decisions<br/>written only by the console<br/>append-only, hash-chained)]
     end
 
@@ -197,9 +197,10 @@ flowchart TD
 | L3 | Headline classification | `fusion/cases.py` — GREEN / ORANGE / RED with RED sub-typing | Design §2.9 |
 | L3 | Analyst report | `reports/` — template-grounded reasoning, regex indicator extraction | Design §2.9, §5.3 |
 | L3 | Audit trail | `logs/audit.py` — hash-chained, append-only | P3, P6 |
-| L3 | Analyst console | `dashboard/` — headline-first presentation, decision capture | P3, P6 |
-| L3 | Console presentation | `dashboard/style.py` — design tokens and markup builders; computes nothing | Design §2.9 |
-| L3 | Console charts | `dashboard/charts.py` — Vega-Lite specifications; plots report fields only | Design §2.9 |
+| L3 | Reference client | `dashboard/` — headline-first presentation, decision before verification, decision capture | P3, P6 |
+| L3 | Client presentation | `dashboard/style.py` — design tokens and markup builders; computes nothing | Design §2.9 |
+| L3 | Client vocabulary | `dashboard/glossary.py` — analyst-facing wording; imports `fusion/cases.py`, restates nothing | Design §2.9 |
+| L3 | Client charts | `dashboard/charts.py` — Vega-Lite specifications; plots report fields only | Design §2.9 |
 
 ---
 
@@ -466,14 +467,17 @@ suppressed; each indicator records the documents in which it appeared.
 
 ### 6.4 Console presentation
 
-The analyst console renders the report; it does not recompute any part of it. Design
-tokens, the stylesheet and the markup builders are isolated in
-[`dashboard/style.py`](dashboard/style.py) and the chart specifications in
-[`dashboard/charts.py`](dashboard/charts.py), whose functions accept plain values and
-return strings or specification dictionaries — a dashboard that derives its own
-figures is a second implementation of the scoring logic, and the two drift.
+The Streamlit console is a **reference client** demonstrating the trust layer; the
+deliverable is the layer itself, which is pipeline-agnostic and sits between retrieval
+and answer delivery in any healthcare RAG system. The console renders the assembled
+report and recomputes no part of it. Design tokens, the stylesheet and the markup
+builders are isolated in [`dashboard/style.py`](dashboard/style.py), the chart
+specifications in [`dashboard/charts.py`](dashboard/charts.py), and the analyst-facing
+vocabulary in [`dashboard/glossary.py`](dashboard/glossary.py). Each accepts plain
+values and returns strings or specification dictionaries — a client that derives its
+own figures is a second implementation of the scoring logic, and the two drift.
 
-Four presentation rules are load-bearing rather than aesthetic.
+Six presentation rules are load-bearing rather than aesthetic.
 
 **The verdict banner is rendered first.** Nothing precedes it: no heading, no metric,
 no spinner. This is design §2.9, and it is enforced as a property of call order by
@@ -481,20 +485,62 @@ no spinner. This is design §2.9, and it is enforced as a property of call order
 first. The stylesheet is therefore injected from the page file rather than from the
 banner function; injected from the banner it would itself become the first call and
 the requirement would cease to be tested. The banner carries the recommended action,
-case identifier and priority alongside the band, so that the disposition survives
-being photographed.
+case identifier and priority alongside the band, each with its plain reading beneath
+it, so that the disposition survives being photographed.
+
+**The verdict is stated in plain language, and the internal tokens are subordinate to
+it.** The results view carries five severity encodings — verdict band, recommended
+action, case identifier, case priority and risk tier — which are consistent by
+construction: the case follows from detector outcome crossed with source tier, the
+action and priority from the case, the band from the action and the tier, and the risk
+tier from the more severe of the priority and the floor the action imposes. Presented
+as five adjacent tokens they read instead as five independent judgements that happen
+to agree. A single sentence therefore states what the band means for the analyst in
+front of it, and the five tokens follow as a labelled detail strip, each beside the
+explanation of what it is and how it was derived.
+
+None of the tokens are renamed or removed. The audit trail, the evaluation harness and
+the override vocabulary all key on those exact strings, and substituting plain language
+for them would interpose a translation layer between what a reviewer reads on screen
+and what the database stores. The plain wording is held in
+[`dashboard/glossary.py`](dashboard/glossary.py), which imports the case definitions
+from [`fusion/cases.py`](fusion/cases.py) rather than restating them, so a case whose
+priority or action changes upstream cannot be described one way by the scorer and
+another by the client.
+
+**Both headline figures are percentages, each with a verbal grade and its direction.**
+Trust and confidence are reported side by side; confidence is stored as a 0–1 fraction
+and was previously displayed as such, which placed two scales in adjacent tiles and
+made the same kind of quantity look like two different kinds. Each figure now carries
+a grade word, a sentence stating what that grade licenses, and an explicit statement
+of which direction it runs — the trust score rises toward safe while all four detector
+readings rise toward dangerous, and a reader who carries one convention onto the other
+inverts the page. The grades are reporting bands for reading a figure aloud, in the
+same sense as the zones on the trust dial, and the accompanying note states that the
+action came from the rule-based taxonomy rather than from any threshold on a score.
+
+**Detectors are labelled by what they detect.** The report field names
+(`injection_probability`, `embedding_anomaly_score`, `claim_unsupport_score`,
+`embedding_conflict_score`) identify which variable holds a number; they do not say
+what was measured. Meters and charts therefore carry the plain description — hidden
+instructions in the document, content unlike the rest of the corpus, claims the
+evidence does not support, sources contradicting one another — while the field name is
+retained beside it in the per-document numeric table and in the detector legend, since
+it is the string required to quote a score in a write-up.
 
 **State is never carried by colour alone.** Every band, fired detector and trust tier
-presents a mark and a word beside its colour. The four state colours are validated
-against the console surface and clear the 3:1 contrast floor, but a projector, a
-colourblind reviewer and a greyscale printout each remove the colour channel outright,
-and the verdict must still arrive. In the collapsed evidence rows — a widget label, and
-the least dependable place for colour of any element on the page — the band is carried
-as a three-letter severity code rather than a coloured mark. Source trust tiers are
-drawn as neutral badges of differing weight for the same reason state colour is
-reserved: a tier is an ordinal fact about provenance, not an alarm. No element of the
-interface is an emoji; emoji render inconsistently across platforms and introduce
-colour the state palette did not choose.
+presents a mark and a word beside its colour. The four state colours clear a 4.5:1
+contrast floor against the console surface, and are applied in three intensities: the
+banner fill, an accent step for rules, dots and bars, and an eight-percent tint that
+washes a panel belonging to the current verdict. A projector, a colourblind reviewer
+and a greyscale printout each remove the colour channel outright, and the verdict must
+still arrive. In the collapsed evidence rows — a widget label, and the least dependable
+place for colour of any element on the page — the band is carried as a three-letter
+severity code rather than a coloured mark. Source trust tiers are drawn as neutral
+badges of differing weight for the same reason state colour is reserved: a tier is an
+ordinal fact about provenance, not an alarm. No element of the interface is an emoji;
+emoji render inconsistently across platforms and introduce colour the state palette did
+not choose.
 
 **Absence is distinguished from zero.** Each detector reading is drawn as a bar
 against its two thresholds, so proximity to firing is legible without arithmetic. A
@@ -510,6 +556,23 @@ imply an equivalence of severity that does not hold. The detector grid is theref
 coloured by status band with the reading printed in the cell, and cross-detector
 comparison is done on the margin to each detector's own threshold rather than on the
 scores themselves.
+
+**The page is ordered decision first, verification second.** The upper half carries the
+banner, the plain verdict, the classification detail, any caveats, the recommended next
+steps, the case, the two figures, and the analyst decision panel; an analyst who accepts
+the verdict can act without scrolling, which is the ordinary case in a queue. A rule
+then separates the lower half, which carries the derivation of the verdict, the detector
+readings, the charts, the reasoning, the evidence document by document, the extracted
+indicators and the stage latency. The decision panel previously sat below all of that,
+which required every analyst to read the verification before being offered the decision.
+There remains exactly one point at which a decision is committed: a second set of
+controls higher up would require its own widget keys and would silently discard the
+optional per-document verdicts, which are the most valuable field in the decision table.
+
+The derivation is presented as an ordered sequence — evidence retrieved, detectors run,
+provenance weighed, situation classified, action taken — in which each step names the
+report field it was read from. It is the same account of the architecture a reviewer
+would otherwise have to be walked through verbally.
 
 Six charts accompany a scored query and three the audit viewer. Each plots values read
 directly from the assembled report or from the audit log's own aggregates:
@@ -530,21 +593,42 @@ without a browser.
 
 A demonstration set of ten benchmark questions, spanning all six poison families in the
 corpus, sits beside the query field in
-[`dashboard/demo_queries.py`](dashboard/demo_queries.py). It holds question text and a
-display label and nothing else. Ground-truth labels, attacker target answers and
-poisoned document identifiers remain solely in the evaluation manifest, which prohibits
-being read by the scoring path; the cheapest way to keep that true is for the manifest
-never to be imported by the running application. Labels are shown to the operator, and
-only the question text is passed for scoring, so the system reaches its verdict knowing
-what an analyst would have typed and nothing more.
+[`dashboard/demo_queries.py`](dashboard/demo_queries.py), grouped by attack family and
+accompanied by one sentence stating what each question probes. That sentence describes
+the adversary's technique — what a poisoned document would attempt against a question
+of that shape — and stops deliberately short of the verdict, the identity of the
+hostile document, and the correct answer. Those three facts constitute the evaluation
+manifest, which prohibits being read by the scoring path; the cheapest way to keep that
+true is for the manifest never to be imported by the running application, and a
+scenario description that restated it would place the answer key inside the running
+client. Labels and descriptions are shown to the operator, and only the question text
+is passed for scoring, so the system reaches its verdict knowing what an analyst would
+have typed and nothing more.
+
+Before any query has been run, the landing view states what the layer is and where it
+sits, the safety property it is built around, the four stages by which a question
+becomes a verdict, what each detector looks for, the ten scenarios grouped by family,
+and a reference to all eleven cases in plain language alongside their formal
+identifiers, priorities and actions.
+
+**Navigation does not depend on the sidebar.** Both pages carry Console and Audit log
+links in the body, because the sidebar collapses and anything reachable only from
+there is unreachable while it is closed. Streamlit's own control for reopening a
+collapsed sidebar is held visible by the stylesheet for the same reason; it shares a
+container with the deployment button, so suppressing that button by stylesheet rather
+than through `toolbarMode` removes the sidebar control along with it.
 
 `test_dashboard.py` checks structure and call order and states in its own closing note
 that it cannot check appearance.
 [`dashboard/make_preview.py`](dashboard/make_preview.py) closes that gap: it walks the
 same render functions the live page calls with a recorder that emits static HTML, and
 writes one self-contained file using the project's own stylesheet and chart
-specifications, from a genuinely scored query rather than a fixture. The console can
-therefore be reviewed without starting the stack.
+specifications, from a genuinely scored query. A `--fixture` mode renders the same
+layout from a hand-written report on a machine where the index has not been built or
+the detector models are not installed. It is expressly not a substitute for the real
+preview — every figure in it is invented, so nothing about detection quality can be
+read from it — and its purpose is confined to layout and wording review; the fixture
+values are plainly synthetic and the rendered page declares itself as such.
 
 ---
 
@@ -762,13 +846,14 @@ Capstone/
     artifacts/               Fitted thresholds and coefficients
   reports/                   Analyst report: narrative engine, indicators, renderers
   logs/                      Audit log (SQLite) and retrieval log
-  dashboard/                 Streamlit analyst console
-    app.py                   Console page: query, verdict, evidence, decision capture
-    service.py               What the console calls; the two write grants in one place
+  dashboard/                 Reference client: Streamlit analyst console
+    app.py                   Console page: query, verdict, decision capture, verification
+    service.py               What the client calls; the two write grants in one place
     components.py            Render functions, ordered; banner first and tested as such
+    glossary.py              Analyst-facing wording; imports the case definitions, restates none
     style.py                 Design tokens, stylesheet, markup builders
     charts.py                Vega-Lite specifications; plots report fields, derives none
-    demo_queries.py          Ten benchmark questions — text and label only, no answer key
+    demo_queries.py          Ten benchmark questions, grouped by family — no answer key
     make_preview.py          Renders the console to standalone HTML for offline review
     pages/                   Audit log viewer
   eval/
@@ -941,7 +1026,7 @@ This framing is restated in the corpus module documentation and in the generator
 | Level 3 fusion, scoring, confidence | Complete, 115 checks passing |
 | Analyst report generator | Complete, 100 checks passing |
 | Audit log | Complete, 62 checks passing |
-| Analyst console | Complete, 55 checks passing |
+| Reference client (analyst console) | Complete, 55 checks passing |
 | Evaluation harness | Complete; results in `eval/results/` |
 | Containerisation | Complete |
 | Detector models installed and evaluation re-run | Complete — real models, GPU or CPU |
