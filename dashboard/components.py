@@ -41,6 +41,28 @@ means, and the distinction is the whole point of the `unusable` status.
 CSS. Emoji render differently on every platform, carry a colour that the state
 palette did not choose, and read as decoration in a tool whose entire job is to
 be believed.
+
+Plain language, and why the internal tokens survive underneath it
+-----------------------------------------------------------------
+The results view carries five severity encodings at once: the verdict band, the
+recommended action, the case id, the case priority and the risk tier. They are
+consistent by construction -- the band is derived from the action and the tier,
+the risk tier from the priority and the action, the priority from the case -- but
+an analyst does not know that, and five tokens with no stated relationship read
+as five independent judgements.
+
+None of them are removed. The audit trail, the evaluation harness and the
+override vocabulary all key on those exact strings, and an interface that renamed
+them would put a translation layer between what a reviewer sees on screen and
+what the database stores. They are DEMOTED instead: `render_verdict_sentence`
+carries the verdict in one line of English, and `render_classification_strip`
+puts the tokens underneath it as labelled detail, each beside the explanation
+that previously existed only in a source-file docstring.
+
+All of that wording lives in `dashboard/glossary.py`, which imports the case
+definitions from `fusion.cases` rather than restating them -- so a case whose
+priority or action changes upstream cannot end up described one way by the scorer
+and another way by the screen.
 """
 
 from __future__ import annotations
@@ -52,7 +74,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from dashboard import charts, style  # noqa: E402
+from dashboard import charts, glossary, style  # noqa: E402
 
 # Kept as a module-level mapping because the audit-log page and the tests both
 # import it. `bg` is the banner fill; the accent step for lines, dots and bars
@@ -86,6 +108,12 @@ SUBTYPE_HINT = {
         "it outlives this query.",
 }
 
+#: The report's field name for each signal. Kept, and still shown in the numeric
+#: table under every document, because it is the string somebody quoting a score
+#: in a write-up has to be able to find. It is no longer what labels the meter:
+#: `injection_probability` told an analyst which variable held the number, not
+#: what the detector was looking for, and only one of those is useful at a
+#: glance. The plain names come from `glossary.DETECTOR`.
 SIGNAL_DISPLAY = {
     "injection": "injection_probability",
     "anomaly": "embedding_anomaly_score",
@@ -144,18 +172,32 @@ def render_banner(st: Any, report: dict[str, Any]) -> None:
             f'<div class="tz-banner-subtype" style="font-size:1.05rem;'
             f'font-weight:600;">{SUBTYPE_LABEL.get(subtype, subtype)}</div>')
 
+    # The Action figure now carries the plain reading under the token rather than
+    # the token alone. "ESCALATE" is what the system decided; "Report to threat
+    # intel" is what it means for the person reading the banner, and the banner
+    # is the part somebody photographs.
+    action = str(report.get("recommended_action", "—"))
     figures = [
-        ("Action", report.get("recommended_action", "—")),
-        ("Case", report.get("case_id", "—")),
-        ("Priority", report.get("priority", "—")),
+        ("Action", action, glossary.ACTION_SHORT.get(action, "")),
+        ("Case", str(report.get("case_id", "—")),
+         glossary.case_view(report.get("case_id")).get("title", "")),
+        ("Priority", str(report.get("priority", "—")),
+         str(report.get("risk_tier", ""))),
     ]
     figs_html = "".join(
         f'<div class="tz-banner-fig"><span class="k">{k}</span>'
-        f'<span class="v">{v}</span></div>' for k, v in figures)
+        f'<span class="v">{v}</span>'
+        + (f'<span class="k" style="text-transform:none;letter-spacing:0.01em;'
+           f'font-size:0.63rem;opacity:0.82;max-width:11rem;margin-left:auto;">'
+           f'{w}</span>' if w else "")
+        + '</div>'
+        for k, v, w in figures)
 
     _md(st, f"""
         <div class="tz-banner" style="background:{style_['bg']};
-                    color:{style_['fg']};border-radius:4px;">
+                    color:{style_['fg']};border-radius:4px;
+                    box-shadow:0 0 0 1px {style.band_accent(band)}55,
+                               0 6px 26px -8px {style.band_glow(band)};">
           <div>
             <div class="tz-banner-eyebrow">System verdict</div>
             <div style="font-size:3.5rem;font-weight:700;line-height:1.02;
@@ -173,57 +215,218 @@ def render_banner(st: Any, report: dict[str, Any]) -> None:
         st.caption(SUBTYPE_HINT.get(subtype, ""))
 
 
-def render_headline_metrics(st: Any, report: dict[str, Any]) -> None:
-    """Composite trust score directly below the banner, then case and action.
+def render_verdict_sentence(st: Any, report: dict[str, Any]) -> None:
+    """The verdict in one line of English, directly under the banner.
 
-    The 95% interval used to be a line of caption text. It is now drawn twice --
-    once to scale under the figure, and once on a fixed 0-100 axis in the dial
-    beside it -- because how *wide* it is changes what an analyst should do with
-    the number, and a pair of decimals does not communicate width.
+    This is the sentence the page is built around. The band above it is a colour
+    and a word; this says what it means for the person in front of it, in the
+    second person, with the imperative where there is something to do. When the
+    band is RED the sub-type sentence follows, because "quarantine a document"
+    and "a source we trusted is compromised" are different jobs for different
+    people and the distinction has to arrive without an expander being opened.
+    """
+    band = report.get("headline", "ORANGE")
+    subtype = report.get("headline_subtype")
+    sentence = glossary.BAND_SENTENCE.get(band, glossary.BAND_SENTENCE["ORANGE"])
+    sub = glossary.SUBTYPE_SENTENCE.get(subtype or "", "") if band == "RED" else ""
+    _md(st, style.verdict_sentence(band, sentence, sub))
+
+
+def render_classification_strip(st: Any, report: dict[str, Any]) -> None:
+    """The five internal tokens, demoted to labelled detail with explanations.
+
+    Every cell is topped with the same band accent, so the strip reads as one
+    object describing one verdict. That is the whole point: these five were
+    previously scattered across the banner and two metric rows, and a reader who
+    cannot see that they are derived from one another reasonably assumes they are
+    five separate judgements that happen to agree.
+    """
+    band = report.get("headline", "ORANGE")
+    case = glossary.case_view(report.get("case_id"))
+    action = str(report.get("recommended_action", "—"))
+    priority = str(report.get("priority", "—"))
+    risk = str(report.get("risk_tier", "—"))
+
+    cells = [
+        ("Verdict band", str(band),
+         "The three-state summary. Derived from the action and the source tier, "
+         "so it can never disagree with them."),
+        ("What the system did", action, glossary.ACTION_SENTENCE.get(action, "")),
+        ("Case", case["case_id"], case["title"]),
+        ("Queue priority", priority, glossary.PRIORITY_MEANING.get(priority, "")),
+        ("Risk tier", risk, glossary.RISK_TIER_MEANING.get(risk, "")),
+    ]
+    _md(st, style.detail_strip(cells, style.band_accent(band)))
+    st.caption(
+        "These five are not five separate judgements. The case comes from the "
+        "detector outcome crossed with the source tier; the action and the "
+        "priority come from the case; the verdict band comes from the action and "
+        "the tier; the risk tier is the more severe of the priority and the "
+        "floor the action puts under it.")
+
+
+def render_next_steps(st: Any, report: dict[str, Any]) -> None:
+    """What to do about it, as an ordered checklist.
+
+    Assembled in `glossary.next_steps` from the final action plus the documents
+    this report already flagged. Nothing in it is derived from a score, and no
+    step names a fact the report does not carry -- a checklist that invented a
+    document id would be the most damaging possible failure on this page.
+    """
+    band = report.get("headline", "ORANGE")
+    steps = glossary.next_steps(report)
+    if not steps:
+        return
+    _md(st, style.band_panel(
+        band,
+        '<div class="tz-eyebrow">What to do next</div>'
+        '<div style="margin-top:0.55rem;">' + style.steps_list(steps) + '</div>',
+        extra="margin-top:0.6rem;"))
+
+
+def render_verdict_ladder(st: Any, report: dict[str, Any]) -> None:
+    """Query to verdict, one rung per decision the layer took.
+
+    The most useful single block on the page for somebody being shown the system
+    rather than using it: it walks retrieval, detection, provenance weighting,
+    classification and action in order, and each rung names the report field it
+    came from. Placed above the charts because it is the explanation the charts
+    are evidence for, not the other way round.
+    """
+    rungs = glossary.verdict_ladder(report)
+    if not rungs:
+        return
+    _eyebrow(st, "How the layer reached this verdict", top="1.5rem")
+    _md(st, f'<div class="tz-panel" style="border-left:3px solid '
+            f'{style.band_accent(report.get("headline", "ORANGE"))};">'
+            + style.ladder(rungs) + '</div>')
+
+
+def render_headline_metrics(st: Any, report: dict[str, Any]) -> None:
+    """The two headline figures, each with its grade, direction and scale note.
+
+    Three things changed here and each fixed a specific misreading.
+
+    **Both figures are percentages.** The report stores confidence as a 0-1
+    fraction, and the console used to print it as `0.62` in a tile next to
+    `73.4%`. Two scales in adjacent tiles invited the reading that one of them
+    was out of ten; worse, it made the two look like different kinds of quantity
+    when they are both "how much of the way to certain".
+
+    **Each figure carries a word.** `62%` does not tell a first-time reader
+    whether that is a normal number for this system. "Moderate", with the
+    sentence that follows it, does. The bands are REPORTING bands for saying the
+    number out loud, in the same sense as the zones on the trust dial -- not
+    decision thresholds, and the scale note says so, because an audience shown a
+    number and a colour will otherwise assume the number was the mechanism. On
+    this system it is not: the rule-based case taxonomy is.
+
+    **The direction is on the card.** The trust score rises toward safe and the
+    four detector readings rise toward dangerous. A reader who carries one
+    convention onto the other inverts the whole page, so each card states which
+    way it runs in 10px type rather than relying on a caption further down.
+
+    The 95% interval stays drawn to scale inside the trust card -- how *wide* it
+    is changes what an analyst should do with the number, and a pair of decimals
+    does not communicate width.
     """
     trust = report.get("trust_percent")
     lo, hi = (report.get("trust_interval") or [None, None])[:2]
     band = report.get("headline", "ORANGE")
 
-    c1, c2, c3 = st.columns([1.35, 1, 1])
+    confidence = report.get("confidence")
+    # The single place a 0-1 fraction becomes a percentage, kept at the call site
+    # so it is visible rather than buried in a formatter.
+    conf_pct = None if confidence is None else float(confidence) * 100.0
+
+    trust_word, trust_meaning = glossary.trust_grade(trust)
+    conf_word, conf_meaning = glossary.confidence_grade(conf_pct)
+
+    c1, c2, c3 = st.columns([1.4, 1.25, 1])
     with c1:
-        st.metric(
-            "Composite trust score",
+        _md(c1, style.score_card(
+            "Trust in this answer",
             "not computed" if trust is None else f"{trust:.1f}%",
-            help="Calibrated probability that this response is not attacker-influenced, "
-                 "expressed as trustworthiness.")
-        if trust is not None and lo is not None:
-            _md(st, style.interval(trust, lo, hi))
+            trust_word, trust_meaning,
+            style.band_accent(band),
+            direction="higher is safer",
+            scale_note=glossary.TRUST_SCALE_NOTE,
+            extra_html=(style.interval(trust, lo, hi)
+                        + (f'<div class="tz-score-scale" style="border:0;'
+                           f'padding-top:0.25rem;">{glossary.INTERVAL_NOTE}</div>'
+                           if trust is not None and lo is not None else ""))))
     with c2:
-        st.metric("Confidence in that score", _fmt(report.get("confidence"), 2),
-                  help="How much to trust the figure on the left. Reported separately "
-                       "because a high score from one document and a high score from "
-                       "five agreeing sources are different things.")
+        _md(c2, style.score_card(
+            "How much that score is worth",
+            "n/a" if conf_pct is None else f"{conf_pct:.0f}%",
+            conf_word, conf_meaning,
+            style.INFO,
+            direction="higher is firmer",
+            scale_note=glossary.CONFIDENCE_SCALE_NOTE))
     with c3:
-        st.metric("Risk tier", report.get("risk_tier", "—"),
-                  help="Queue severity, from the case priority and the final action, "
-                       "whichever is more severe.")
+        # Kept as an `st.metric` rather than a third card. It is a queue label
+        # rather than a measurement -- it has no scale, no interval and no
+        # direction to explain -- and giving it the same furniture as the two
+        # figures beside it would have implied it was one.
+        st.metric("Queue severity", report.get("risk_tier", "—"),
+                  help="Where this sorts in the analyst queue. The more severe of "
+                       "the case priority and the floor the final action puts "
+                       "under it — never the more comfortable of the two.")
+        st.caption(glossary.RISK_TIER_MEANING.get(
+            str(report.get("risk_tier", "")), ""))
 
     _md(st, f"<div style='height:2px;background:{style.band_accent(band)};"
             f"opacity:0.5;border-radius:1px;margin:0.55rem 0 0 0;'></div>")
 
 
 def render_case_and_action(st: Any, report: dict[str, Any]) -> None:
+    """The case, led by what it means rather than by what it is called.
+
+    The plain title is the heading and the formal name sits underneath it as the
+    record. That inversion is the point: `C6 — Open-Feed Irregularity` is precise
+    and tells a first-time reader nothing, while "Irregular content from an open
+    feed" tells them the situation and costs the same space.
+
+    The `distinct` line is the part a taxonomy of eleven cases most needs and
+    least often states -- what separates this case from the one beside it. It is
+    what answers the question a panel always asks about C4: why a *suspicious*
+    Tier-1 document outranks an outright *malicious* Tier-3 one.
+    """
     band = report.get("headline", "ORANGE")
-    action = report.get("recommended_action", "—")
-    _md(st, f"""
-        <div class="tz-panel tz-panel-accent"
-             style="border-left-color:{style.band_accent(band)};margin-top:0.6rem;">
-          <div class="tz-eyebrow">Case classification</div>
-          <div style="font-size:0.98rem;font-weight:600;margin:0.28rem 0 0.5rem 0;">
+    action = str(report.get("recommended_action", "—"))
+    case = glossary.case_view(report.get("case_id"))
+    accent = style.band_accent(band)
+
+    distinct = (f'<div style="font-size:0.8rem;line-height:1.6;'
+                f'color:{style.INK_3};margin-top:0.45rem;padding-top:0.45rem;'
+                f'border-top:1px solid {style.LINE_SOFT};">'
+                f'<strong style="color:{style.INK_2};">What makes this case '
+                f'different:</strong> {case["distinct"]}</div>'
+                ) if case["distinct"] else ""
+
+    _md(st, style.band_panel(band, f"""
+          <div class="tz-eyebrow">What kind of situation this is</div>
+          <div style="font-size:1.02rem;font-weight:650;margin:0.3rem 0 0.15rem 0;
+                      color:{style.INK};">
+            {case['title']}
+          </div>
+          <div style="font-family:{style.MONO};font-size:0.7rem;
+                      color:{style.INK_3};letter-spacing:0.04em;">
             {report.get('case_id', '—')} — {report.get('case_name', '')}
           </div>
-          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-            {style.chip(action, style.band_accent(band))}
-            <span style="font-size:0.78rem;color:{style.INK_3};">
+          <div style="font-size:0.85rem;line-height:1.6;color:{style.INK_2};
+                      margin-top:0.5rem;">{case['plain']}</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;
+                      margin-top:0.6rem;">
+            {style.chip(action, accent)}
+            <span style="font-size:0.78rem;color:{style.INK_2};">
+              {glossary.ACTION_SHORT.get(action, '')}</span>
+            <span style="font-size:0.72rem;color:{style.INK_3};
+                         font-family:{style.MONO};">
               recommended action · {report.get('priority', '')}</span>
           </div>
-        </div>""")
+          {distinct}""", extra="margin-top:0.6rem;"))
+
     if report.get("action_meaning"):
         st.caption(report["action_meaning"])
 
@@ -244,7 +447,15 @@ def render_signal_overview(st: Any, report: dict[str, Any]) -> None:
     if not docs:
         return
 
-    _eyebrow(st, "Detector readings across the retrieval set", top="1.4rem")
+    _eyebrow(st, "What the four detectors looked for", top="1.5rem")
+    _md(st, style.detector_legend([
+        (spec["name"], spec["field"], spec["what"])
+        for spec in glossary.DETECTOR.values()]))
+    _md(st, f'<div style="margin-top:0.55rem;">'
+            f'{style.note("<strong>Reading direction.</strong> " + glossary.DETECTOR_DIRECTION)}'
+            f'</div>')
+
+    _eyebrow(st, "Which document tripped which detector", top="1.4rem")
     matrix = charts.signal_matrix(docs)
     if matrix:
         charts.render(st, matrix, height=max(150, 42 * len(docs) + 70))
@@ -283,7 +494,7 @@ def render_score_analysis(st: Any, report: dict[str, Any]) -> None:
 
     c1, c2 = st.columns([1.1, 1])
     with c1:
-        _eyebrow(c1, "Composite trust score and 95% interval", top="1.4rem")
+        _eyebrow(c1, "Trust score on a fixed 0–100 scale", top="1.4rem")
         dial = charts.trust_dial(trust, lo, hi)
         if dial:
             charts.render(c1, dial, height=120)
@@ -293,13 +504,26 @@ def render_score_analysis(st: Any, report: dict[str, Any]) -> None:
         else:
             c1.caption("No composite score was computed for this query.")
     with c2:
-        _eyebrow(c2, "What the confidence figure rests on", top="1.4rem")
-        comp = charts.confidence_components(components)
+        _eyebrow(c2, "Why the confidence figure landed where it did", top="1.4rem")
+        # Relabelled here rather than in `charts`, which takes a plain mapping and
+        # has no business knowing what the keys are called in front of an analyst.
+        # The confidence figure is a geometric mean, so the lowest bar is the one
+        # holding the whole number down -- naming it is more useful than the
+        # composite, which is the reason this chart exists at all.
+        labelled = {
+            glossary.CONFIDENCE_COMPONENT.get(k, k.replace("_", " ")): v
+            for k, v in components.items()}
+        comp = charts.confidence_components(labelled)
         if comp:
-            charts.render(c2, comp, height=max(120, 26 * len(components) + 44))
+            charts.render(c2, comp, height=max(130, 30 * len(labelled) + 48))
+            c2.caption(
+                "Each bar runs 0 to 1. These are combined by a geometric mean, so "
+                "the shortest bar is the one holding the figure down — a run held "
+                "back by how much evidence there was needs a different response "
+                "from one held back by the sources disagreeing.")
             caps = report.get("confidence_caps") or []
             if caps:
-                c2.caption("Capped by: " + ", ".join(str(c) for c in caps))
+                c2.caption("A hard cap was applied: " + ", ".join(str(c) for c in caps))
         else:
             c2.caption("No confidence components were reported for this query.")
 
@@ -334,6 +558,11 @@ def render_documents(st: Any, report: dict[str, Any]) -> None:
     """
     docs = report.get("documents", []) or []
     st.subheader(f"Evidence — {len(docs)} retrieved documents")
+    st.caption(
+        "One row per document the retriever returned, in rank order. A row "
+        "marked `[MAL]` or `[SUS]` opens by default; the rest stay closed. "
+        "Trust tier is provenance, not severity — T1 is a source we verify "
+        "ourselves, T3 is one we do not.")
 
     for doc in docs:
         band = doc.get("headline", "ORANGE")
@@ -360,31 +589,65 @@ def render_documents(st: Any, report: dict[str, Any]) -> None:
                 <div style="font-size:0.92rem;font-weight:600;margin-bottom:0.3rem;">
                   {doc.get('title', '')}</div>""")
 
+            doc_case = glossary.case_view(doc.get("case_id"))
+            doc_action = str(doc.get("action", ""))
             _md(st, style.kv([
                 ("Source", f"{doc.get('source_name', '')} "
                            f"({doc.get('source_id', '')})"),
-                ("Trust tier", f"{doc.get('source_tier')} — "
+                ("Trust tier", f"Tier {doc.get('source_tier')} — "
                                f"{doc.get('source_tier_label', '')}"),
-                ("Case", f"{doc.get('case_id')} {doc.get('case_name', '')}"),
-                ("Action", f"{doc.get('action')} ({doc.get('priority')})"),
+                ("Situation", f"{doc_case['title']}<br/>"
+                              f"<span style='font-family:{style.MONO};"
+                              f"font-size:0.7rem;color:{style.INK_3};'>"
+                              f"{doc.get('case_id')} {doc.get('case_name', '')}</span>"),
+                ("Action", f"{doc_action} — "
+                           f"{glossary.ACTION_SHORT.get(doc_action, '')} "
+                           f"<span style='font-family:{style.MONO};"
+                           f"font-size:0.7rem;color:{style.INK_3};'>"
+                           f"({doc.get('priority')})</span>"),
             ]))
 
-            _eyebrow(st, "Detector readings", top="1rem")
+            _eyebrow(st, "Detector readings — higher is worse", top="1rem")
             for r in readings:
+                # The meter is labelled with what the detector looks for; the
+                # numeric table below carries the report's field name. The bar is
+                # the glance, the table is the record, and they need different
+                # labels for that split to work.
                 _md(st, style.meter(
-                    SIGNAL_DISPLAY.get(r["signal"], r["signal"]),
+                    glossary.detector_name(str(r["signal"])),
                     r.get("value"), r.get("suspicious_threshold"),
                     r.get("malicious_threshold"), str(r.get("status", ""))))
+                # Only the readings that are NOT a plain sub-threshold
+                # measurement get a sentence. Printing "measured, and came in
+                # under the line" under all four of a clean document's meters
+                # said the same thing four times and buried the one reading that
+                # did have something to say; the shared case is stated once,
+                # below, instead.
+                if str(r.get("status", "")) != "below":
+                    status_sentence = glossary.STATUS_SENTENCE.get(
+                        str(r.get("status", "")), "")
+                    if status_sentence:
+                        st.caption(status_sentence)
+
+            if any(str(r.get("status", "")) == "below" for r in readings):
+                st.caption(glossary.STATUS_SENTENCE["below"])
 
             rows = []
             for r in readings:
+                status = str(r.get("status", ""))
+                # Both names in one cell rather than two columns. The field name
+                # has to be here -- it is what somebody quoting a score in a
+                # write-up needs -- but a sixth column pushed this table into a
+                # horizontal scroll at ordinary widths, and a table that scrolls
+                # sideways is one an analyst stops reading.
                 rows.append({
-                    "Detector": SIGNAL_DISPLAY.get(r["signal"], r["signal"]),
+                    "Detector": (glossary.detector_name(str(r["signal"]))
+                                 + f"  ({SIGNAL_DISPLAY.get(r['signal'], r['signal'])})"),
                     "Score": _fmt(r.get("value")),
                     "Suspicious at": _fmt(r.get("suspicious_threshold")),
                     "Malicious at": _fmt(r.get("malicious_threshold")),
-                    "Status": ("FIRED" if r.get("status") in
-                               ("over_malicious", "over_suspicious") else r.get("status")),
+                    "Status": ("FIRED" if status in
+                               ("over_malicious", "over_suspicious") else status),
                 })
             st.table(rows)
 
@@ -424,7 +687,11 @@ def render_entities(st: Any, report: dict[str, Any]) -> None:
 
 
 def render_reasoning(st: Any, report: dict[str, Any]) -> None:
-    st.subheader("Reasoning")
+    st.subheader("Reasoning, in the system's own words")
+    st.caption(
+        "Assembled from fixed sentence templates with figures substituted from "
+        "this report. No language model wrote any of it, which is why every "
+        "number in it can be traced to a field.")
     reasoning = report.get("reasoning", {}) or {}
     sentences = reasoning.get("sentences", []) or []
     if sentences:
@@ -462,11 +729,18 @@ def event_rows_for_table(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         subtype = e.get("headline_subtype")
         display = band + (f" — {SUBTYPE_LABEL.get(subtype, subtype)}" if subtype else "")
         trust = e.get("trust_percent")
+        confidence = e.get("confidence")
+        case = glossary.case_view(e.get("case_id"))
         out.append({
             "Class": display,
             "Case": f"{e.get('case_id', '')} {e.get('case_name', '') or ''}".strip(),
+            "Situation": case["title"],
             "Trust %": "—" if trust is None else f"{trust:.1f}",
-            "Confidence": _fmt(e.get("confidence"), 2),
+            # Shown as a percentage here for the same reason as on the results
+            # view: a column of 0.49 beside a column of 93.5 reads as two
+            # different kinds of quantity when it is the same kind twice.
+            "Confidence %": ("—" if confidence is None
+                             else f"{float(confidence) * 100:.0f}"),
             "Action": e.get("final_action", ""),
             "Analyst decision": e.get("analyst_decision") or "— not reviewed —",
             "Query": (e.get("query_text", "")[:60]

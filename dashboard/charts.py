@@ -90,13 +90,22 @@ _STATUS_DOMAIN = ["over malicious", "over suspicious", "below threshold",
 _STATUS_RANGE = [style.CRIT, style.WARN, style.ACCENT, style.NEUTRAL,
                  style.NEUTRAL]
 
+#: Axis labels for the four detectors. These are the short forms -- an axis tick
+#: has perhaps twenty characters before it wraps or truncates, so the full plain
+#: names in `glossary.DETECTOR` will not fit here. They are chosen to be the
+#: shortest phrase that still says what was measured rather than which variable
+#: held it: "Injection" named the detector, "Hidden instructions" names the
+#: finding, and only one of those means anything to a reader seeing the chart
+#: for the first time. The detector legend above the chart carries the full
+#: names and the report field names beside them.
 SIGNAL_LABEL = {
-    "injection": "Injection",
-    "anomaly": "Anomaly",
-    "unsupport": "Unsupport",
-    "conflict": "Conflict",
+    "injection": "Hidden instructions",
+    "anomaly": "Unlike the corpus",
+    "unsupport": "Unsupported claims",
+    "conflict": "Sources conflict",
 }
-SIGNAL_ORDER = ["Injection", "Anomaly", "Unsupport", "Conflict"]
+SIGNAL_ORDER = ["Hidden instructions", "Unlike the corpus", "Unsupported claims",
+                "Sources conflict"]
 
 
 def render(st: Any, spec: dict[str, Any], height: int = 210) -> None:
