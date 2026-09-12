@@ -26,7 +26,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st  # noqa: E402
 
-from dashboard import charts, style  # noqa: E402
+from dashboard import charts, glossary, style  # noqa: E402
 from dashboard.components import SUBTYPE_LABEL, event_rows_for_table  # noqa: E402
 from dashboard.service import distinct_cases, get_audit_log, list_events  # noqa: E402
 
@@ -38,6 +38,23 @@ st.markdown(style.masthead(
     "Every scored query, with its class, case, scores and analyst decision",
     "TAMPER-EVIDENT · HASH-CHAINED"),
     unsafe_allow_html=True)
+
+# Navigation in the body as well as the sidebar: the sidebar collapses, and a
+# reviewer who closes it should not lose the way back to the console.
+_nav1, _nav2, _ = st.columns([1, 1, 5])
+with _nav1:
+    st.page_link("app.py", label="Console")
+with _nav2:
+    st.page_link("pages/1_Audit_Log.py", label="Audit log")
+
+with st.sidebar:
+    st.markdown('<div class="tz-side-brand">Trust and Risk Layer</div>'
+                '<div class="tz-side-brand-sub">Healthcare threat-intelligence RAG'
+                '<br/>Team Zetabyte</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tz-eyebrow" style="margin:1.3rem 0 0.4rem 0;">'
+                'Pages</div>', unsafe_allow_html=True)
+    st.page_link("app.py", label="Console")
+    st.page_link("pages/1_Audit_Log.py", label="Audit log")
 
 log = get_audit_log()
 stats = log.stats()
@@ -92,7 +109,15 @@ with f2:
              "are not equally urgent.")
 with f3:
     cases = distinct_cases()
-    case_id = st.selectbox("Case classification", ["All"] + cases)
+    # Shown as "C9 — Poisoning on the expected attack path". The id is kept in
+    # the label rather than replaced by the plain title: the id is what the
+    # evaluation harness and the audit rows carry, so a reviewer cross-checking
+    # this filter against a report has to be able to see it.
+    case_id = st.selectbox(
+        "Case classification", ["All"] + cases,
+        format_func=lambda c: (
+            c if c == "All"
+            else f"{c} — {glossary.case_view(c)['title']}"))
 with f4:
     decision = st.selectbox(
         "Analyst decision", ["All", "UNREVIEWED", "ACCEPT", "REJECT", "OVERRIDE"],
@@ -135,21 +160,37 @@ else:
             unsafe_allow_html=True)
 
         trust = event.get("trust_percent")
+        event_case = glossary.case_view(event.get("case_id"))
+        event_action = str(event["final_action"])
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(style.kv([
                 ("Query", event["query_text"]),
                 ("Reference", event["event_id"]),
                 ("When", str(event["created_at"])),
-                ("Case", f"{event['case_id']} {event.get('case_name') or ''}"),
-                ("Action", f"{event['final_action']} ({event['risk_priority']})"),
+                ("Situation", f"{event_case['title']}<br/>"
+                              f"<span style='font-family:{style.MONO};"
+                              f"font-size:0.7rem;color:{style.INK_3};'>"
+                              f"{event['case_id']} "
+                              f"{event.get('case_name') or ''}</span>"),
+                ("Action", f"{event_action} — "
+                           f"{glossary.ACTION_SHORT.get(event_action, '')} "
+                           f"<span style='font-family:{style.MONO};"
+                           f"font-size:0.7rem;color:{style.INK_3};'>"
+                           f"({event['risk_priority']})</span>"),
             ]), unsafe_allow_html=True)
         with c2:
             backends_ok = bool(event["backends_are_models"])
+            # Both figures as percentages, matching the console. A column of
+            # 0.494 beside a column of 93.5% reads as two different kinds of
+            # quantity when it is the same kind twice.
+            confidence_pct = float(event["confidence"]) * 100.0
             st.markdown(style.kv([
                 ("Trust score",
-                 "not computed" if trust is None else f"{trust:.1f}%"),
-                ("Confidence", f"{event['confidence']:.3f}"),
+                 "not computed" if trust is None else f"{trust:.1f}%"
+                 + f" ({glossary.trust_grade(trust)[0].lower()})"),
+                ("Score worth", f"{confidence_pct:.0f}% "
+                                f"({glossary.confidence_grade(confidence_pct)[0].lower()})"),
                 ("Rule track", event["taxonomy_action"]),
                 ("Score track", event["score_action"]),
                 ("Detectors",
