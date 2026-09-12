@@ -2,6 +2,7 @@
 Render the console to a standalone HTML file for design review.
 
     python -m dashboard.make_preview "<query>"      -> dashboard/ui_preview.html
+    python -m dashboard.make_preview --fixture      -> same, without the stack
 
 WHY THIS EXISTS
 ---------------
@@ -19,9 +20,18 @@ what the file shows is what the console shows. It is a review aid, not a second
 implementation of the page: it renders whatever `components.py` produces and has
 no layout opinions of its own.
 
-The report it renders is a real scored query, not a fixture, so the preview
-carries the same caveats the console would -- including the fallback-backend
-warnings when the models are not installed.
+The report it renders is a real scored query, so the preview carries the same
+caveats the console would -- including the fallback-backend warnings when the
+models are not installed.
+
+`--fixture` renders the same page from a hand-written report instead. That is a
+strictly worse preview and it is not a substitute for the real one: the figures
+are invented, so nothing about detection quality can be read off it. What it is
+for is LAYOUT, on a machine where the index has not been built or the detector
+models are not installed -- a wording change or a panel that collapses at narrow
+width can be seen without bringing the whole stack up. Every fixture value is
+plainly synthetic and the page says so at the top, so a fixture render cannot be
+mistaken for a result.
 """
 
 from __future__ import annotations
@@ -126,8 +136,12 @@ class HtmlRecorder:
         body = "".join(
             "<tr>" + "".join(f"<td>{html.escape(str(v))}</td>" for v in r.values())
             + "</tr>" for r in rows)
-        self.emit(f'<table class="tz-table"><thead><tr>{head}</tr></thead>'
-                  f"<tbody>{body}</tbody></table>")
+        # Wrapped in its own scroller. `st.table` scrolls itself in the product;
+        # a bare table here made the whole page scroll sideways at narrow widths
+        # and reported an overflow the console does not have.
+        self.emit(f'<div style="overflow-x:auto;max-width:100%;">'
+                  f'<table class="tz-table"><thead><tr>{head}</tr></thead>'
+                  f"<tbody>{body}</tbody></table></div>")
 
     def _alert(self, kind: str, body: str) -> None:
         colour = {"info": style.ACCENT, "warning": style.WARN,
@@ -204,16 +218,128 @@ class _Deferred:
         return "".join(out)
 
 
-def build(query: str, db_path: str | None = None) -> Path:
-    from dashboard.service import run_query  # noqa: PLC0415
+def _fixture_report() -> tuple[dict[str, Any], str]:
+    """A hand-written report for layout review only.
 
-    report, event_id = run_query(query, db_path=db_path)
+    Deliberately a RED / C5 case: it exercises the sub-type line in the banner,
+    the compromise sentence, the escalation checklist, a fired detector, an
+    uncalibrated one, and a caveat -- which between them cover every conditional
+    branch in the render functions. The values are invented and the page says so.
+    """
+    readings = [
+        {"signal": "injection", "value": 0.91, "suspicious_threshold": 0.60,
+         "malicious_threshold": 0.85, "margin_to_suspicious": 0.31,
+         "margin_to_malicious": 0.06, "status": "over_malicious"},
+        {"signal": "anomaly", "value": 0.42, "suspicious_threshold": 0.55,
+         "malicious_threshold": 0.80, "margin_to_suspicious": -0.13,
+         "margin_to_malicious": -0.38, "status": "below"},
+        {"signal": "unsupport", "value": 0.71, "suspicious_threshold": 0.60,
+         "malicious_threshold": 0.85, "margin_to_suspicious": 0.11,
+         "margin_to_malicious": -0.14, "status": "over_suspicious"},
+        {"signal": "conflict", "value": None, "suspicious_threshold": None,
+         "malicious_threshold": None, "margin_to_suspicious": None,
+         "margin_to_malicious": None, "status": "unusable"},
+    ]
+    report: dict[str, Any] = {
+        "report_id": "rpt-FIXTURE", "schema_version": "report-v1.0",
+        "generated_at": "2026-09-12T00:00:00+00:00",
+        "query": "FIXTURE — layout review only",
+        "headline": "RED", "headline_subtype": "TRUSTED_SOURCE_COMPROMISE",
+        "case_id": "C5", "case_name": "Authoritative Channel Compromise",
+        "priority": "P0", "risk_tier": "CRITICAL",
+        "recommended_action": "ESCALATE",
+        "action_meaning": "Raise a security event to the threat-intelligence owner.",
+        "trust_percent": 21.4, "trust_interval": [11.8, 34.2],
+        "confidence": 0.58,
+        "confidence_components": {
+            "volume": 0.72, "agreement": 0.41, "independence": 0.66,
+            "detector_concurrence": 0.55, "model_stability": 0.80},
+        "confidence_caps": [], "tier_governing": 1, "n_retrieved": 2,
+        "entity_count": 2,
+        "entities": {"cve": [{"value": "CVE-2020-6961", "doc_ids": ["fx-1"]}],
+                     "ipv4": [{"value": "198.51.100.47", "doc_ids": ["fx-1"]}]},
+        "documents": [
+            {"rank": 1, "doc_id": "fx-1", "title": "FIXTURE advisory (synthetic)",
+             "source_id": "fx-tier1", "source_name": "Fixture authority feed",
+             "source_tier": 1, "source_tier_label": "verified-authoritative",
+             "similarity": 0.88, "case_id": "C5",
+             "case_name": "Authoritative Channel Compromise", "headline": "RED",
+             "headline_subtype": "TRUSTED_SOURCE_COMPROMISE", "action": "ESCALATE",
+             "priority": "P0", "trust_percent": 18.0, "risk": 0.82,
+             "signals": {"injection": 0.91, "anomaly": 0.42,
+                         "unsupport": 0.71, "conflict": None},
+             "readings": readings,
+             "provenance": {"published_date": "2026-09-01",
+                            "ingestion_date": "2026-09-02",
+                            "reference_verified": False},
+             "entities": []},
+            {"rank": 2, "doc_id": "fx-2", "title": "FIXTURE corroborating note",
+             "source_id": "fx-tier2", "source_name": "Fixture open feed",
+             "source_tier": 2, "source_tier_label": "trusted-open",
+             "similarity": 0.74, "case_id": "C2",
+             "case_name": "Community Corroboration", "headline": "ORANGE",
+             "headline_subtype": None, "action": "ACCEPT", "priority": "P4",
+             "trust_percent": 68.0, "risk": 0.22,
+             "signals": {"injection": 0.04, "anomaly": 0.19,
+                         "unsupport": 0.31, "conflict": 0.12},
+             "readings": [
+                 {"signal": s, "value": v, "suspicious_threshold": 0.60,
+                  "malicious_threshold": 0.85, "margin_to_suspicious": v - 0.60,
+                  "margin_to_malicious": v - 0.85, "status": "below"}
+                 for s, v in (("injection", 0.04), ("anomaly", 0.19),
+                              ("unsupport", 0.31), ("conflict", 0.12))],
+             "provenance": {"published_date": "2026-08-20",
+                            "reference_verified": True},
+             "entities": []},
+        ],
+        "reasoning": {
+            "text": "FIXTURE narrative.",
+            "sentences": [
+                {"template_id": "fx1", "text": "A Tier 1 source carried content "
+                                               "the injection detector scored at "
+                                               "0.910, above its malicious "
+                                               "threshold of 0.850.", "facts": []},
+                {"template_id": "fx2", "text": "The contradiction detector could "
+                                               "not be calibrated on this query, "
+                                               "so inter-document conflict is "
+                                               "unmeasured.", "facts": []}],
+            "grounding": {"fact_count": 4, "generated_by_model": False}},
+        "analyst_decision": {"status": "AWAITING_REVIEW", "decision": None},
+        "provenance": {
+            "n_distinct_sources": 2, "detector_backends": {},
+            "timings_ms": {"retrieval": 41.2, "generation": 612.5,
+                           "scoring": 884.0, "report": 12.8, "total": 1550.5}},
+        "caveats": ["FIXTURE RENDER — every figure on this page is invented. "
+                    "Nothing here is a measurement."],
+    }
+    return report, "evt-FIXTURE"
 
+
+def build(query: str, db_path: str | None = None, fixture: bool = False) -> Path:
+    if fixture:
+        report, event_id = _fixture_report()
+        query = "FIXTURE — layout review only, no query was run"
+    else:
+        from dashboard.service import run_query  # noqa: PLC0415
+        report, event_id = run_query(query, db_path=db_path)
+
+    # The same order the console renders in: decision first, then verification.
+    # Kept in step with `dashboard/app.py` by hand -- the preview walks the render
+    # functions directly rather than importing the page, because the page calls
+    # `set_page_config` and reads `session_state`.
     rec = HtmlRecorder()
     components.render_banner(rec, report)
-    components.render_headline_metrics(rec, report)
-    components.render_case_and_action(rec, report)
+    components.render_verdict_sentence(rec, report)
+    components.render_classification_strip(rec, report)
     components.render_caveats(rec, report)
+    components.render_next_steps(rec, report)
+    components.render_case_and_action(rec, report)
+    components.render_headline_metrics(rec, report)
+    rec.markdown(f'<div style="height:1px;background:{style.LINE};'
+                 f'margin:2.2rem 0 1.1rem 0;"></div>'
+                 f'<div class="tz-eyebrow">Verification — the evidence behind '
+                 f'the verdict</div>', unsafe_allow_html=True)
+    components.render_verdict_ladder(rec, report)
     components.render_signal_overview(rec, report)
     components.render_score_analysis(rec, report)
     components.render_reasoning(rec, report)
@@ -232,7 +358,12 @@ def build(query: str, db_path: str | None = None) -> Path:
   body {{ background:{style.BG}; color:{style.INK}; margin:0;
           font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
                       "Helvetica Neue",Arial,sans-serif; }}
-  .tz-shell {{ display:grid; grid-template-columns:250px 1fr; min-height:100vh; }}
+  /* minmax(0,1fr) rather than 1fr: a bare 1fr grid track takes its minimum
+     from its content, so the main column could not shrink below the widest
+     thing in it and the whole preview scrolled sideways at narrow widths --
+     reporting an overflow the console does not have. */
+  .tz-shell {{ display:grid; grid-template-columns:250px minmax(0,1fr);
+               min-height:100vh; }}
   .tz-side {{ background:{style.PANEL}; border-right:1px solid {style.LINE};
               padding:1.4rem 1.1rem; }}
   .tz-main {{ padding:1.6rem 2rem 4rem 2rem; max-width:1500px; }}
@@ -307,9 +438,12 @@ def build(query: str, db_path: str | None = None) -> Path:
 
 
 if __name__ == "__main__":
-    q = (sys.argv[1] if len(sys.argv) > 1 else
+    args = [a for a in sys.argv[1:] if a != "--fixture"]
+    use_fixture = "--fixture" in sys.argv
+    q = (args[0] if args else
          "Is the Contec CMS8000 patient monitor safe to keep connected to our "
          "clinical network?")
-    db = sys.argv[2] if len(sys.argv) > 2 else None
-    path = build(q, db)
-    print(f"wrote {path} ({path.stat().st_size:,} bytes)")
+    db = args[1] if len(args) > 1 else None
+    path = build(q, db, fixture=use_fixture)
+    print(f"wrote {path} ({path.stat().st_size:,} bytes)"
+          + ("  [FIXTURE — layout only, figures invented]" if use_fixture else ""))
